@@ -1,0 +1,23 @@
+{
+  "cadvisor:arm64v8-cpu-0.1.0": {
+    "repo": "registry.jiangxingai.com:5000/cadvisor",
+    "tag": "arm64v8-cpu-0.1.0"
+  },
+  "device-pipe-gbitrate:arm64v8-cpu-0.1.0": {
+    "repo": "registry.jiangxingai.com:5000/base/device-pipe-gbitrate",
+    "tag": "arm64v8-cpu-0.1.0"
+  },
+  "device-pipe-gstreamer:arm64v8-cpu-0.1.5": {
+    "repo": "registry.jiangxingai.com:5000/base/device-pipe-gstreamer",
+    "tag": "arm64v8-cpu-0.1.5"
+  },
+  "nginx-rtmp:arm64v8-cpu-0.1.0": {
+    "repo": "registry.jiangxingai.com:5000/nginx-rtmp",
+    "tag": "arm64v8-cpu-0.1.0"
+  },
+  "statsd_influxdb:arm64v8-cpu-1.0.1": {
+    "repo": "registry.jiangxingai.com:5000/statsd_influxdb",
+    "tag": "arm64v8-cpu-1.0.1"
+  }
+}
+
