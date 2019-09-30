@@ -11,8 +11,6 @@ import (
     "regexp"
     "strings"
     "time"
-
-    "github.com/rjeczalik/notify"
 )
 
 func LookUpDns(domain string) {
@@ -106,4 +104,3 @@ func ResolvGuard() {
 
     exec.Command("/bin/bash", "-c", "systemctl restart dnsmasq").Run()
 }
-

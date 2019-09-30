@@ -1,8 +1,13 @@
 package network
 
 import (
+    "fmt"
+    "jxcore/core/device"
     "jxcore/log"
+    "jxcore/systemapi/utils"
+    "jxcore/systemapi/vpn"
     "net"
+    "os/exec"
     "strings"
     "time"
 )
@@ -84,4 +89,43 @@ func GetEthIP() string {
     }
 
     return addrStr
+}
+
+
+
+// GetClusterIP 获取集群内网 VPN IP
+func GetClusterIP() string {
+    d,err:= device.GetDevice()
+    utils.CheckErr(err)
+    switch d.Vpn {
+    case device.VPNModeLocal:
+        tun0interface, err := GetMyIP(vpn.OpenVPNInterface)
+        if err != nil {
+            log.WithFields(log.Fields{"Operating": "GetClusterIP"}).Error(err)
+            return ""
+        }
+        return tun0interface
+    case device.VPNModeWG:
+        wg0interface, err := GetMyIP(vpn.WireGuardInterface)
+        if err != nil {
+            log.WithFields(log.Fields{"Operating": "GetClusterIP"}).Error(err)
+            return ""
+        }
+        return wg0interface
+    }
+    return ""
+}
+
+
+func CheckNetwork() bool {
+    cmd := exec.Command("ping", "baidu.com", "-c", "1", "-W", "5")
+    err := cmd.Run()
+    if err != nil {
+        fmt.Println(err.Error())
+        return false
+    } else {
+        fmt.Println("Net Status , OK")
+    }
+    return true
+
 }

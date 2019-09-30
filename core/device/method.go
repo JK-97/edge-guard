@@ -5,6 +5,7 @@ import (
     "fmt"
     "gopkg.in/yaml.v2"
     "io/ioutil"
+    "jxcore/log"
     "jxcore/systemapi/utils"
     "jxcore/version"
     "math/rand"
@@ -50,12 +51,19 @@ func (d *Device) BuildDeviceInfo(vpnmodel string, ticket string, authHost string
         vpnmodel = vpnSlice[r.Intn(len(vpnSlice))]
     }
     if GetDeviceType() == version.Pro {
-
+        //pro
     } else {
+        //base
+        if vpnmodel != VPNModeLocal || authHost != VPNModeLocal{
+            log.Fatal("Base version can not support networking")
+        }
         
     }
     d.Vpn = vpnmodel
-
     d.DhcpServer = authHost
+    log.Info("Update Init Config File")
+    outputdata, err := yaml.Marshal(d)
+    utils.CheckErr(err)
+    ioutil.WriteFile("/edge/init", outputdata, 0666)
 
 }

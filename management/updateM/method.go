@@ -6,7 +6,9 @@ import (
     "fmt"
     "gopkg.in/yaml.v2"
     "io/ioutil"
+    "jxcore/core/device"
     "jxcore/log"
+    "jxcore/systemapi/utils"
 
     "net/http"
     "os"
@@ -14,7 +16,7 @@ import (
     "path/filepath"
 )
 
-func PraseVersionFile()(versioninfo map[string]string) {
+func PraseVersionFile() (versioninfo map[string]string) {
     err := filepath.Walk("/edge", func(path string, info os.FileInfo, err error) error {
         if err != nil {
             fmt.Printf("prevent panic by handling failure accessing a path %q: %v\n", path, err)
@@ -90,9 +92,11 @@ func (up *UpgradeProcess) CheckUpdate() map[string]string {
 
 func (up *UpgradeProcess) UploadVersion() {
     url := "http://masterip/api/v1/worker/version_info"
+    deviceinfo, err := device.GetDevice()
+    utils.CheckErr(err)
     resprawinfo := Respdatastruct{
         Status:   up.GetStatus().String(),
-        WorkerId: regeister.DeviceKey.WorkID,
+        WorkerId: deviceinfo.WorkID,
         PkgInfo:  PraseVersionFile(),
     }
     respdata, err := json.Marshal(resprawinfo)

@@ -12,7 +12,7 @@ var GitCommit string
 var Version = "1.0.0"
 
 // Type 
-var Type = "PRO"
+var Type = Pro
 
 // BuildDate 编译日期
 var BuildDate = "2019.08.23"

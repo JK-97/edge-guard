@@ -1,5 +1,8 @@
 package programM
 
+func (pm ProgramM) AddProgram() {
+
+}
 func (pm ProgramM) LoadConfig() {
 
 }
