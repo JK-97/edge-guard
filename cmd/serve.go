@@ -15,31 +15,25 @@
 package cmd
 
 import (
-	"io/ioutil"
-	"jxcore/app/route"
-	"jxcore/config"
-	"jxcore/journal"
-	"jxcore/log"
-	"jxcore/monitor"
-	"jxcore/regeister"
-	"jxcore/utils"
-	"net/http"
-	"os"
-	"os/exec"
-	"os/signal"
-	"sync"
-	"syscall"
-	"time"
+    "io/ioutil"
+    "jxcore/config"
+    "jxcore/journal"
+    "jxcore/log"
+    "jxcore/systemapi/utils"
+    "os"
+    "os/exec"
+    "syscall"
+    "time"
 
-	// 调试
-	_ "net/http/pprof"
+    // 调试
+    _ "net/http/pprof"
 
-	// 日志采插件
-	_ "jxcore/journal/docker"
-	_ "jxcore/journal/rfile"
-	_ "jxcore/journal/systemd"
+    // 日志采插件
+    _ "jxcore/journal/docker"
+    _ "jxcore/journal/rfile"
+    _ "jxcore/journal/systemd"
 
-	"github.com/spf13/cobra"
+    "github.com/spf13/cobra"
 )
 
 const logBase = "/edge/logs/"
@@ -57,64 +51,8 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		port, err := cmd.Flags().GetString("port")
-		if err != nil {
-			port = ":80"
-		}
+		
 		forever := make(chan interface{}, 1)
-		go func() {
-			log.Info("Listen on", port)
-			log.Fatal(http.ListenAndServe(port, route.Routes()))
-			os.Exit(1)
-			forever <- nil
-		}()
-
-		if debug, _ := cmd.Flags().GetBool("debug"); debug {
-			go func() {
-				port := ":10880"
-				log.Info("Enable Debug Mode Listen on", port)
-				log.Fatal(http.ListenAndServe(port, nil))
-				os.Exit(1)
-				forever <- nil
-			}()
-		}
-
-		applySyncTools()
-
-		if _, err := os.Stat(logBase); err != nil && os.IsNotExist(err) {
-			os.MkdirAll(logBase, 0644)
-		}
-
-		signalChannel := make(chan os.Signal, 16)
-		signal.Notify(signalChannel)
-		go handleSignal(signalChannel, forever)
-
-		info, err := regeister.ReadDeviceInfo()
-		if err != nil {
-			log.Error(err)
-			return
-		}
-
-		workerID := info.WorkID
-		log.Info("Start Gateway")
-		monitor.GWEmitter()
-		go monitor.MutiFileMonitor(config.InterSettings.FileMonitor.OverSeePath)
-		go monitor.GateWayMonitor()
-
-		log.Info("Patternmatching")
-		go regeister.Patternmatching()
-
-		go monitor.ComponentMonitor()
-
-		go regeister.DnsFileListener()
-
-		//go component.CleanerAdministrator()
-		// monitor.StopGateway()
-		wg := new(sync.WaitGroup)
-		wg.Wait()
-
-		log.Info("Prepare to collect journal")
-		go collectJournal(workerID)
 
 		<-forever
 	},

@@ -1,8 +1,8 @@
 package version
 
 import (
-	"fmt"
-	"runtime"
+    "fmt"
+    "runtime"
 )
 
 // GitCommit The git commit that was compiled. This will be filled in by the compiler.
@@ -10,6 +10,9 @@ var GitCommit string
 
 // Version The main version number that is being run at the moment.
 var Version = "1.0.0"
+
+// Type 
+var Type = "PRO"
 
 // BuildDate 编译日期
 var BuildDate = "2019.08.23"
