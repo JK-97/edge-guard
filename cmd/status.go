@@ -4,9 +4,9 @@ import (
     "fmt"
     "jxcore/core/device"
 
-    "jxcore/systemapi/network"
+    "jxcore/lowapi/network"
 
-    "jxcore/systemapi/vpn"
+    "jxcore/lowapi/vpn"
     "os"
 
     "github.com/spf13/cobra"

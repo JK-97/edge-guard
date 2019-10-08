@@ -17,20 +17,15 @@ package cmd
 import (
     "io/ioutil"
     "jxcore/config"
+    "jxcore/core"
     "jxcore/core/device"
-    "jxcore/journal"
     "jxcore/log"
-    "jxcore/management/updateM"
-    "jxcore/systemapi/network"
-    "jxcore/systemapi/utils"
+    "jxcore/lowapi/utils"
+    "jxcore/subprocess"
+    "jxcore/version"
     "jxcore/web/route"
     "net/http"
     "os"
-    "os/exec"
-    "os/signal"
-    "syscall"
-    "time"
-
     // 调试
     _ "net/http/pprof"
 
@@ -40,11 +35,6 @@ import (
     _ "jxcore/journal/systemd"
 
     "github.com/spf13/cobra"
-)
-
-const (
-    InitPath = "/edge/init"
-    logBase  = "/edge/logs/"
 )
 
 var start chan bool
@@ -61,57 +51,34 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
     Run: func(cmd *cobra.Command, args []string) {
         forever := make(chan interface{}, 1)
-        signalChannel := make(chan os.Signal, 16)
-        signal.Notify(signalChannel)
-        go handleSignal(signalChannel, forever)
 
+        //signalChannel := make(chan os.Signal, 16)
+        //signal.Notify(signalChannel)
+        //go handleSignal(signalChannel, forever)
+        //
 
         if utils.Exists(InitPath) {
-            
         } else {
             log.Fatal("please run the bootstrap before serve")
         }
-        currentdevice,err := device.GetDevice()
+        currentdevice, err := device.GetDevice()
         utils.CheckErr(err)
-        if network.CheckNetwork() {
-            updateprocess := updateM.GetUpdateProcess()
-            updateprocess.UploadVersion()
-            pkgneedupdate := updateprocess.CheckUpdate()
-            if len(pkgneedupdate) != 0 {
-                updateprocess.UpdateSource()
-                updateprocess.UpdateComponent(pkgneedupdate)
-                log.Info("updating")
-            }
-            for {
-                if updateprocess.GetStatus() == updateM.FINISHED {
-                    break
-                }
-            }
-            updateprocess.UploadVersion()
-        } else {
-            log.Warn("The network is not working properly and automatically enters offline mode.")
+        log.Info(currentdevice.WorkID)
+
+        core.BaseCore()
+        if device.GetDeviceType() == version.Pro {
+            // online version
+            core.ProCore()
         }
 
+        //collection log
+        core.CollectJournal(currentdevice.WorkID)
 
-        // 启动 DNS 修改(离线、在线)
-        // 启动基础服务: DB/rabbitmq/consul/influxdb(离线、在线)
-        // 启动 gateway (离线、在线)
-        // 启动 component 按照配置启动(tools, fileslistener)
+        //start up all component process
+        subprocess.Run()
+        log.Info("all process has run")
 
-
-
-
-        // (pro版本, jxcore hardcode) 启动 VPN, 离线模式下一直重试
-        // pro板 需要检查 同步工具完整性(按照启动的配置)
-        // VPN 就绪之后 启动 component 按照配置启动(同步工具集合)
-
-
-
-
-        log.Info("Prepare to collect journal")
-        go collectJournal(currentdevice.WorkID)
-
-
+        //web server
         port, err := cmd.Flags().GetString("port")
         if err != nil {
             port = ":80"
@@ -122,6 +89,15 @@ to quickly create a Cobra application.`,
             os.Exit(1)
             forever <- nil
         }()
+        if debug, _ := cmd.Flags().GetBool("debug"); debug {
+            go func() {
+                port := ":10880"
+                log.Info("Enable Debug Mode Listen on", port)
+                log.Fatal(http.ListenAndServe(port, nil))
+                os.Exit(1)
+                forever <- nil
+            }()
+        }
 
         <-forever
     },
@@ -129,8 +105,8 @@ to quickly create a Cobra application.`,
 
 func init() {
     rootCmd.AddCommand(serveCmd)
-    cmd := exec.Command("/bin/bash", "-c", "pgrep gateway | xargs kill -s 9")
-    cmd.Run()
+    //cmd := exec.Command("/bin/bash", "-c", "pgrep gateway | xargs kill -s 9")
+    //cmd.Run()
 
     // Here you will define your flags and configuration settings.
 
@@ -167,37 +143,22 @@ func applySyncTools() {
     }
 }
 
-func collectJournal(workerID string) {
-
-    ttl := time.Hour * 24 * 30 // 日志只保留 30 天
-    journalConfig := map[string]interface{}{
-        "rotate-directory": []string{logBase},
-    }
-
-    arcFolder := "/data/edgebox/local/logs"
-    metaFolder := "/data/edgebox/remote/logs/" + workerID
-
-    os.MkdirAll(arcFolder, 0755)
-    os.MkdirAll(metaFolder, 0755)
-
-    journal.RunForever(&journalConfig, 20*time.Minute, arcFolder, metaFolder, ttl)
-}
-
-func handleSignal(c <-chan os.Signal, w chan<- interface{}) {
-    for sig := range c {
-        log.Info("Receive Signal", sig)
-        switch sig {
-        case syscall.SIGKILL, syscall.SIGABRT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT:
-            os.Exit(1)
-            w <- sig
-        case syscall.SIGPIPE, SIGCHLD, SIGTSTP, SIGCONT:
-        }
-    }
-}
+//
+//func handleSignal(c <-chan os.Signal, w chan<- interface{}) {
+//    for sig := range c {
+//        log.Info("Receive Signal", sig)
+//        switch sig {
+//        case syscall.SIGKILL, syscall.SIGABRT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT:
+//            os.Exit(1)
+//            w <- sig
+//        case syscall.SIGPIPE, SIGCHLD, SIGTSTP, SIGCONT:
+//        }
+//    }
+//}
 
 // 信号
-var (
-    SIGCHLD os.Signal = syscall.Signal(0x11)
-    SIGTSTP os.Signal = syscall.Signal(0x14)
-    SIGCONT os.Signal = syscall.Signal(0x12)
-)
+//var (
+//    SIGCHLD os.Signal = syscall.Signal(0x11)
+//    SIGTSTP os.Signal = syscall.Signal(0x14)
+//    SIGCONT os.Signal = syscall.Signal(0x12)
+//)

@@ -1,10 +1,10 @@
 package device
 
 type Device struct {
-    WorkID     string `json:"workerid"`
-    Key        string `json:"key"`
-    DhcpServer string `json:"dhcpserver"`
-    Vpn        string `json:"vpn"`
+    WorkID     string `yaml:"workerid"`
+    Key        string `yaml:"key"`
+    DhcpServer string `yaml:"dhcpserver"`
+    Vpn        string `yaml:"vpn"`
 }
 
 type buildkeyreq struct {

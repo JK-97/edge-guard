@@ -1,16 +1,31 @@
 package programM
 
-func (pm ProgramM) AddProgram() {
+import "jxcore/log"
 
-}
-func (pm ProgramM) LoadConfig() {
-
-}
-
-func (pm ProgramM) StartUp() {
-
+func GetJxConfig() (config string) {
+    return ProgramMconfig+ BaseDepend +ProgramSetting
 }
 
-func (pm ProgramM) ShutDown() {
+func GetBaseConfig() (config string) {
+    return ProgramMconfig
+}
 
+func AddToStart(programName string) {
+    if _, ok := ProgramCfgMap[programName]; ok == true {
+        ProgramSetting = ProgramSetting + ProgramCfgMap[programName]   
+    }else{
+        log.Info("this jxcore  version does not suppoted this commponent,please update")
+    }
+    
+}
+
+
+func AddDependStart(programName string){
+    if _, ok := ProgramCfgMap[programName]; ok == true {
+        ProgramSetting = ProgramSetting + ProgramCfgMap[programName]+DependOnBase
+    }else{
+        log.Info("this jxcore  version does not suppoted this commponent,please update")
+    }
+    
+    
 }

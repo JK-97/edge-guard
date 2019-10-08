@@ -1,12 +1,12 @@
 package journal
 
 import (
-	"bytes"
-	"encoding/json"
-	"io"
-	"io/ioutil"
-	"sync"
-	"time"
+    "bytes"
+    "encoding/json"
+    "io"
+    "io/ioutil"
+    "sync"
+    "time"
 )
 
 // 日志模式
@@ -191,3 +191,4 @@ func RegisteredModes() []string {
 
 	return result
 }
+

@@ -8,7 +8,7 @@ import (
     "io/ioutil"
     "jxcore/core/device"
     "jxcore/log"
-    "jxcore/systemapi/utils"
+    "jxcore/lowapi/utils"
 
     "net/http"
     "os"
@@ -16,7 +16,7 @@ import (
     "path/filepath"
 )
 
-func PraseVersionFile() (versioninfo map[string]string) {
+func ParseVersionFile() (versioninfo map[string]string) {
     err := filepath.Walk("/edge", func(path string, info os.FileInfo, err error) error {
         if err != nil {
             fmt.Printf("prevent panic by handling failure accessing a path %q: %v\n", path, err)
@@ -25,15 +25,15 @@ func PraseVersionFile() (versioninfo map[string]string) {
         if !info.IsDir() {
             if len(path) > 7 {
 
-                if (path[len(path)-7:] == "version") {
+                if path[len(path)-7:] == "version" {
 
-                    filebyte, err := ioutil.ReadFile(path)
+                    fileRawData, err := ioutil.ReadFile(path)
                     if err != nil {
                         log.Error(err)
                     }
-                    componentinfo := ComponentInfo{}
-                    yaml.Unmarshal(filebyte, &componentinfo)
-                    versioninfo[componentinfo.Name] = componentinfo.Version
+                    conponentInfo := ComponentInfo{}
+                    yaml.Unmarshal(fileRawData, &conponentInfo)
+                    versioninfo[conponentInfo.Name] = conponentInfo.Version
                 }
             }
 
@@ -55,7 +55,7 @@ func NewUpdateProcess() *UpgradeProcess {
     json.Unmarshal(targetdata, &targetinfo)
     return &UpgradeProcess{
         Target:     targetinfo.Target,
-        NowVersion: PraseVersionFile(),
+        NowVersion: ParseVersionFile(),
         Status:     FINISHED,
     }
 
@@ -75,35 +75,35 @@ func (up *UpgradeProcess) UpdateSource() {
     exec.Command("apt", "updateM").Run()
 }
 
-func (up *UpgradeProcess) GetStatus() UpgradStatus {
+func (up *UpgradeProcess) GetStatus() UpgradeStatus {
     return up.Status
 }
 
 func (up *UpgradeProcess) CheckUpdate() map[string]string {
-    var pkgneeddate = make(map[string]string)
-    for pkgnamme, version := range up.Target {
-        if up.NowVersion[pkgnamme] != version {
-            pkgneeddate[pkgnamme] = version
+    var pkgNeedUpdate = make(map[string]string)
+    for pkgName, version := range up.Target {
+        if up.NowVersion[pkgName] != version {
+            pkgNeedUpdate[pkgName] = version
         }
     }
-    return pkgneeddate
+    return pkgNeedUpdate
 
 }
 
 func (up *UpgradeProcess) UploadVersion() {
     url := "http://masterip/api/v1/worker/version_info"
-    deviceinfo, err := device.GetDevice()
+    deviceInfo, err := device.GetDevice()
     utils.CheckErr(err)
-    resprawinfo := Respdatastruct{
+    respRawData := Respdatastruct{
         Status:   up.GetStatus().String(),
-        WorkerId: deviceinfo.WorkID,
-        PkgInfo:  PraseVersionFile(),
+        WorkerId: deviceInfo.WorkID,
+        PkgInfo:  ParseVersionFile(),
     }
-    respdata, err := json.Marshal(resprawinfo)
+    respData, err := json.Marshal(respRawData)
     if err != nil {
         log.Error(err)
     }
-    http.Post(url, "application/json", bytes.NewReader(respdata))
+    http.Post(url, "application/json", bytes.NewReader(respData))
 
 }
 
@@ -121,9 +121,9 @@ func (up *UpgradeProcess) ChangeToUpdateSource() {
 }
 func (up *UpgradeProcess) UpdateComponent(componenttoupdate map[string]string) {
     up.ChangeToUpdating()
-    for pkgname, pkgversion := range componenttoupdate {
-        pkginfo := pkgname + "==" + pkgversion
-        exec.Command("apt", "install", pkginfo)
+    for pkgName, pkgVersion := range componenttoupdate {
+        pkgInfo := pkgName + "==" + pkgVersion
+        exec.Command("apt", "install", pkgInfo)
     }
     up.ChangeToFinish()
 }

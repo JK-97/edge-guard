@@ -1,9 +1,9 @@
 package updateM
 
 type UpgradeProcess struct {
-    Status     UpgradStatus `json:"status"`
-    Target     Versioninfo  `json:"target"`
-    NowVersion Versioninfo  `json:"now_version"`
+    Status     UpgradeStatus `json:"status"`
+    Target     VersionInfo   `json:"target"`
+    NowVersion VersionInfo   `json:"now_version"`
 }
 
 type targetversionfile struct {

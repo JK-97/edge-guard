@@ -3,12 +3,12 @@ package updateM
 import "sync"
 
 const (
-    FINISHED     UpgradStatus = iota
-    UPDATING                  = 10
-    UPDATESOURCE              = 100
+    FINISHED     UpgradeStatus = iota
+    UPDATING                   = 10
+    UPDATESOURCE               = 100
 )
 
-func (p UpgradStatus) String() string {
+func (p UpgradeStatus) String() string {
     switch p {
     case FINISHED:
         return "FINISH"
@@ -22,10 +22,8 @@ func (p UpgradStatus) String() string {
 
 }
 
-type UpgradStatus int
-type Versioninfo map[string]string
-
-
+type UpgradeStatus int
+type VersionInfo map[string]string
 
 var process *UpgradeProcess
 var lock *sync.Mutex = &sync.Mutex{}

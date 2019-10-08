@@ -21,9 +21,10 @@ import (
     "jxcore/core/device"
     "jxcore/core/register"
     "jxcore/log"
-    "jxcore/systemapi/dns"
-    "jxcore/systemapi/docker"
-    "jxcore/systemapi/utils"
+    "jxcore/lowapi/dns"
+    "jxcore/lowapi/docker"
+    "jxcore/lowapi/utils"
+    "jxcore/version"
     "net/url"
     "os"
     "os/exec"
@@ -38,8 +39,6 @@ var (
 
     skipRestore bool
 )
-
-
 
 const (
     restoreImagePath     = "/edge/jxbootstrap/worker/dependencies/recover/dockerimage"
@@ -57,6 +56,9 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
     Run: func(cmd *cobra.Command, args []string) {
+        if device.GetDeviceType() ==version.Base && vpnmode != device.VPNModeLocal{
+            log.Fatal("This version does not support vpn networking mode,")
+        }
         workerid := device.BuildWokerID()
         if ticket == "" {
             fmt.Println("Need Ticket")

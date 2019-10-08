@@ -15,9 +15,9 @@
 package cmd
 
 import (
-    "jxcore/systemapi/mongo"
-    "jxcore/systemapi/docker"
-    "jxcore/systemapi/pythonpkg"
+    "jxcore/lowapi/mongo"
+    "jxcore/lowapi/docker"
+    "jxcore/lowapi/pythonpkg"
     "jxcore/log"
     "os/exec"
 
