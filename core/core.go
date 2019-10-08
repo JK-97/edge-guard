@@ -2,6 +2,9 @@ package core
 
 import (
     "jxcore/config/yaml"
+    "jxcore/core/device"
+    "jxcore/core/hearbeat"
+    "jxcore/core/register"
     "jxcore/journal"
     "jxcore/log"
     "jxcore/lowapi/network"
@@ -15,7 +18,7 @@ import (
 //control the base version 
 func BaseCore() {
 
-    UpdateCore(30)
+    //UpdateCore(10)
     startupProgram, err := yaml.LoadYaml(YamlComponentSetting)
     utils.CheckErr(err)
     yaml.ParseAndCheck(startupProgram, "")
@@ -24,18 +27,25 @@ func BaseCore() {
 
 //control the base version 
 func ProCore() {
-    // (pro版本, jxcore hardcode) 启动 VPN, 离线模式下一直重试
-
+    var err error
+    var mymasterip string
+    currentedvice,err:=device.GetDevice()
+    utils.CheckErr(err)
+    for {
+        log.Info()
+        register.FindMasterFromDHCPServer(currentedvice.WorkID, currentedvice.Key)
+        mymasterip, err = register.GetMyMaster(currentedvice.WorkID, currentedvice.Key)
+        utils.CheckErr(err)
+        log.Error("Register Worker Net", err)
+        time.Sleep(3 * time.Second)
+    }
+    time.Sleep(3 * time.Second)
     
     dnsdetector.RunDnsDetector()
-    // pro板 需要检查 同步工具完整性(按照启动的配置)
-
     // VPN 就绪之后 启动 component 按照配置启动(同步工具集合)
+    hearbeat.AliveReport(mymasterip)
 }
 
-func DnsCore() {
-
-}
 
 //contrl the update 
 func UpdateCore(timeout int) {

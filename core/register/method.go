@@ -17,13 +17,11 @@ import (
     "time"
 )
 
-// findMasterFromDHCPServer 从 DHCP 服务器 获取 Master 节点的 IP
-func findMasterFromDHCPServer(workerid string, key string) (masterip string, err error) {
-    
-    currentdevice,err:=device.GetDevice()
+// FindMasterFromDHCPServer 从 DHCP 服务器 获取 Master 节点的 IP
+func FindMasterFromDHCPServer(workerid string, key string) (masterip string, err error) {
+
+    currentdevice, err := device.GetDevice()
     utils.CheckErr(err)
-    
-    
     reqinfo := reqRegister{
         WorkerID: workerid,
         Nonce:    time.Now().Unix(),
@@ -52,7 +50,7 @@ func findMasterFromDHCPServer(workerid string, key string) (masterip string, err
     if err != nil {
         log.Error(err, "restart dnsmasq")
         exec.Command("service", "dnsmasq", "restart").Run()
-        getmymaster(workerid, key)
+        GetMyMaster(workerid, key)
         return
     } else if resp.StatusCode != http.StatusOK {
         err = errors.New(resp.Status)
@@ -94,7 +92,7 @@ func findMasterFromDHCPServer(workerid string, key string) (masterip string, err
         replacesetting(bytes.NewReader(content), "/etc/wireguard")
         //vpn commponet检测配置变动 启动wireguard ,wg0
         vpn.CloseWg()
-        if err :=vpn. StartWg(); err == nil {
+        if err := vpn.StartWg(); err == nil {
             dns.OnVPNConnetced()
         }
 
@@ -113,7 +111,6 @@ func findMasterFromDHCPServer(workerid string, key string) (masterip string, err
     exec.Command("service", "dnsmasq", "restart").Run()
     return
 }
-
 
 func (r *ChaosReader) Read(p []byte) (n int, err error) {
     length := len(r.Bytes)
@@ -140,7 +137,6 @@ func (r *ChaosReader) Read(p []byte) (n int, err error) {
     return
 }
 
-
 func replacesetting(formfile *bytes.Reader, toetc string) {
     formfile.Seek(0, io.SeekStart)
 
@@ -156,12 +152,11 @@ func replacesetting(formfile *bytes.Reader, toetc string) {
     }
 }
 
+func GetMyMaster(workerid, key string) (mymasterip string, err error) {
+    masterIp := dns.FindMasterFromHostFile()
 
-func getmymaster(workerid, key string) (mymasterip string, err error) {
-    masterip := dns.FindMasterFromHostFile()
-
-    if masterip == "" {
-        masterip, err = findMasterFromDHCPServer(workerid, key)
+    if masterIp == "" {
+        masterIp, err = FindMasterFromDHCPServer(workerid, key)
     }
     if err != nil {
         return
@@ -171,5 +166,5 @@ func getmymaster(workerid, key string) (mymasterip string, err error) {
     log.Info("Finish Update VPN")
     // _, errusb0 := GetMyIP("usb0")
 
-    return masterip, err
+    return masterIp, err
 }

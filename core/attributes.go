@@ -4,6 +4,6 @@ package core
 const (
     
     logBase  = "/edge/logs/"
-    YamlComponentSetting = `./setings.yaml`
+    YamlComponentSetting = "/edge/jxcore/bin/settings.yaml"
 )
 
