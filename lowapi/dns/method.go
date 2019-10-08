@@ -1,9 +1,15 @@
 package dns
 
 import (
+    "bufio"
+    "encoding/json"
     "io"
     "io/ioutil"
+    "jxcore/core/device"
     "jxcore/log"
+    "jxcore/lowapi/network"
+    "jxcore/lowapi/utils"
+    "jxcore/template"
     "math/rand"
     "net"
     "os"
@@ -96,4 +102,127 @@ func ResetResolv() {
         log.Error(err)
     }
 
+}
+func ResetHostFile(ethIp string){
+
+    f, err := os.OpenFile(HostsFile, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
+    utils.CheckErr(err)
+    f.WriteString(ethIp + " edgegw.localhost\n")
+    f.WriteString(ethIp + " edgegw.iotedge\n")
+    
+}
+
+
+func UpdateMasterIPToHosts(masterip string) {
+    buf, err := ioutil.ReadFile(HostsFile)
+    if err != nil {
+        if os.IsNotExist(err) {
+            // 文件不存在，创建文件
+            f, _ := os.Create(HostsFile)
+            f.Close()
+            buf = make([]byte, 0)
+        } else {
+            log.Error(err)
+            return
+        }
+    }
+    var flag bool
+    lines := strings.Split(string(buf), "\n")
+    for i, line := range lines {
+        if strings.Contains(line, MasterHostName) {
+            lines[i] = masterip + " " + MasterHostName
+            flag = true
+            break
+        }
+    }
+    var tmp []string
+    if flag == false {
+        tmp = append(lines, masterip+" "+MasterHostName+"\n")
+    } else {
+        tmp = lines
+    }
+
+    output := strings.Join(tmp, "\n")
+    err = ioutil.WriteFile(HostsFile, []byte(output), 0644)
+    if err != nil {
+        log.Error(err)
+    }
+}
+
+
+// FindMasterFromHostFile 从 hosts 文件获取 Master 节点的 IP
+func FindMasterFromHostFile() string {
+    f, err := os.Open(HostsFile)
+    if err != nil {
+        return ""
+    }
+    defer f.Close()
+    scanner := bufio.NewScanner(f)
+    for scanner.Scan() {
+        line := scanner.Text()
+        if strings.Contains(line, MasterHostName) {
+            arr := strings.Split(line, MasterHostName)
+            return strings.TrimSpace(arr[0])
+        }
+    }
+    return ""
+}
+// onVPNConnetced VPN 连接成功后执行
+func OnVPNConnetced() {
+    currentdevice,err:=device.GetDevice()
+    utils.CheckErr(err)
+    
+    masterip := FindMasterFromHostFile()
+    if masterip == "" {
+        return
+    }
+    // 生成conf
+    template.Telegrafcfg(masterip, currentdevice.WorkID)
+    var VpnIP string
+    //确保4g 或 以太有一个起来的情况下
+    if _, erreth0 := network.GetMyIP("eth0"); erreth0 == nil {
+        VpnIP = network.GetClusterIP()
+    } else if _, errusb0 := network.GetMyIP("usb0"); errusb0 == nil {
+        VpnIP =network.GetClusterIP()
+    }
+    if VpnIP != "" {
+        template.Statsitecfg(masterip, VpnIP)
+    }
+}
+
+
+// onMasterIPChanged master IP 变化后执行
+func OnMasterIPChanged(masterip string) {
+    currentdevice,err:=device.GetDevice()
+    utils.CheckErr(err)
+    if utils.Exists(consulConfigPath) {
+        config := consulConfig{
+            Server:           true,
+            ClientAddr:       "0.0.0.0",
+            AdvertiseAddrWan: network.GetClusterIP(),
+            BootstrapExpect:  1,
+            Datacenter:       "worker-" + currentdevice.WorkID,
+            NodeName:         "worker-" + currentdevice.WorkID,
+            RetryJoinWan:     []string{MasterHostName},
+            UI:               true,
+        }
+        if buf, err := json.Marshal(config); err == nil {
+            ioutil.WriteFile(consulConfigPath, buf, 0666)
+        }
+    }
+
+}
+
+
+
+// appendHostnameHosts 将更新后的 hostsname 写入 hosts 文件
+func AppendHostnameHosts(workerid string) {
+
+    var hostnameresolv = "\n127.0.0.1 worker-" + workerid + "\n"
+    f, err := os.OpenFile(HostsFile, os.O_WRONLY|os.O_APPEND, 0644)
+    if err != nil {
+        log.Error(err)
+    }
+    f.WriteString(hostnameresolv)
+    f.Close()
 }

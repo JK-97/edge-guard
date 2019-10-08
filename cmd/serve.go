@@ -105,13 +105,6 @@ to quickly create a Cobra application.`,
 
 func init() {
     rootCmd.AddCommand(serveCmd)
-    //cmd := exec.Command("/bin/bash", "-c", "pgrep gateway | xargs kill -s 9")
-    //cmd.Run()
-
-    // Here you will define your flags and configuration settings.
-
-    // Cobra supports Persistent Flags which will work for this command
-    // and all subcommands, e.g.:
     serveCmd.PersistentFlags().String("port", ":80", "Port to run Application server on")
     serveCmd.PersistentFlags().String("interface", "eth0", "gateway listen where")
     serveCmd.PersistentFlags().String("config", "./settings.yaml", "yaml setting for component")
@@ -119,9 +112,7 @@ func init() {
     cfg := config.Config()
     cfg.BindPFlag("yamlsettings", serveCmd.PersistentFlags().Lookup("config"))
     cfg.BindPFlag("interface", serveCmd.PersistentFlags().Lookup("interface"))
-    // Cobra supports local flags which will only run when this command
-    // is called directly, e.g.:
-    // serveCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
 }
 
 // applySyncTools 配置同步工具
