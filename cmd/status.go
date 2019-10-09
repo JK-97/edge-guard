@@ -33,7 +33,7 @@ var statusCmd = &cobra.Command{
         }
         flags := cmd.PersistentFlags()
         if ok, _ := flags.GetBool("device"); ok {
-            fmt.Println("WorkID:", cuerrentdevice.WorkID)
+            fmt.Println("WorkerID:", cuerrentdevice.WorkerID)
             fmt.Println("DhcpServer:", cuerrentdevice.DhcpServer)
             fmt.Println("DeviceKey:", cuerrentdevice.Key)
             fmt.Println("VPN Mode:", cuerrentdevice.Vpn)

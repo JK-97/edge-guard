@@ -1,4 +1,4 @@
-package updateM
+package updatemange
 
 import "sync"
 
@@ -6,6 +6,10 @@ const (
     FINISHED     UpgradeStatus = iota
     UPDATING                   = 10
     UPDATESOURCE               = 100
+)
+const (
+    EDGEVERSIONFILE = "/edge/VERSION"
+    TARGETVERSION="/etc/edgetarget"
 )
 
 func (p UpgradeStatus) String() string {

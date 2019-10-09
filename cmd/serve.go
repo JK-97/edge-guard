@@ -53,9 +53,9 @@ to quickly create a Cobra application.`,
         }
         currentdevice, err := device.GetDevice()
         utils.CheckErr(err)
-        log.Info(currentdevice.WorkID)
+        log.Info(currentdevice.WorkerID)
         
-        //core.UpdateCore(30)
+        core.UpdateCore(30)
         
         core.BaseCore()
         
@@ -65,7 +65,7 @@ to quickly create a Cobra application.`,
         }
 
         //collection log
-        //core.CollectJournal(currentdevice.WorkID)
+        //core.CollectJournal(currentdevice.WorkerID)
        
         //start up all component process
         go subprocess.Run()
@@ -128,23 +128,3 @@ func applySyncTools() {
         }
     }
 }
-
-//
-//func handleSignal(c <-chan os.Signal, w chan<- interface{}) {
-//    for sig := range c {
-//        log.Info("Receive Signal", sig)
-//        switch sig {
-//        case syscall.SIGKILL, syscall.SIGABRT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT:
-//            os.Exit(1)
-//            w <- sig
-//        case syscall.SIGPIPE, SIGCHLD, SIGTSTP, SIGCONT:
-//        }
-//    }
-//}
-
-// 信号
-//var (
-//    SIGCHLD os.Signal = syscall.Signal(0x11)
-//    SIGTSTP os.Signal = syscall.Signal(0x14)
-//    SIGCONT os.Signal = syscall.Signal(0x12)
-//)

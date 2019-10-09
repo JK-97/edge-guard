@@ -177,7 +177,7 @@ func OnVPNConnetced() {
         return
     }
     // 生成conf
-    template.Telegrafcfg(masterip, currentdevice.WorkID)
+    template.Telegrafcfg(masterip, currentdevice.WorkerID)
     var VpnIP string
     //确保4g 或 以太有一个起来的情况下
     if _, erreth0 := network.GetMyIP("eth0"); erreth0 == nil {
@@ -201,8 +201,8 @@ func OnMasterIPChanged(masterip string) {
             ClientAddr:       "0.0.0.0",
             AdvertiseAddrWan: network.GetClusterIP(),
             BootstrapExpect:  1,
-            Datacenter:       "worker-" + currentdevice.WorkID,
-            NodeName:         "worker-" + currentdevice.WorkID,
+            Datacenter:       "worker-" + currentdevice.WorkerID,
+            NodeName:         "worker-" + currentdevice.WorkerID,
             RetryJoinWan:     []string{MasterHostName},
             UI:               true,
         }

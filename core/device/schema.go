@@ -1,7 +1,7 @@
 package device
 
 type Device struct {
-    WorkID     string `yaml:"workerid"`
+    WorkerID     string `yaml:"workerid"`
     Key        string `yaml:"key"`
     DhcpServer string `yaml:"dhcpserver"`
     Vpn        string `yaml:"vpn"`

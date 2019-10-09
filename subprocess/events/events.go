@@ -157,7 +157,7 @@ func (el *EventListener) start() {
 }
 
 func (el *EventListener) waitForReady() error {
-	log.Debug("start to check if event listener programM is ready")
+	log.Debug("start to check if event listener programmange is ready")
 	for {
 		line, err := el.stdin.ReadString('\n')
 		if err != nil {
@@ -507,7 +507,7 @@ func (pec *ProcCommEventCapture) findEndStr() int {
 	end_pos := strings.Index(pec.eventBuffer, PROC_COMMON_END_STR)
 	if end_pos == -1 {
 		if len(pec.eventBuffer) > pec.captureMaxBytes {
-			log.WithFields(log.Fields{"programM": pec.procName}).Warn("The capture buffer is overflow, discard the content")
+			log.WithFields(log.Fields{"programmange": pec.procName}).Warn("The capture buffer is overflow, discard the content")
 			pec.eventBeginPos = -1
 			pec.eventBuffer = ""
 		}

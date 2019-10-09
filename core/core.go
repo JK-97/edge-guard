@@ -8,7 +8,7 @@ import (
     "jxcore/log"
     "jxcore/lowapi/network"
     "jxcore/lowapi/utils"
-    "jxcore/management/updateM"
+    "jxcore/management/updatemanage"
     "jxcore/monitor/dnsdetector"
     "time"
 )
@@ -29,8 +29,8 @@ func ProCore() {
     currentedvice, err := device.GetDevice()
     utils.CheckErr(err)
     for {
-        register.FindMasterFromDHCPServer(currentedvice.WorkID, currentedvice.Key)
-        mymasterip, err = register.GetMyMaster(currentedvice.WorkID, currentedvice.Key)
+        register.FindMasterFromDHCPServer(currentedvice.WorkerID, currentedvice.Key)
+        mymasterip, err = register.GetMyMaster(currentedvice.WorkerID, currentedvice.Key)
         utils.CheckErr(err)
         log.Error("Register Worker Net", err)
         time.Sleep(3 * time.Second)
@@ -46,8 +46,8 @@ func ProCore() {
 func UpdateCore(timeout int) {
     if network.CheckNetwork() {
         starttime := time.Now()
-        updateprocess := updateM.GetUpdateProcess()
-        updateprocess.UploadVersion()
+        updateprocess := updatemange.GetUpdateProcess()
+        //updateprocess.UploadVersion()
         pkgneedupdate := updateprocess.CheckUpdate()
         if len(pkgneedupdate) != 0 {
             updateprocess.UpdateSource()
@@ -55,7 +55,7 @@ func UpdateCore(timeout int) {
             log.Info("updating")
         }
         for {
-            if updateprocess.GetStatus() == updateM.FINISHED {
+            if updateprocess.GetStatus() == updatemange.FINISHED {
                 break
             }
             if time.Now().Unix() > starttime.Add(time.Duration(timeout)*time.Second).Unix() {
@@ -70,17 +70,3 @@ func UpdateCore(timeout int) {
 
 }
 
-//func CollectJournal(workerID string) {
-//
-//    ttl := time.Hour * 24 * 30 // 日志只保留 30 天
-//    journalConfig := map[string]interface{}{
-//        "rotate-directory": []string{},
-//    }
-//
-//    arcFolder := "/data/edgebox/local/logs"
-//    metaFolder := "/data/edgebox/remote/logs/" + workerID
-//
-//    os.MkdirAll(arcFolder, 0755)
-//    os.MkdirAll(metaFolder, 0755)
-//    journal.RunForever(&journalConfig, 20*time.Minute, arcFolder, metaFolder, ttl)
-//}

@@ -43,8 +43,8 @@ func BuildWokerID() string {
 
 // BuildDeviceInfo
 func (d *Device) BuildDeviceInfo(vpnmodel string, ticket string, authHost string) {
-    if d.WorkID == "" {
-        d.WorkID = BuildWokerID()
+    if d.WorkerID == "" {
+        d.WorkerID = BuildWokerID()
     }
     if vpnmodel == VPNModeRandom {
         r := rand.New(rand.NewSource(time.Now().Unix()))

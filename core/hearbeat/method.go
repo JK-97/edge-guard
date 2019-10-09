@@ -17,7 +17,7 @@ func AliveReport(masterip string)  {
     utils.CheckErr(err)
     vpninterface ,err:= network.GetMyIP(currentdevice.Vpn)
     utils.CheckErr(err)
-    msg = fmt.Sprintf(vpninterface + ":" + currentdevice.WorkID)
+    msg = fmt.Sprintf(vpninterface + ":" + currentdevice.WorkerID)
     conn, err := net.Dial("tcp", masterip+":30431")
     if err != nil {
         log.WithFields(log.Fields{"Operating": "AliveReport"}).Error("disconnect my master", err)
