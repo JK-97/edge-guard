@@ -20,6 +20,7 @@ import (
 // FindMasterFromDHCPServer 从 DHCP 服务器 获取 Master 节点的 IP
 func FindMasterFromDHCPServer(workerid string, key string) (masterip string, err error) {
 
+    //register 请求体
     currentdevice, err := device.GetDevice()
     utils.CheckErr(err)
     reqinfo := reqRegister{
@@ -28,7 +29,6 @@ func FindMasterFromDHCPServer(workerid string, key string) (masterip string, err
         Key:      key,
         Version:  version.Version,
     }
-
     reqdata, err := json.Marshal(reqinfo)
     if err != nil {
         log.Error(err)
@@ -40,7 +40,7 @@ func FindMasterFromDHCPServer(workerid string, key string) (masterip string, err
 
     //通过dhcpserver获取key
     reqbody := bytes.NewBuffer(dst)
-
+    //register vpn对应url
     url := currentdevice.DhcpServer + wireguardRegisterPath
     if currentdevice.Vpn == device.VPNModeOPENVPN {
         url = currentdevice.DhcpServer + openvpnRegisterPath
@@ -86,9 +86,9 @@ func FindMasterFromDHCPServer(workerid string, key string) (masterip string, err
 
     log.Info("Updating VPN")
     // 替换vpn配置
+    log.Info("VPN Mode: ", currentdevice.Vpn)
     switch currentdevice.Vpn {
     case device.VPNModeWG:
-        log.Info("VPN Mode: ", currentdevice.Vpn)
         replacesetting(bytes.NewReader(content), "/etc/wireguard")
         //vpn commponet检测配置变动 启动wireguard ,wg0
         vpn.CloseWg()
@@ -97,7 +97,7 @@ func FindMasterFromDHCPServer(workerid string, key string) (masterip string, err
         }
 
     case device.VPNModeOPENVPN:
-        log.Info("VPN Mode: ", currentdevice.Vpn)
+       
         replacesetting(bytes.NewReader(content), "/etc/openvpn/")
         vpn.Closeopenvpn()
         if err := vpn.Startopenvpn(); err == nil {

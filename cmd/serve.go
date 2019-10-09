@@ -51,12 +51,7 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
     Run: func(cmd *cobra.Command, args []string) {
         forever := make(chan interface{}, 1)
-
-        //signalChannel := make(chan os.Signal, 16)
-        //signal.Notify(signalChannel)
-        //go handleSignal(signalChannel, forever)
-        //
-
+        
         if utils.Exists(InitPath) {
         } else {
             log.Fatal("please run the bootstrap before serve")
@@ -64,8 +59,11 @@ to quickly create a Cobra application.`,
         currentdevice, err := device.GetDevice()
         utils.CheckErr(err)
         log.Info(currentdevice.WorkID)
-
+        
+        //core.UpdateCore(30)
+        
         core.BaseCore()
+        
         if device.GetDeviceType() == version.Pro {
             // online version
             core.ProCore()
@@ -73,11 +71,13 @@ to quickly create a Cobra application.`,
 
         //collection log
         core.CollectJournal(currentdevice.WorkID)
-
+       
         //start up all component process
         subprocess.Run()
         log.Info("all process has run")
 
+        
+        
         //web server
         port, err := cmd.Flags().GetString("port")
         if err != nil {

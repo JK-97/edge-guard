@@ -17,7 +17,6 @@ import (
 
 //control the base version 
 func BaseCore() {
-
     //UpdateCore(10)
     startupProgram, err := yaml.LoadYaml(YamlComponentSetting)
     utils.CheckErr(err)
@@ -32,7 +31,6 @@ func ProCore() {
     currentedvice,err:=device.GetDevice()
     utils.CheckErr(err)
     for {
-        log.Info()
         register.FindMasterFromDHCPServer(currentedvice.WorkID, currentedvice.Key)
         mymasterip, err = register.GetMyMaster(currentedvice.WorkID, currentedvice.Key)
         utils.CheckErr(err)
