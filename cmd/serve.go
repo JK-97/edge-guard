@@ -29,11 +29,6 @@ import (
     // 调试
     _ "net/http/pprof"
 
-    // 日志采插件
-    _ "jxcore/journal/docker"
-    _ "jxcore/journal/rfile"
-    _ "jxcore/journal/systemd"
-
     "github.com/spf13/cobra"
 )
 
@@ -66,14 +61,14 @@ to quickly create a Cobra application.`,
         
         if device.GetDeviceType() == version.Pro {
             // online version
-            core.ProCore()
+           go  core.ProCore()
         }
 
         //collection log
-        core.CollectJournal(currentdevice.WorkID)
+        //core.CollectJournal(currentdevice.WorkID)
        
         //start up all component process
-        subprocess.Run()
+        go subprocess.Run()
         log.Info("all process has run")
 
         
