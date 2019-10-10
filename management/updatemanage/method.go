@@ -55,6 +55,7 @@ func GetUpdateProcess() *UpgradeProcess {
 
 func (up *UpgradeProcess) UpdateSource() {
     up.ChangeToUpdateSource()
+    log.WithFields(log.Fields{"Operating":"Updating"}).Info("Updating Source")
     exec.Command("apt", "updatemanage").Run()
 }
 
@@ -76,8 +77,9 @@ func (up *UpgradeProcess) FlushTargetVersion() {
 }
 func (up *UpgradeProcess) CheckUpdate() map[string]string {
     var pkgneeddate = make(map[string]string)
-    log.Info("now version", up.NowVersion)
-    log.Info("target version", up.Target)
+    log.WithFields(log.Fields{"Operating":"Updating"}).Info("Current Version : ", up.NowVersion)
+    log.WithFields(log.Fields{"Operating":"Updating"}).Info("Target Version : ", up.Target)
+ 
     for pkgnamme, version := range up.Target {
         if up.NowVersion[pkgnamme] != version {
             pkgneeddate[pkgnamme] = version
@@ -111,10 +113,12 @@ func (up *UpgradeProcess) UploadVersion() {
 func (up *UpgradeProcess) UpdateComponent(componenttoupdate map[string]string) {
     up.ChangeToUpdating()
     for pkgname, pkgversion := range componenttoupdate {
-        exec.Command("apt", "autoremove", pkgname).Run()
+        exec.Command("apt", "autoremove","-y", pkgname).Run()
         log.Info("updating " + pkgname)
         pkginfo := pkgname + "=" + pkgversion
+        log.WithFields(log.Fields{"Operating":"Updating"}).Info("Installing : ",pkginfo)
         exec.Command("apt", "install", "-y", pkginfo).Run()
+        
     }
     up.FlushVersionInfo()
     up.ChangeToFinish()

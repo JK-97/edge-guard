@@ -124,7 +124,7 @@ func CheckNetwork() bool {
         fmt.Println(err.Error())
         return false
     } else {
-        fmt.Println("Net Status , OK")
+        log.WithFields(log.Fields{"Device":"NetWork Check"}).Info("Net Status , OK")
     }
     return true
 

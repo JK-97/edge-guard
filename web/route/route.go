@@ -10,7 +10,7 @@ func Routes() http.Handler {
     mux := http.NewServeMux()
     handler := logRequest(mux)
 
-    mux.HandleFunc("/api/v1/ping", controller.UpdateByDeb)
+    mux.HandleFunc("/edgenode/exec/update", controller.UpdateByDeb)
 
     return handler
 }

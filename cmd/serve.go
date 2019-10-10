@@ -53,7 +53,7 @@ to quickly create a Cobra application.`,
         }
         currentdevice, err := device.GetDevice()
         utils.CheckErr(err)
-        log.Info(currentdevice.WorkerID)
+        log.WithFields(log.Fields{"INFO":"Device"}).Info("workerid : ",currentdevice.WorkerID)
         
         core.UpdateCore(30)
         

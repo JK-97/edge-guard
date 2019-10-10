@@ -11,5 +11,5 @@ const (
     VPNModeOPENVPN string = "openvpn"
     VPNModeLocal   string = "local"
 )
-
+const BOOTSTRAPATH  string = "/api/v1/bootstrap"
 var vpnSlice []string = []string{VPNModeWG, VPNModeOPENVPN}

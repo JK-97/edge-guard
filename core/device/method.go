@@ -7,7 +7,6 @@ import (
     "fmt"
     "gopkg.in/yaml.v2"
     "io/ioutil"
-    "jxcore/core/register"
     "jxcore/log"
     "jxcore/lowapi/utils"
     "jxcore/version"
@@ -78,10 +77,10 @@ func (d *Device) BuildDeviceInfo(vpnmodel string, ticket string, authHost string
         }
         //通过域名获取key
         body := bytes.NewBuffer(data)
-        log.Info("Post to ", d.DhcpServer+register.BOOTSTRAPATH)
+        log.Info("Post to ", d.DhcpServer+BOOTSTRAPATH)
 
         // http.DefaultClient.Timeout = 8 * time.Second
-        resp, err := http.Post(d.DhcpServer+register.BOOTSTRAPATH, "application/json", body)
+        resp, err := http.Post(d.DhcpServer+BOOTSTRAPATH, "application/json", body)
         if err != nil {
             log.Error(err)
             return

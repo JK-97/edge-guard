@@ -3,6 +3,7 @@ package controller
 import (
     "encoding/json"
     "io/ioutil"
+    "jxcore/core"
     "jxcore/core/device"
     "jxcore/log"
     "jxcore/lowapi/utils"
@@ -12,6 +13,7 @@ import (
 
 func UpdateByDeb(w http.ResponseWriter, r *http.Request) {
     updateprocess := updatemanage.GetUpdateProcess()
+    log.Warn("hello")
     if updateprocess.GetStatus() != updatemanage.FINISHED {
         w.WriteHeader(400)
         respondResonJSON(nil, w, r, "machine is busy to updating,please update later")
@@ -32,8 +34,7 @@ func UpdateByDeb(w http.ResponseWriter, r *http.Request) {
         updateprocess.SetNewTarget(indentdata)
 
         go func() {
-            updateprocess.UpdateSource()
-            updateprocess.UploadVersion()
+            core.UpdateCore(30)
         }()
         deviceinfo, err := device.GetDevice()
         if err != nil {

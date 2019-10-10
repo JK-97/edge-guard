@@ -52,7 +52,6 @@ func UpdateCore(timeout int) {
         if len(pkgneedupdate) != 0 {
             updateprocess.UpdateSource()
             updateprocess.UpdateComponent(pkgneedupdate)
-            log.Info("updating")
         }
         for {
             if updateprocess.GetStatus() == updatemanage.FINISHED {
