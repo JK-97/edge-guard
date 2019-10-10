@@ -68,7 +68,7 @@ func UpdateCore(timeout int) {
                 break
             }
         }
-        //updateprocess.UploadVersion()
+        updateprocess.UploadVersion()
     } else {
         log.Warn("The network is not working properly and automatically enters offline mode.")
     }
