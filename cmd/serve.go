@@ -15,116 +15,120 @@
 package cmd
 
 import (
-    "io/ioutil"
-    "jxcore/config"
-    "jxcore/core"
-    "jxcore/core/device"
-    "jxcore/log"
-    "jxcore/lowapi/utils"
-    "jxcore/subprocess"
-    "jxcore/version"
-    "jxcore/web/route"
-    "net/http"
-    "os"
-    // 调试
-    _ "net/http/pprof"
+	"io/ioutil"
+	"jxcore/config"
+	"jxcore/core"
+	"jxcore/core/device"
+	"jxcore/log"
+	"jxcore/lowapi/utils"
+	"jxcore/subprocess"
+	"jxcore/subprocess/gateway"
+	"jxcore/version"
+	"jxcore/web/route"
+	"net/http"
+	"os"
 
-    "github.com/spf13/cobra"
+	// 调试
+	_ "net/http/pprof"
+
+	"github.com/spf13/cobra"
 )
 
 var start chan bool
 
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
-    Use:   "serve",
-    Short: "Serve http backend for jxcore",
-    Long: `A longer description that spans multiple lines and likely contains examples
+	Use:   "serve",
+	Short: "Serve http backend for jxcore",
+	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-    Run: func(cmd *cobra.Command, args []string) {
-        forever := make(chan interface{}, 1)
-        
-        if utils.Exists(InitPath) {
-        } else {
-            log.Fatal("please run the bootstrap before serve")
-        }
-        currentdevice, err := device.GetDevice()
-        utils.CheckErr(err)
-        log.WithFields(log.Fields{"INFO":"Device"}).Info("workerid : ",currentdevice.WorkerID)
-        
-        core.UpdateCore(30)
-        
-        core.BaseCore()
-        
-        if device.GetDeviceType() == version.Pro {
-            // online version
-           go  core.ProCore()
-        }
+	Run: func(cmd *cobra.Command, args []string) {
+		go func() {
+			gateway.Setup()
+			gateway.ServeGateway()
+		}()
+		forever := make(chan interface{}, 1)
 
-        //collection log
-        //core.CollectJournal(currentdevice.WorkerID)
-       
-        //start up all component process
-        go subprocess.Run()
-        log.Info("all process has run")
+		if utils.Exists(InitPath) {
+		} else {
+			log.Fatal("please run the bootstrap before serve")
+		}
+		currentdevice, err := device.GetDevice()
+		utils.CheckErr(err)
+		log.WithFields(log.Fields{"INFO": "Device"}).Info("workerid : ", currentdevice.WorkerID)
 
-        
-        
-        //web server
-        port, err := cmd.Flags().GetString("port")
-        if err != nil {
-            port = ":80"
-        }
-        go func() {
-            log.Info("Listen on", port)
-            log.Fatal(http.ListenAndServe(port, route.Routes()))
-            os.Exit(1)
-            forever <- nil
-        }()
-        if debug, _ := cmd.Flags().GetBool("debug"); debug {
-            go func() {
-                port := ":10880"
-                log.Info("Enable Debug Mode Listen on", port)
-                log.Fatal(http.ListenAndServe(port, nil))
-                os.Exit(1)
-                forever <- nil
-            }()
-        }
+		core.UpdateCore(30)
 
-        <-forever
-    },
+		core.BaseCore()
+
+		if device.GetDeviceType() == version.Pro {
+			// online version
+			go core.ProCore()
+		}
+
+		//collection log
+		//core.CollectJournal(currentdevice.WorkerID)
+
+		//start up all component process
+		go subprocess.Run()
+		log.Info("all process has run")
+
+		//web server
+		port, err := cmd.Flags().GetString("port")
+		if err != nil {
+			port = ":80"
+		}
+		go func() {
+			log.Info("Listen on", port)
+			log.Fatal(http.ListenAndServe(port, route.Routes()))
+			os.Exit(1)
+			forever <- nil
+		}()
+		if debug, _ := cmd.Flags().GetBool("debug"); debug {
+			go func() {
+				port := ":10880"
+				log.Info("Enable Debug Mode Listen on", port)
+				log.Fatal(http.ListenAndServe(port, nil))
+				os.Exit(1)
+				forever <- nil
+			}()
+		}
+
+		<-forever
+	},
 }
 
 func init() {
-    rootCmd.AddCommand(serveCmd)
-    serveCmd.PersistentFlags().String("port", ":80", "Port to run Application server on")
-    serveCmd.PersistentFlags().String("interface", "eth0", "gateway listen where")
-    serveCmd.PersistentFlags().String("config", "./settings.yaml", "yaml setting for component")
-    serveCmd.PersistentFlags().Bool("debug", false, "Whether to enable pprof")
-    cfg := config.Config()
-    cfg.BindPFlag("yamlsettings", serveCmd.PersistentFlags().Lookup("config"))
-    cfg.BindPFlag("interface", serveCmd.PersistentFlags().Lookup("interface"))
+	rootCmd.AddCommand(serveCmd)
+	serveCmd.PersistentFlags().String("port", ":80", "Port to run Application server on")
+	serveCmd.PersistentFlags().String("interface", "eth0", "gateway listen where")
+	serveCmd.PersistentFlags().String("config", "./settings.yaml", "yaml setting for component")
+	serveCmd.PersistentFlags().Bool("debug", false, "Whether to enable pprof")
+	cfg := config.Config()
+	cfg.BindPFlag("yamlsettings", serveCmd.PersistentFlags().Lookup("config"))
+	cfg.BindPFlag("interface", serveCmd.PersistentFlags().Lookup("interface"))
 
 }
 
 // applySyncTools 配置同步工具
 func applySyncTools() {
-    if utils.Exists("/edge/synctools.zip") {
-        data, err := ioutil.ReadFile("/edge/synctools.zip")
-        if err != nil {
-            log.Error(err)
-        } else {
-            err = utils.Unzip(data, "/edge/mnt")
-            if err == nil {
-                log.Info("has find the synctools.zip")
-                os.Remove("/edge/synctools.zip.old")
-                if err = os.Rename("/edge/synctools.zip", "/edge/synctools.zip.old"); err != nil {
-                    log.Error("Fail to move /edge/synctools.zip to /edge/synctools.zip.old", err)
-                }
-            }
-        }
-    }
+	if utils.Exists("/edge/synctools.zip") {
+		data, err := ioutil.ReadFile("/edge/synctools.zip")
+		if err != nil {
+			log.Error(err)
+		} else {
+			err = utils.Unzip(data, "/edge/mnt")
+			if err == nil {
+				log.Info("has find the synctools.zip")
+				os.Remove("/edge/synctools.zip.old")
+				if err = os.Rename("/edge/synctools.zip", "/edge/synctools.zip.old"); err != nil {
+					log.Error("Fail to move /edge/synctools.zip to /edge/synctools.zip.old", err)
+				}
+			}
+		}
+	}
 }
