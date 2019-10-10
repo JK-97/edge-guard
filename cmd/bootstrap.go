@@ -56,7 +56,8 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
     Run: func(cmd *cobra.Command, args []string) {
-        if device.GetDeviceType() ==version.Base && vpnmode != device.VPNModeLocal{
+        vpnMode:= device.Vpn(vpnmode)
+        if device.GetDeviceType() ==version.Base && vpnMode != device.VPNModeLocal{
             log.Fatal("This version does not support vpn networking mode,")
         }
         workerid := device.BuildWokerID()
@@ -127,7 +128,7 @@ to quickly create a Cobra application.`,
         log.Info("Register to ", authHost)
         CurrentDevice, err := device.GetDevice()
         utils.CheckErr(err)
-        CurrentDevice.BuildDeviceInfo(vpnmode, ticket, authHost)
+        CurrentDevice.BuildDeviceInfo(vpnMode, ticket, authHost)
 
     },
 }
@@ -143,7 +144,7 @@ func GetHost(u string) string {
 
 func init() {
     rootCmd.AddCommand(bootstrapCmd)
-    bootstrapCmd.PersistentFlags().StringVarP(&vpnmode, "mode", "m", device.VPNModeRandom, "openvpn or wireguard or local")
+    bootstrapCmd.PersistentFlags().StringVarP(&vpnmode, "mode", "m", device.VPNModeRandom.String(), "openvpn or wireguard or local")
     bootstrapCmd.PersistentFlags().StringVarP(&ticket, "ticket", "t", "", "ticket for bootstrap")
     bootstrapCmd.PersistentFlags().StringVarP(&authHost, "host", "", register.FallBackAuthHost, "host for bootstrap")
     bootstrapCmd.PersistentFlags().BoolVarP(&skipRestore, "skip", "s", false, "skip restore")

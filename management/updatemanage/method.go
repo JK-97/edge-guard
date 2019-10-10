@@ -6,10 +6,10 @@ import (
     "io/ioutil"
     "jxcore/core/device"
     "jxcore/log"
-    "strings"
-
+    "jxcore/lowapi/utils"
     "net/http"
     "os/exec"
+    "strings"
 )
 
 func ParseVersionFile() (versioninfo map[string]string) {
@@ -54,9 +54,9 @@ func GetUpdateProcess() *UpgradeProcess {
 }
 
 func (up *UpgradeProcess) UpdateSource() {
-    up.ChangeToUpdateSource()
-    log.WithFields(log.Fields{"Operating":"Updating"}).Info("Updating Source")
-    exec.Command("apt", "updatemanage").Run()
+    up.ChangeToUpdating()
+    log.WithFields(log.Fields{"Operating": "Updating"}).Info("Updating Source")
+    exec.Command("apt", "update").Run()
 }
 
 func (up *UpgradeProcess) GetStatus() UpgradeStatus {
@@ -77,21 +77,19 @@ func (up *UpgradeProcess) FlushTargetVersion() {
 }
 func (up *UpgradeProcess) CheckUpdate() map[string]string {
     var pkgneeddate = make(map[string]string)
-    log.WithFields(log.Fields{"Operating":"Updating"}).Info("Current Version : ", up.NowVersion)
-    log.WithFields(log.Fields{"Operating":"Updating"}).Info("Target Version : ", up.Target)
- 
+    log.WithFields(log.Fields{"Operating": "Updating"}).Info("Current Version : ", up.NowVersion)
+    log.WithFields(log.Fields{"Operating": "Updating"}).Info("Target Version : ", up.Target)
     for pkgnamme, version := range up.Target {
         if up.NowVersion[pkgnamme] != version {
             pkgneeddate[pkgnamme] = version
         }
     }
-
     return pkgneeddate
 
 }
 
 func (up *UpgradeProcess) UploadVersion() {
-    
+
     deviceinfo, _ := device.GetDevice()
 
     resprawinfo := Respdatastruct{
@@ -111,14 +109,13 @@ func (up *UpgradeProcess) UploadVersion() {
 }
 
 func (up *UpgradeProcess) UpdateComponent(componenttoupdate map[string]string) {
-    up.ChangeToUpdating()
+
     for pkgname, pkgversion := range componenttoupdate {
-        exec.Command("apt", "autoremove","-y", pkgname).Run()
-        log.Info("updating " + pkgname)
         pkginfo := pkgname + "=" + pkgversion
-        log.WithFields(log.Fields{"Operating":"Updating"}).Info("Installing : ",pkginfo)
-        exec.Command("apt", "install", "-y", pkginfo).Run()
-        
+        log.WithFields(log.Fields{"Operating": "Updating"}).Info("Installing : ", pkginfo)
+        err := exec.Command("/bin/bash", "-c", "aptitude install -o Aptitude::ProblemResolver::SolutionCost='100*canceled-actions,200*removals' -y "+pkginfo).Run()
+        utils.CheckErr(err)
+
     }
     up.FlushVersionInfo()
     up.ChangeToFinish()
@@ -132,10 +129,7 @@ func (up *UpgradeProcess) ChangeToUpdating() {
     up.Status = UPDATING
 
 }
-func (up *UpgradeProcess) ChangeToUpdateSource() {
-    up.Status = UPDATESOURCE
 
-}
 func (up *UpgradeProcess) SetNewTarget(indentdata []byte) {
     ioutil.WriteFile(TARGETVERSION, indentdata, 0644)
     up.FlushVersionInfo()

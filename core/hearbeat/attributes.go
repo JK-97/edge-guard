@@ -5,3 +5,4 @@ const (
     WireGuardInterface = "wg0"
     OpenVPNInterface   = "tun0"
 )
+

@@ -10,8 +10,11 @@ import (
     "jxcore/lowapi/utils"
     "jxcore/management/updatemanage"
     "jxcore/monitor/dnsdetector"
+    "sync"
     "time"
 )
+
+var DnsOnce sync.Once
 
 //control the base version 
 func BaseCore() {
@@ -29,17 +32,20 @@ func ProCore() {
     currentedvice, err := device.GetDevice()
     utils.CheckErr(err)
     for {
-        register.FindMasterFromDHCPServer(currentedvice.WorkerID, currentedvice.Key)
-        mymasterip, err = register.GetMyMaster(currentedvice.WorkerID, currentedvice.Key)
-        utils.CheckErr(err)
-        log.Error("Register Worker Net", err)
+        for {
+            register.FindMasterFromDHCPServer(currentedvice.WorkerID, currentedvice.Key)
+            mymasterip, err = register.GetMyMaster(currentedvice.WorkerID, currentedvice.Key)
+            if err == nil {
+                break
+            }
+            log.Error("Register Worker Net", err)
+            time.Sleep(3 * time.Second)
+        }
         time.Sleep(3 * time.Second)
+        go DnsOnce.Do(dnsdetector.RunDnsDetector)
+        // VPN 就绪之后 启动 component 按照配置启动(同步工具集合)
+        hearbeat.AliveReport(mymasterip)
     }
-    time.Sleep(3 * time.Second)
-
-    dnsdetector.RunDnsDetector()
-    // VPN 就绪之后 启动 component 按照配置启动(同步工具集合)
-    hearbeat.AliveReport(mymasterip)
 }
 
 //contrl the update 
@@ -62,7 +68,7 @@ func UpdateCore(timeout int) {
                 break
             }
         }
-        updateprocess.UploadVersion()
+        //updateprocess.UploadVersion()
     } else {
         log.Warn("The network is not working properly and automatically enters offline mode.")
     }

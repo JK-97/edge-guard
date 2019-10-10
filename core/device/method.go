@@ -46,7 +46,7 @@ func BuildWokerID() string {
 }
 
 // BuildDeviceInfo
-func (d *Device) BuildDeviceInfo(vpnmodel string, ticket string, authHost string) {
+func (d *Device) BuildDeviceInfo(vpnmodel Vpn, ticket string, authHost string) {
 	if d == nil {
 		d = new(Device)
 	}
@@ -66,7 +66,7 @@ func (d *Device) BuildDeviceInfo(vpnmodel string, ticket string, authHost string
 		} else {
 			switch vpnmodel {
 			case VPNModeLocal:
-				d.DhcpServer = VPNModeLocal
+				d.DhcpServer = VPNModeLocal.String()
 			case VPNModeWG, VPNModeOPENVPN, VPNModeRandom:
 				d.DhcpServer = authHost
 			default:
@@ -101,11 +101,11 @@ func (d *Device) BuildDeviceInfo(vpnmodel string, ticket string, authHost string
 		log.Info("Completed")
 	} else {
 		//base
-		if vpnmodel != VPNModeLocal || authHost != VPNModeLocal {
+		if vpnmodel != VPNModeLocal || authHost != VPNModeLocal.String() {
 			log.Fatal("Base version can not support networking")
 		}
 		d.Vpn = VPNModeLocal
-		d.DhcpServer = VPNModeLocal
+		d.DhcpServer = VPNModeLocal.String()
 
 	}
 	log.Info("Update Init Config File")

@@ -15,7 +15,9 @@ func AliveReport(masterip string)  {
     var msg string
     currentdevice, err := device.GetDevice()
     utils.CheckErr(err)
-    vpninterface ,err:= network.GetMyIP(currentdevice.Vpn)
+    vpn,err:=currentdevice.Vpn.Interface()
+    utils.CheckErr(err)
+    vpninterface ,err:= network.GetMyIP(vpn)
     utils.CheckErr(err)
     msg = fmt.Sprintf(vpninterface + ":" + currentdevice.WorkerID)
     conn, err := net.Dial("tcp", masterip+":30431")

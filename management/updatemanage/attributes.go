@@ -3,26 +3,23 @@ package updatemanage
 import "sync"
 
 const (
-    FINISHED     UpgradeStatus = iota
-    UPDATING                   = 10
-    UPDATESOURCE               = 100
+    FINISHED UpgradeStatus = iota
+    UPDATING UpgradeStatus = 10
 )
 const (
     EDGEVERSIONFILE = "/edge/VERSION"
-    TARGETVERSION="/etc/edgetarget"
-    UPLOADURL = "http://10.55.2.207:10111/api/v1/worker_version"
+    TARGETVERSION   = "/etc/edgetarget"
+    UPLOADURL       = "http://10.55.2.207:10111/api/v1/worker_version"
 )
 
 func (p UpgradeStatus) String() string {
     switch p {
     case FINISHED:
-        return "FINISH"
-    case UPDATESOURCE:
-        return "UPDATESOURCE"
+        return "finished"
     case UPDATING:
-        return "UPDATING"
+        return "updating"
     default:
-        return "UNKNOWN"
+        return "unknow"
     }
 
 }

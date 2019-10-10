@@ -86,7 +86,7 @@ func FindMasterFromDHCPServer(workerid string, key string) (masterip string, err
 
     log.Info("Updating VPN")
     // 替换vpn配置
-    log.Info("VPN Mode: ", currentdevice.Vpn)
+    log.Info("VPN Mode: ", currentdevice.Vpn.String())
     switch currentdevice.Vpn {
     case device.VPNModeWG:
         replacesetting(bytes.NewReader(content), "/etc/wireguard")
