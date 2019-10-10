@@ -4,7 +4,7 @@ import (
     "bufio"
     "github.com/jessevdk/go-flags"
     "jxcore/log"
-    "jxcore/management/programmange"
+    "jxcore/management/programmanage"
     "os"
     "os/signal"
     "runtime"
@@ -86,7 +86,7 @@ func LoadEnvFile() {
 
 func findSupervisordConf() (string, error) {
 
-    return programmange.GetJxConfig(), nil
+    return programmanage.GetJxConfig(), nil
 }
 
 func RunServer() {

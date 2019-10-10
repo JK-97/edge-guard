@@ -1,4 +1,4 @@
-package programmange
+package programmanage
 
 const (
     DependOnBase string = "depends_on=gateway"

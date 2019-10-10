@@ -1,4 +1,4 @@
-package updatemange
+package updatemanage
 
 type UpgradeProcess struct {
     Status     UpgradeStatus `json:"status"`

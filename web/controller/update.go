@@ -6,17 +6,23 @@ import (
     "jxcore/core/device"
     "jxcore/log"
     "jxcore/lowapi/utils"
-    updatemange "jxcore/management/updatemanage"
     "net/http"
+    "jxcore/management/updatemanage"
 )
 
 func UpdateByDeb(w http.ResponseWriter, r *http.Request) {
-    updateprocess := updatemange.GetUpdateProcess()
-    if updateprocess.GetStatus() != updatemange.FINISHED {
+    updateprocess := updatemanage.GetUpdateProcess()
+    if updateprocess.GetStatus() != updatemanage.FINISHED {
         w.WriteHeader(400)
         respondResonJSON(nil, w, r, "machine is busy to updating,please update later")
     } else {
-     
+        reqrawdata, err := ioutil.ReadAll(r.Body)
+        if err != nil {
+            log.Error(err)
+        }
+        reqinfo := updatemanage.Reqdatastruct{}
+        err = json.Unmarshal(reqrawdata, &reqinfo)
+        if err != nil {
             log.Error(err)
         }
         indentdata, err := json.MarshalIndent(reqinfo.Data, "", "  ")
@@ -24,7 +30,7 @@ func UpdateByDeb(w http.ResponseWriter, r *http.Request) {
         utils.CheckErr(err)
 
         updateprocess.SetNewTarget(indentdata)
-        
+
         go func() {
             updateprocess.UpdateSource()
             updateprocess.UploadVersion()
@@ -33,10 +39,10 @@ func UpdateByDeb(w http.ResponseWriter, r *http.Request) {
         if err != nil {
             log.Error(err)
         }
-        respdata := updatemange.Respdatastruct{
-            Status:   updatemange.FINISHED.String(),
+        respdata := updatemanage.Respdatastruct{
+            Status:   updatemanage.FINISHED.String(),
             WorkerId: deviceinfo.WorkerID,
-            PkgInfo:  updatemange.ParseVersionFile(),
+            PkgInfo:  updatemanage.ParseVersionFile(),
         }
         respondJSON(respdata, w, r)
         //wg.Add(2)

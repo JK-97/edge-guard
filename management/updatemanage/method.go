@@ -1,4 +1,4 @@
-package updatemange
+package updatemanage
 
 import (
     "bytes"
@@ -76,8 +76,8 @@ func (up *UpgradeProcess) FlushTargetVersion() {
 }
 func (up *UpgradeProcess) CheckUpdate() map[string]string {
     var pkgneeddate = make(map[string]string)
-    log.Info(up.NowVersion)
-    log.Info(up.Target)
+    log.Info("now version", up.NowVersion)
+    log.Info("target version", up.Target)
     for pkgnamme, version := range up.Target {
         if up.NowVersion[pkgnamme] != version {
             pkgneeddate[pkgnamme] = version
@@ -89,7 +89,7 @@ func (up *UpgradeProcess) CheckUpdate() map[string]string {
 }
 
 func (up *UpgradeProcess) UploadVersion() {
-    url := "http://10.55.2.207:10111/api/v1/worker_version"
+    
     deviceinfo, _ := device.GetDevice()
 
     resprawinfo := Respdatastruct{
@@ -101,7 +101,7 @@ func (up *UpgradeProcess) UploadVersion() {
     if err != nil {
         log.Error(err)
     }
-    _, err = http.Post(url, "application/json", bytes.NewReader(respdata))
+    _, err = http.Post(UPLOADURL, "application/json", bytes.NewReader(respdata))
     if err != nil {
         log.Error(err)
     }
@@ -111,6 +111,7 @@ func (up *UpgradeProcess) UploadVersion() {
 func (up *UpgradeProcess) UpdateComponent(componenttoupdate map[string]string) {
     up.ChangeToUpdating()
     for pkgname, pkgversion := range componenttoupdate {
+        exec.Command("apt", "autoremove", pkgname).Run()
         log.Info("updating " + pkgname)
         pkginfo := pkgname + "=" + pkgversion
         exec.Command("apt", "install", "-y", pkginfo).Run()

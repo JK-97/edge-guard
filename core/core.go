@@ -46,7 +46,7 @@ func ProCore() {
 func UpdateCore(timeout int) {
     if network.CheckNetwork() {
         starttime := time.Now()
-        updateprocess := updatemange.GetUpdateProcess()
+        updateprocess := updatemanage.GetUpdateProcess()
         //updateprocess.UploadVersion()
         pkgneedupdate := updateprocess.CheckUpdate()
         if len(pkgneedupdate) != 0 {
@@ -55,7 +55,7 @@ func UpdateCore(timeout int) {
             log.Info("updating")
         }
         for {
-            if updateprocess.GetStatus() == updatemange.FINISHED {
+            if updateprocess.GetStatus() == updatemanage.FINISHED {
                 break
             }
             if time.Now().Unix() > starttime.Add(time.Duration(timeout)*time.Second).Unix() {
@@ -69,4 +69,3 @@ func UpdateCore(timeout int) {
     }
 
 }
-

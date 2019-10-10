@@ -1,4 +1,4 @@
-package updatemange
+package updatemanage
 
 import "sync"
 
@@ -10,6 +10,7 @@ const (
 const (
     EDGEVERSIONFILE = "/edge/VERSION"
     TARGETVERSION="/etc/edgetarget"
+    UPLOADURL = "http://10.55.2.207:10111/api/v1/worker_version"
 )
 
 func (p UpgradeStatus) String() string {

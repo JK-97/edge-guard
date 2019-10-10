@@ -1,4 +1,4 @@
-package programmange
+package programmanage
 
 import (
     "jxcore/log"

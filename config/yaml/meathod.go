@@ -4,7 +4,7 @@ import (
     "gopkg.in/yaml.v2"
     "io/ioutil"
     "jxcore/log"
-    "jxcore/management/programmange"
+    "jxcore/management/programmanage"
     "jxcore/lowapi/utils"
     "reflect"
     "strings"
@@ -36,7 +36,7 @@ func ParseAndCheck(o interface{}, fix string) {
                         binfile = strings.ReplaceAll(binfile, "synctools", "mnt")
                     }
                     if utils.Exists(binfile) {
-                        programmange.AddDependStart(f.Name)
+                        programmanage.AddDependStart(f.Name)
                     } else {
                         log.WithFields(log.Fields{"component": f.Name}).Warn("not found path ")
                     }

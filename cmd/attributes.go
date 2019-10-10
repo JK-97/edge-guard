@@ -1,6 +1,7 @@
 package cmd
 
 const (
-    InitPath      = "/edge/init"
-    TARGETVERSION = "/etc/edgetarget"
+    InitPath             = "/edge/init"
+    TARGETVERSION        = "/etc/edgetarget"
+  
 )
