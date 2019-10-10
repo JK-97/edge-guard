@@ -1,79 +1,78 @@
 package cmd
 
 import (
-	"fmt"
-	"jxcore/regeister"
-	"os"
+    "fmt"
+    "jxcore/core/device"
 
-	"github.com/spf13/cobra"
+    "jxcore/lowapi/network"
+
+    "jxcore/lowapi/vpn"
+    "os"
+
+    "github.com/spf13/cobra"
 )
 
 const (
-	exitCodeNotInitialized int = 1 << iota
-	exitCodeVPNFailed
+    exitCodeNotInitialized int = 1 << iota
+    exitCodeVPNFailed
 )
 
 // statusCmd 获取 jxcore 的状态
 var statusCmd = &cobra.Command{
-	Use:   "status",
-	Short: "to see the status of jxcore",
-	Long:  `to see the status of jxcore`,
+    Use:   "status",
+    Short: "to see the status of jxcore",
+    Long:  `to see the status of jxcore`,
 
-	Run: func(cmd *cobra.Command, args []string) {
-		exitCode := 0
-		info, err := regeister.ReadDeviceInfo()
-		if err != nil && os.IsNotExist(err) {
-			fmt.Println("Not initialized.")
-			exitCode |= exitCodeNotInitialized
-			os.Exit(exitCode)
-		}
-		flags := cmd.PersistentFlags()
-		if ok, _ := flags.GetBool("device"); ok {
-			fmt.Println("WorkID:", info.WorkID)
-			fmt.Println("DhcpServer:", info.DhcpServer)
-			fmt.Println("DeviceKey:", info.Key)
-			fmt.Println("VPN Mode:", info.Vpn)
-		}
-		if ok, _ := flags.GetBool("vpn"); ok && info.Vpn != regeister.VPNModeLocal {
-			fmt.Println("Test VPN Status")
-			var ip string
-			switch info.Vpn {
-			case regeister.VPNModeOPENVPN:
-				regeister.Closeopenvpn()
-				regeister.Startopenvpn()
-			case regeister.VPNModeWG:
-				regeister.CloseWg()
-				regeister.StartWg()
-			}
-			ip = regeister.GetClusterIP()
-			if ip != "" {
-				fmt.Println("ClusterIP:", ip)
-			} else {
-				exitCode |= exitCodeVPNFailed
-				fmt.Println("VPN Test Failed!")
-			}
-		}
+    Run: func(cmd *cobra.Command, args []string) {
+        exitCode := 0
+        cuerrentdevice, err := device.GetDevice()
+        if err != nil && os.IsNotExist(err) {
+            fmt.Println("Not initialized.")
+            exitCode |= exitCodeNotInitialized
+            os.Exit(exitCode)
+        }
+        flags := cmd.PersistentFlags()
+        if ok, _ := flags.GetBool("device"); ok {
+            fmt.Println("WorkerID:", cuerrentdevice.WorkerID)
+            fmt.Println("DhcpServer:", cuerrentdevice.DhcpServer)
+            fmt.Println("DeviceKey:", cuerrentdevice.Key)
+            fmt.Println("VPN Mode:", cuerrentdevice.Vpn)
+        }
+        if ok, _ := flags.GetBool("vpn"); ok && cuerrentdevice.Vpn != device.VPNModeLocal {
+            fmt.Println("Test VPN Status")
+            var ip string
+            switch cuerrentdevice.Vpn {
+            case device.VPNModeOPENVPN:
+                vpn.Closeopenvpn()
+                vpn.Startopenvpn()
+            case device.VPNModeWG:
+                vpn.CloseWg()
+                vpn.StartWg()
+            }
+            ip = network.GetClusterIP()
+            if ip != "" {
+                fmt.Println("ClusterIP:", ip)
+            } else {
+                exitCode |= exitCodeVPNFailed
+                fmt.Println("VPN Test Failed!")
+            }
+        }
 
-		// if ok, _ := flags.GetBool("gateway"); ok {
-		// 	fmt.Println("Test Start Gateway")
-		// 	monitor.GWEmitter()
-		// }
+        // if ok, _ := flags.GetBool("gateway"); ok {
+        // 	fmt.Println("Test Start Gateway")
+        // 	monitor.GWEmitter()
+        // }
 
-		os.Exit(exitCode)
-	}}
+        os.Exit(exitCode)
+    }}
 
 func init() {
-	// Here you will define your flags and configuration settings.
-	rootCmd.AddCommand(statusCmd)
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
+    // Here you will define your flags and configuration settings.
+    rootCmd.AddCommand(statusCmd)
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// initCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	flags := statusCmd.PersistentFlags()
-	flags.BoolP("device", "d", true, "Print device informations.")
-	flags.BoolP("vpn", "v", true, "Test VPN Status")
-	flags.BoolP("gateway", "g", true, "Test Gateway")
-	// flags.BoolP("mongo", "m", false, "Recover Mongo")
+    flags := statusCmd.PersistentFlags()
+    flags.BoolP("device", "d", true, "Print device informations.")
+    flags.BoolP("vpn", "v", true, "Test VPN Status")
+    flags.BoolP("gateway", "g", true, "Test Gateway")
+
 }
