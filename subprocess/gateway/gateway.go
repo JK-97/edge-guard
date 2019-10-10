@@ -55,16 +55,16 @@ func makeRouter() http.Handler {
 
 func simpleMw(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger.Infof("In :\t%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+		logger.Infof("In :\t%s %s %s", r.RemoteAddr, r.Method, r.URL)
 		start := time.Now()
 		// Call the next handler, which can be another middleware in the chain, or the final handler.
 		next.ServeHTTP(w, r)
 		cost := time.Since(start)
 		resp := r.Response
 		if resp != nil {
-			logger.Infof("End:\t%s %s %s %dms %s\n", r.RemoteAddr, r.Method, r.URL, cost.Milliseconds(), resp.Status)
+			logger.Infof("End:\t%s %s %s %dms %s", r.RemoteAddr, r.Method, r.URL, cost.Milliseconds(), resp.Status)
 		} else {
-			logger.Infof("End:\t%s %s %s %dms\n", r.RemoteAddr, r.Method, r.URL, cost.Milliseconds())
+			logger.Infof("End:\t%s %s %s %dms", r.RemoteAddr, r.Method, r.URL, cost.Milliseconds())
 		}
 	})
 }
@@ -241,7 +241,7 @@ func listenUnix(router http.Handler) {
 	}
 
 	defer os.Remove(addr.Name)
-	logger.Infof("Listen on: unix:%s\n", addr.Name)
+	logger.Info("Listen on: unix: ", addr.Name)
 	http.Serve(ln, router)
 }
 
@@ -254,6 +254,6 @@ func ServeGateway() error {
 		go listenUnix(router)
 	}
 
-	logger.Infof("Listen on: http://%s\n", ServerOptions.Addr)
+	logger.Info("Listen on: http://", ServerOptions.Addr)
 	return http.ListenAndServe(ServerOptions.Addr, router)
 }

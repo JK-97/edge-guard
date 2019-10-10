@@ -104,10 +104,40 @@ stderr_capture_maxbytes=0
 stderr_events_enabled=false
 restart_when_binary_changed=true
 `
+var mq = `[program:mq]
+#directory=/edge/mnt/mq/bin
+command=./mq --config /edge/mnt/mq/bin/mq.cfg
+process_name=%(program_name)s
+numprocs=1
+#numprocs_start=not support
+autostart=true
+startsecs=3
+startretries=3
+autorestart=true
+exitcodes=0,2
+stopsignal=TERM
+stopwaitsecs=10
+stopasgroup=true
+killasgroup=true
+user=root
+redirect_stderr=false
+stdout_logfile=/edge/logs/%(program_name)s_stdout.log
+stdout_logfile_maxbytes=50MB
+stdout_logfile_backups=10
+stdout_capture_maxbytes=0
+stdout_events_enabled=true
+stderr_logfile=/edge/logs/%(program_name)s_stderr.log
+stderr_logfile_maxbytes=50MB
+stderr_logfile_backups=10
+stderr_capture_maxbytes=0
+stderr_events_enabled=false
+`
+
 var ProgramCfgMap = map[string]string{
 	"Filelistener": filelistener,
 	"Telegraf":     telegraf,
-	"Db":Db,
+	"Db":           Db,
+	"Mq":           mq,
 	//"gateway": gateway,
 }
 
