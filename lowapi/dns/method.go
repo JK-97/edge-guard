@@ -226,3 +226,17 @@ func AppendHostnameHosts(workerid string) {
     f.WriteString(hostnameresolv)
     f.Close()
 }
+
+
+
+func ParseIpInTxt(url string) (string,string){
+    txtRecords,err:= net.LookupTXT(url)
+    if err != nil {
+        log.Error(err)
+    }
+    //for _,txt :=range txtRecords{
+    //    log.Info(txt)
+    //}
+    res:= strings.Split(txtRecords[0],":")
+    return res[0],res[1]
+}

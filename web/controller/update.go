@@ -12,7 +12,7 @@ import (
 )
 
 func UpdateByDeb(w http.ResponseWriter, r *http.Request) {
-    
+    core:=core.GetJxCore()
     updateprocess := updatemanage.GetUpdateProcess()
     if updateprocess.GetStatus() != updatemanage.FINISHED {
         w.WriteHeader(400)

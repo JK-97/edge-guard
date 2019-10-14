@@ -9,7 +9,9 @@ const (
 const (
     EDGEVERSIONFILE = "/edge/VERSION"
     TARGETVERSION   = "/etc/edgetarget"
-    UPLOADURL       = "http://10.55.2.207:10111/api/v1/worker_version"
+    UPLOADDOMAIN    = "port30111.version-control.ffffffffffffffffffffffff.master.iotedge"
+    UPLOADPATH      = "/api/v1/worker_version"
+    SOURCEHOST      = "10.53.1.220"
 )
 
 func (p UpgradeStatus) String() string {

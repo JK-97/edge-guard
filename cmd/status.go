@@ -72,6 +72,12 @@ var statusCmd = &cobra.Command{
 				exitCode |= exitCodeVPNFailed
 				log.Error("VPN Test Failed!")
 			}
+            switch info.Vpn {
+            case device.VPNModeOPENVPN:
+                vpn.Closeopenvpn()
+            case device.VPNModeWG:
+                vpn.CloseWg()
+            }
 		}
 
 		os.Exit(exitCode)

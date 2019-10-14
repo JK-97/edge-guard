@@ -6,11 +6,23 @@ import (
     "io/ioutil"
     "jxcore/core/device"
     "jxcore/log"
+    "jxcore/lowapi/dns"
     "jxcore/lowapi/utils"
     "net/http"
+    "os"
     "os/exec"
     "strings"
 )
+
+
+func AddAptKey() {
+    ip,_:=dns.ParseIpInTxt(UPLOADDOMAIN)
+    exec.Command("/bin/bash", "-c", "curl http://"+ip+"/public/gpg | sudo apt-key add -").Run()
+    file,err := os.OpenFile(TARGETVERSION,os.O_APPEND,0666)
+    defer file.Close()
+    utils.CheckErr(err)
+    file.WriteString("deb [arch=amd64] http://"+ip+" stable main")
+}
 
 func ParseVersionFile() (versioninfo map[string]string) {
     versionRawInfo, err := ioutil.ReadFile(EDGEVERSIONFILE)
@@ -98,10 +110,13 @@ func (up *UpgradeProcess) UploadVersion() {
         PkgInfo:  ParseVersionFile(),
     }
     respdata, err := json.Marshal(resprawinfo)
+    //log.Info(string(respdata))
     if err != nil {
         log.Error(err)
     }
-    _, err = http.Post(UPLOADURL, "application/json", bytes.NewReader(respdata))
+    ip,port:=dns.ParseIpInTxt(UPLOADDOMAIN)
+    log.Info(ip,port)
+    _, err = http.Post("http://"+ip+":"+port+UPLOADPATH, "application/json", bytes.NewReader(respdata))
     if err != nil {
         log.Error(err)
     }

@@ -10,14 +10,26 @@ import (
     "jxcore/lowapi/utils"
     "jxcore/management/updatemanage"
     "jxcore/monitor/dnsdetector"
-    "sync"
     "time"
 )
 
-var DnsOnce sync.Once
+func NewJxCore() *JxCore {
+    return &JxCore{}
+}
+
+func GetJxCore() *JxCore {
+
+    lock.Lock()
+    defer lock.Unlock()
+    if jxcore == nil {
+        jxcore = NewJxCore()
+        return jxcore
+    }
+    return jxcore
+}
 
 //control the base version 
-func BaseCore() {
+func (j *JxCore) BaseCore() {
     //UpdateCore(10)
     startupProgram, err := yaml.LoadYaml(YamlComponentSetting)
     utils.CheckErr(err)
@@ -26,7 +38,7 @@ func BaseCore() {
 }
 
 //control the base version 
-func ProCore() {
+func (j *JxCore) ProCore() {
     var err error
     var mymasterip string
     currentedvice, err := device.GetDevice()
@@ -49,7 +61,7 @@ func ProCore() {
 }
 
 //contrl the update 
-func UpdateCore(timeout int) {
+func (j JxCore) UpdateCore(timeout int) {
     if network.CheckNetwork() {
         starttime := time.Now()
         updateprocess := updatemanage.GetUpdateProcess()

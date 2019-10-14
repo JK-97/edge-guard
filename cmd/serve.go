@@ -15,23 +15,23 @@
 package cmd
 
 import (
-	"io/ioutil"
-	"jxcore/config"
-	"jxcore/core"
-	"jxcore/core/device"
-	"jxcore/log"
-	"jxcore/lowapi/utils"
-	"jxcore/subprocess"
-	"jxcore/subprocess/gateway"
-	"jxcore/version"
-	"jxcore/web/route"
-	"net/http"
-	"os"
+    "io/ioutil"
+    "jxcore/config"
+    "jxcore/core"
+    "jxcore/core/device"
+    "jxcore/log"
+    "jxcore/lowapi/utils"
+    "jxcore/subprocess"
+    "jxcore/subprocess/gateway"
+    "jxcore/version"
+    "jxcore/web/route"
+    "net/http"
+    "os"
 
-	// 调试
-	_ "net/http/pprof"
+    // 调试
+    _ "net/http/pprof"
 
-	"github.com/spf13/cobra"
+    "github.com/spf13/cobra"
 )
 
 var start chan bool
@@ -47,58 +47,62 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		go func() {
-			gateway.Setup()
-			gateway.ServeGateway()
-		}()
-		forever := make(chan interface{}, 1)
+	    //Deamonize(func() {
+        //})
 
-		if utils.Exists(InitPath) {
-		} else {
-			log.Fatal("please run the bootstrap before serve")
-		}
-		currentdevice, err := device.GetDevice()
-		utils.CheckErr(err)
-		log.WithFields(log.Fields{"INFO": "Device"}).Info("workerid : ", currentdevice.WorkerID)
+        core := core.GetJxCore()
+        go func() {
+            gateway.Setup()
+            gateway.ServeGateway()
+        }()
+        forever := make(chan interface{}, 1)
 
-		core.UpdateCore(30)
+        if utils.Exists(InitPath) {
+        } else {
+            log.Fatal("please run the bootstrap before serve")
+        }
+        currentdevice, err := device.GetDevice()
+        utils.CheckErr(err)
+        log.WithFields(log.Fields{"INFO": "Device"}).Info("workerid : ", currentdevice.WorkerID)
 
-		core.BaseCore()
 
-		if device.GetDeviceType() == version.Pro {
-			// online version
-			go core.ProCore()
-		}
 
-		//collection log
-		//core.CollectJournal(currentdevice.WorkerID)
+        if device.GetDeviceType() == version.Pro {
+            // online version
+            go core.ProCore()
+        }
+        core.UpdateCore(30)
+        core.BaseCore()
+        
+        //collection log
+        //core.CollectJournal(currentdevice.WorkerID)
 
-		//start up all component process
-		go subprocess.Run()
-		log.Info("all process has run")
+        //start up all component process
+        go subprocess.Run()
+        log.Info("all process has run")
 
-		//web server
-		port, err := cmd.Flags().GetString("port")
-		if err != nil {
-			port = ":80"
-		}
-		go func() {
-			log.Info("Listen on", port)
-			log.Fatal(http.ListenAndServe(port, route.Routes()))
-			os.Exit(1)
-			forever <- nil
-		}()
-		if debug, _ := cmd.Flags().GetBool("debug"); debug {
-			go func() {
-				port := ":10880"
-				log.Info("Enable Debug Mode Listen on", port)
-				log.Fatal(http.ListenAndServe(port, nil))
-				os.Exit(1)
-				forever <- nil
-			}()
-		}
+        //web server
+        port, err := cmd.Flags().GetString("port")
+        if err != nil {
+            port = ":80"
+        }
+        go func() {
+            log.Info("Listen on", port)
+            log.Fatal(http.ListenAndServe(port, route.Routes()))
+            os.Exit(1)
+            forever <- nil
+        }()
+        if debug, _ := cmd.Flags().GetBool("debug"); debug {
+            go func() {
+                port := ":10880"
+                log.Info("Enable Debug Mode Listen on", port)
+                log.Fatal(http.ListenAndServe(port, nil))
+                os.Exit(1)
+                forever <- nil
+            }()
+        }
 
-		<-forever
+        <-forever  
 	},
 }
 

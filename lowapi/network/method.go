@@ -98,7 +98,7 @@ func GetClusterIP() string {
     d,err:= device.GetDevice()
     utils.CheckErr(err)
     switch d.Vpn {
-    case device.VPNModeLocal:
+    case device.VPNModeOPENVPN:
         tun0interface, err := GetMyIP(vpn.OpenVPNInterface)
         if err != nil {
             log.WithFields(log.Fields{"Operating": "GetClusterIP"}).Error(err)

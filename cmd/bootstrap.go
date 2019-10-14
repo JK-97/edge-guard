@@ -24,6 +24,7 @@ import (
     "jxcore/lowapi/dns"
     "jxcore/lowapi/docker"
     "jxcore/lowapi/utils"
+    "jxcore/management/updatemanage"
     "jxcore/version"
     "net/url"
     "os"
@@ -60,7 +61,9 @@ to quickly create a Cobra application.`,
         if device.GetDeviceType() ==version.Base && vpnMode != device.VPNModeLocal{
             log.Fatal("This version does not support vpn networking mode,")
         }
+        
         workerid := device.BuildWokerID()
+        updatemanage.AddAptKey()
         if ticket == "" {
             fmt.Println("Need Ticket")
             fmt.Println("Worker ID:", workerid)
@@ -119,7 +122,6 @@ to quickly create a Cobra application.`,
 
         host := GetHost(authHost)
 
-        // "auth.iotedge.jiangxingai.com"
         dns.LookUpDns(host)
 
         initcmd := exec.Command("touch", "/edge/init")
