@@ -2,6 +2,12 @@
 
 ## 使用
 
+go >= 1.13
+
+```shell
+git submodule update --init --recursive
+```
+
 ### bootstrap
 
 * 在第一次使用前需要执行bootstrap生成设备信息(/edge/init)

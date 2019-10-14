@@ -123,6 +123,7 @@ stderr_capture_maxbytes=0
 stderr_events_enabled=false
 restart_when_binary_changed=true
 `
+
 var Watchdog = `[program:WatchDog]
 restart_when_binary_changed=true
 command=/edge/tools/mcutools/watchdog/bin/watchdog

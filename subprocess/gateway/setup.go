@@ -37,6 +37,6 @@ func Setup() {
 		logger.Fatalf("[%v] is not directory\n", workingDir)
 	} else {
 		defaultStore = store.NewLevelDBStore(filepath.Join(workingDir, "gateway.db"))
-		logger.Infof("Working directory: %s\n", workingDir)
+		logger.Info("Working directory: ", workingDir)
 	}
 }
