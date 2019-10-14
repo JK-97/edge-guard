@@ -226,3 +226,11 @@ func AppendHostnameHosts(workerid string) {
     f.WriteString(hostnameresolv)
     f.Close()
 }
+
+
+func LookIptxt(domain string) (string,string) {
+    ipRecords, _ := net.LookupTXT(domain)
+    res:=strings.Split(ipRecords[0],":")
+    return res[0],res[1]
+    
+}

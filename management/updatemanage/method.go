@@ -6,6 +6,7 @@ import (
     "io/ioutil"
     "jxcore/core/device"
     "jxcore/log"
+    "jxcore/lowapi/dns"
     "strings"
 
     "net/http"
@@ -93,7 +94,7 @@ func (up *UpgradeProcess) CheckUpdate() map[string]string {
 func (up *UpgradeProcess) UploadVersion() {
     
     deviceinfo, _ := device.GetDevice()
-
+    
     resprawinfo := Respdatastruct{
         Status:   up.GetStatus().String(),
         WorkerId: deviceinfo.WorkerID,
@@ -103,7 +104,8 @@ func (up *UpgradeProcess) UploadVersion() {
     if err != nil {
         log.Error(err)
     }
-    _, err = http.Post(UPLOADURL, "application/json", bytes.NewReader(respdata))
+    ip,port :=dns.LookIptxt(UPLOADPATH)
+    _, err = http.Post("http://"+ip+":"+port+"/api/v1/worker_version", "application/json", bytes.NewReader(respdata))
     if err != nil {
         log.Error(err)
     }
