@@ -30,5 +30,6 @@
 .idea
 logfile
 go_build_jxcore
-jxcore*
+# jxcore*
 /version/version_impl.go
+build/
