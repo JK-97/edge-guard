@@ -1,0 +1,6 @@
+Package: jx-jxcore
+Version: REPLACE_VERSION
+Maintainer: shenmingjie <shenmingjie@jiangxing.ai>
+Description: Jiangxing Core
+Homepage: http://gitlab.jiangxingai.com/edgenode/jxcore
+Architecture: REPLACE_ARCH
