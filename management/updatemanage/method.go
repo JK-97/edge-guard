@@ -12,6 +12,8 @@ import (
     "os"
     "os/exec"
     "strings"
+    "syscall"
+    "time"
 )
 
 
@@ -115,7 +117,6 @@ func (up *UpgradeProcess) UploadVersion() {
         log.Error(err)
     }
     ip,port:=dns.ParseIpInTxt(UPLOADDOMAIN)
-    log.Info(ip,port)
     _, err = http.Post("http://"+ip+":"+port+UPLOADPATH, "application/json", bytes.NewReader(respdata))
     if err != nil {
         log.Error(err)
@@ -134,6 +135,10 @@ func (up *UpgradeProcess) UpdateComponent(componenttoupdate map[string]string) {
     }
     up.FlushVersionInfo()
     up.ChangeToFinish()
+    log.Info("restart in 5 second")
+    time.Sleep(5*time.Second)
+
+    syscall.Exit(0)
 }
 
 func (up *UpgradeProcess) ChangeToFinish() {
