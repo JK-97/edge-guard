@@ -14,7 +14,7 @@ build:
       - .cache
   stage: build
   before_script:
-    - sed -i 's/http:\/\/gitlab\.jiangxingai\.com/..\/..\/../' .gitmodules
+    - sed -i 's/http:\/\/gitlab\.jiangxingai\.com/..\/../' .gitmodules
     - git submodule sync --recursive
     - git submodule update --init --recursive
 
