@@ -9,7 +9,7 @@ builddate=$(shell date "+%m/%d/%Y %R %Z")
 arch?=arm64
 
 REPO=jxcore
-GO=CGO_ENABLED=0 GO111MODULE=off go
+GO=CGO_ENABLED=0 GO111MODULE=on go
 GOFLAGS=-v -ldflags '-X "$(REPO)/version.Version=$(version)" -X "$(REPO)/version.GitCommit=$(commit)" -X "$(REPO)/version.BuildDate=$(builddate)"'
 
 .PHONY: build debian test clean check_version push_to_source
@@ -20,7 +20,6 @@ ifeq ($(version),)
 endif
 	
 build: check_version
-	$(GO) get
 	GOARCH=$(arch) $(GO) build $(GOFLAGS) -o $(BINDIR)/$(NAME)-$(arch)
 
 debian: check_version build
