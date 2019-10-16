@@ -43,8 +43,8 @@ var (
 )
 
 const (
-    restoreImagePath     = "/edge/jxbootstrap/worker/dependencies/recover/dockerimage"
-    restoreBootstrapPath = "/edge/jxbootstrap"
+    restoreImagePath     = "/restore/dockerimage"
+    restoreBootstrapPath = "/jxbootstrap"
 )
 
 // bootstrapCmd represents the bootstrap command
@@ -84,39 +84,34 @@ to quickly create a Cobra application.`,
         }
         if !skipRestore {
             if _, err := os.Stat(restoreImagePath); err == nil {
-                os.RemoveAll("/restore/dockerimage")
-                os.Mkdir("/restore", 0644)
-                err = os.Rename(restoreImagePath, "/restore/dockerimage")
-                utils.CheckErr(err)
+                log.Info("Restore Docker Images")
+                var dockerobj = docker.NewClient()
+                err := dockerobj.DockerRestore()
+                if err != nil {
+                    log.Error(err)
+                } else {
+                    log.Info("Finish Restore Docker Images")
+                }
             }
 
-            log.Info("Restore Docker Images")
-            var dockerobj = docker.NewClient()
-            err := dockerobj.DockerRestore()
-            if err != nil {
-                log.Error(err)
-            } else {
-                log.Info("Finish Restore Docker Images")
-            }
+        
 
-            err = exec.Command("hostnamectl", "set-hostname", "worker-"+workerid).Run()
+            err := exec.Command("hostnamectl", "set-hostname", "worker-"+workerid).Run()
             if err != nil {
                 panic(err)
             }
 
             if _, err := os.Stat(restoreBootstrapPath); err == nil {
-                os.RemoveAll("/jxbootstrap")
-                err = os.Rename(restoreBootstrapPath, "/jxbootstrap")
-                utils.CheckErr(err)
+                basecmd := exec.Command("/jxbootstrap/worker/scripts/base.sh")
+                basecmd.Stdout = os.Stdout
+                basecmd.Stdout = os.Stderr
+                err = basecmd.Run()
+                if err != nil {
+                    panic(err)
+                }
             }
 
-            basecmd := exec.Command("/jxbootstrap/worker/scripts/base.sh")
-            basecmd.Stdout = os.Stdout
-            basecmd.Stdout = os.Stderr
-            err = basecmd.Run()
-            if err != nil {
-                panic(err)
-            }
+           
         }
         if authHost == "" {
             authHost = register.FallBackAuthHost

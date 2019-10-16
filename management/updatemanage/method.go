@@ -23,7 +23,7 @@ func AddAptKey() {
     file,err := os.OpenFile(TARGETVERSION,os.O_APPEND,0666)
     defer file.Close()
     utils.CheckErr(err)
-    file.WriteString("deb [arch=amd64] http://"+ip+" stable main")
+    file.WriteString("deb [arch=arm64] http://"+ip+" stable main")
 }
 
 func ParseVersionFile() (versioninfo map[string]string) {

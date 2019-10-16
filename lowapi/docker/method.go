@@ -97,7 +97,7 @@ func (c *DockerObj) StopContainer() {
 }
 
 //ImagesList is
-func (c *DockerObj) ImagesList() (*DockerImageResp, error) {
+func (c *DockerObj) ImagesList() ([]*DockerImageResources, error) {
     images, err := c.cli.ImageList(c.ctx, types.ImageListOptions{})
     if err != nil {
         log.Error(err)
@@ -114,11 +114,11 @@ func (c *DockerObj) ImagesList() (*DockerImageResp, error) {
 
     }
 
-    dockerresp := &DockerImageResp{Status: "runing", ProcessPercentage: 0.2, DockerInternalResources: s}
-    return dockerresp, err
+    //dockerresp := &DockerImageResp{Status: "runing", ProcessPercentage: 0.2, DockerInternalResources: s}
+    return s, err
 }
 
-func (c *DockerObj) ContainerList() (*DockerContainerResp, error) {
+func (c *DockerObj) ContainerList() ([]*DockerContainerResources, error) {
     containers, err := c.cli.ContainerList(c.ctx, types.ContainerListOptions{})
     if err != nil {
         log.Error(err)
@@ -130,8 +130,8 @@ func (c *DockerObj) ContainerList() (*DockerContainerResp, error) {
         contaner_info := &DockerContainerResources{Status: container.Status, ContainerID: container.ID, Image: container.Image, Lable: container.Labels}
         s = append(s, contaner_info)
     }
-    dockerresp := &DockerContainerResp{Status: "runing", ProcessPercentage: 0.2, DockerInternalResources: s}
-    return dockerresp, err
+    //dockerresp := &DockerContainerResp{Status: "runing", ProcessPercentage: 0.2, DockerInternalResources: s}
+    return s, err
 }
 
 //ContainerAllRemove :it will remove all container

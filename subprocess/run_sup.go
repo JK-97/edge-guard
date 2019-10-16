@@ -89,6 +89,8 @@ func findSupervisordConf() (string, error) {
     return programmanage.GetJxConfig(), nil
 }
 
+
+
 func RunServer() {
     // infinite loop for handling Restart ('reload' command)
     LoadEnvFile()
@@ -96,7 +98,9 @@ func RunServer() {
     for true {
         options.Configuration, _ = findSupervisordConf()
         s := NewSupervisor(options.Configuration)
+
         //log.Info(s.procMgr.Find("gateway"))
+        //s.GetProcessInfo()
         initSignals(s)
         if sErr, addedGroup, changedGroup, removedGroup := s.Reload(); sErr != nil {
             panic(sErr)

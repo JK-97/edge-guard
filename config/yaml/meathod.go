@@ -3,11 +3,8 @@ package yaml
 import (
     "gopkg.in/yaml.v2"
     "io/ioutil"
-    "jxcore/log"
     "jxcore/management/programmanage"
-    "jxcore/lowapi/utils"
     "reflect"
-    "strings"
 )
 
 func LoadYaml(path string) (Yamlsetting YamlSchema, err error) {
@@ -28,18 +25,14 @@ func ParseAndCheck(o interface{}, fix string) {
         val := v.Field(i).Interface()
         t1 := reflect.TypeOf(val)
         if t1.Kind() != reflect.Struct {
-            path := strings.ToLower(fix + f.Name)
+            //path := strings.ToLower(fix + f.Name)
             if b, ok := val.(bool); ok {
                 if b {
-                    binfile := strings.ToLower("/edge/" + path + "/bin/" + f.Name)
-                    if strings.Count(binfile, "synctools") != 0 {
-                        binfile = strings.ReplaceAll(binfile, "synctools", "mnt")
-                    }
-                    if utils.Exists(binfile) {
-                        programmanage.AddDependStart(f.Name)
-                    } else {
-                        log.WithFields(log.Fields{"component": f.Name}).Warn("not found path ")
-                    }
+                    //binfile := strings.ToLower("/edge/" + path + "/bin/" + f.Name)
+                    //if strings.Count(binfile, "synctools") != 0 {
+                    //    binfile = strings.ReplaceAll(binfile, "synctools", "mnt")
+                    //}
+                    programmanage.AddDependStart(f.Name)
 
                 } else {
                 }

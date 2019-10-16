@@ -35,7 +35,7 @@ func AddDependStart(programName string) {
 
 		ProgramSetting = ProgramSetting + ProgramCfgDepended
 	} else {
-		log.Info("this jxcore  version does not suppoted this commponent,please update")
+		log.Info("Missibg "+programName + " config,maybe jxcore low version")
 	}
 
 }

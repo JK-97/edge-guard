@@ -463,23 +463,23 @@ func (s *Supervisor) startEventListeners() {
 }
 //
 //func (s *Supervisor) startHttpServer() {
-//    httpServerConfig, ok := s.config.GetInetHttpServer()
-//    s.xmlRPC.Stop()
-//    if ok {
-//        addr := httpServerConfig.GetString("port", "")
-//        if addr != "" {
-//            go s.xmlRPC.StartInetHttpServer(httpServerConfig.GetString("username", ""), httpServerConfig.GetString("password", ""), addr, s)
-//        }
-//    }
+//   httpServerConfig, ok := s.config.GetInetHttpServer()
+//   s.xmlRPC.Stop()
+//   if ok {
+//       addr := httpServerConfig.GetString("port", "")
+//       if addr != "" {
+//           go s.xmlRPC.StartInetHttpServer(httpServerConfig.GetString("username", ""), httpServerConfig.GetString("password", ""), addr, s)
+//       }
+//   }
 //
-//    httpServerConfig, ok = s.config.GetUnixHttpServer()
-//    if ok {
-//        env := config.NewStringExpression("here", s.config.GetConfigFileDir())
-//        sockFile, err := env.Eval(httpServerConfig.GetString("file", "/tmp/supervisord.sock"))
-//        if err == nil {
-//            go s.xmlRPC.StartUnixHttpServer(httpServerConfig.GetString("username", ""), httpServerConfig.GetString("password", ""), sockFile, s)
-//        }
-//    }
+//   httpServerConfig, ok = s.config.GetUnixHttpServer()
+//   if ok {
+//       env := config.NewStringExpression("here", s.config.GetConfigFileDir())
+//       sockFile, err := env.Eval(httpServerConfig.GetString("file", "/tmp/supervisord.sock"))
+//       if err == nil {
+//           go s.xmlRPC.StartUnixHttpServer(httpServerConfig.GetString("username", ""), httpServerConfig.GetString("password", ""), sockFile, s)
+//       }
+//   }
 //
 //}
 
