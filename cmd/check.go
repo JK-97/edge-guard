@@ -84,6 +84,7 @@ to quickly create a Cobra application.`,
         //    }
         //}
         network.CheckNetwork()
+
         if out, _ := exec.Command("pgrep", "jxcore_service").Output(); len(out) != 0 {
             log.Info("has detect the jxcore running")
             resp, err := http.Get("http://localhost:80/ping")
@@ -92,7 +93,13 @@ to quickly create a Cobra application.`,
                 log.Info("jxcore web service health")
             }
         }
-        
+        for programname , shellpath :=range BinFilesMAP {
+            if out, _ := exec.Command("pgrep", "-f", shellpath).Output(); len(out) != 0 {
+                log.Info(programname+ " running ")
+            }else {
+                log.Info(programname+ " not running ")
+            }
+        }
     },
 }
 

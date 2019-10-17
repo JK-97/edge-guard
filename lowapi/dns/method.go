@@ -109,8 +109,8 @@ func ResetHostFile(ethIp string) {
 
     f, err := os.OpenFile(HostsFile, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
     utils.CheckErr(err)
-    f.WriteString(ethIp + " edgegw.localhost\n")
-    f.WriteString(ethIp + " edgegw.iotedge\n")
+    f.WriteString(ethIp + LocalHostName+"\n")
+    f.WriteString(ethIp + MasterHostName+"\n")
 
 }
 
@@ -248,4 +248,15 @@ func ParseIpInTxt(url string) (string, string) {
     //}
     res := strings.Split(txtRecords[0], ":")
     return res[0], res[1]
+}
+
+
+func DnsmasqConfCheck(){
+    rawData,err:=ioutil.ReadFile(HostsFile)
+    utils.CheckErr(err)
+    lines:=strings.Split(string(rawData),"\n")
+    for _,line :=range lines{
+        strings.Contains(line,MasterHostName)
+    }
+    
 }
