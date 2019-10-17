@@ -21,11 +21,10 @@ import (
     "github.com/spf13/cobra"
     "jxcore/core/device"
     "jxcore/core/register"
-    "jxcore/log"
+    log "jxcore/go-utils/logger"
     "jxcore/lowapi/dns"
     "jxcore/lowapi/docker"
     "jxcore/lowapi/utils"
-    "jxcore/management/updatemanage"
     "jxcore/version"
     "net/url"
     "os"
@@ -65,7 +64,7 @@ to quickly create a Cobra application.`,
         }
 
         workerid := device.BuildWokerID()
-        updatemanage.AddAptKey()
+        
         if ticket == "" {
             fmt.Println("Need Ticket")
             fmt.Println("Worker ID:", workerid)
@@ -125,7 +124,9 @@ to quickly create a Cobra application.`,
         initcmd.Run()
 
         log.Info("Register to ", authHost)
+        //updatemanage.AddAptKey()
         CurrentDevice, err := device.GetDevice()
+        
         utils.CheckErr(err)
         CurrentDevice.BuildDeviceInfo(vpnMode, ticket, authHost)
 

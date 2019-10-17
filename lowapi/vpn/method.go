@@ -2,7 +2,7 @@ package vpn
 
 import (
     "bufio"
-    "jxcore/log"
+    log "jxcore/go-utils/logger"
     "os"
     "os/exec"
     "strings"

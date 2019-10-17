@@ -5,7 +5,7 @@ import (
     "encoding/json"
     "io/ioutil"
     "jxcore/core/device"
-    "jxcore/log"
+    log "jxcore/go-utils/logger"
     "jxcore/lowapi/dns"
     "jxcore/lowapi/utils"
     "net/http"
@@ -44,7 +44,7 @@ func NewUpdateProcess() *UpgradeProcess {
     }
     targetinfo := targetversionfile{}
     json.Unmarshal(targetdata, &targetinfo.Target)
-    //log.Info(targetinfo.Target)
+    log.Info(targetinfo.Target)
     return &UpgradeProcess{
         //Target:     targetinfo.Target["target"],
         Target:     targetinfo.Target,
@@ -62,6 +62,7 @@ func GetUpdateProcess() *UpgradeProcess {
         return process
     }
     new := NewUpdateProcess()
+    //process.Target = new.Target
     process.Target = new.Target
     process.NowVersion = new.NowVersion
     return process

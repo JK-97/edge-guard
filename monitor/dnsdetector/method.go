@@ -2,16 +2,15 @@ package dnsdetector
 
 import (
     "github.com/rjeczalik/notify"
-    "jxcore/log"
+    log "jxcore/go-utils/logger"
     "jxcore/lowapi/dns"
-    "os"
 )
 
 // DnsDetector 检测 resolv 文件的改动
 func DnsDetector() {
 
     c := make(chan notify.EventInfo, 2)
-    if err := notify.Watch(resolvfile, c, notify.All); err != nil {
+    if err := notify.Watch(dns.ResolvFile, c, notify.All); err != nil {
         log.Error(err)
     }
     for ei := range c {
@@ -26,12 +25,9 @@ func DnsDetector() {
 }
 func RunDnsDetector() {
     dns.RestartDnsmasq()
-    // TODO check /etc/resolv.conf exists
-    if _, err := os.Stat(resolvfile); err == nil {
-        dns.ResolvGuard()
-    } else {
-        log.Info("Has no detect the resolv.conf")
-        dns.ResetResolv()
-    }
+    
     DnsDetector()
 }
+
+
+

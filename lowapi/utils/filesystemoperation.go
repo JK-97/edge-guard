@@ -4,7 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"io"
-	"jxcore/log"
+    log "jxcore/go-utils/logger"
 	"os"
 	"path/filepath"
 )

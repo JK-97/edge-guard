@@ -5,7 +5,7 @@ import (
     "io/ioutil"
     "jxcore/core"
     "jxcore/core/device"
-    "jxcore/log"
+    log "jxcore/go-utils/logger"
     "jxcore/lowapi/utils"
     "jxcore/management/updatemanage"
     "net/http"

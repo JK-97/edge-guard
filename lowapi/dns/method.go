@@ -7,7 +7,7 @@ import (
     "io"
     "io/ioutil"
     "jxcore/core/device"
-    "jxcore/log"
+    log "jxcore/go-utils/logger"
     "jxcore/lowapi/network"
     "jxcore/lowapi/utils"
     "jxcore/template"
@@ -80,7 +80,8 @@ func ResolvGuard() {
                 continue
             }
             if pos := strings.Index(rawLine, "nameserver"); pos != -1 {
-                server := strings.TrimSpace(rawLine[pos:])
+                log.Info(pos)
+                server := strings.TrimSpace(rawLine[pos+10:])
                 f.WriteString("server=" + server + "\n")
             }
         }
@@ -108,9 +109,10 @@ func ResetResolv() {
 func ResetHostFile(ethIp string) {
 
     f, err := os.OpenFile(HostsFile, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
+    defer f.Close()
     utils.CheckErr(err)
-    f.WriteString(ethIp + LocalHostName+"\n")
-    f.WriteString(ethIp + MasterHostName+"\n")
+    f.WriteString(ethIp +" "+ LocalHostName+"\n")
+    f.WriteString(ethIp +" "+ IotedgeHostName+"\n")
 
 }
 
@@ -190,6 +192,13 @@ func OnVPNConnetced() {
         template.Statsitecfg(masterip, VpnIP)
     }
 
+}
+
+// OnMasterIPChanged master IP 变化后执行
+func OnMasterIPChanged(masterip string) {
+    currentdevice, err := device.GetDevice()
+    utils.CheckErr(err)
+    
     if utils.Exists(consulConfigPath) {
         config := consulConfig{
             Server:           true,
@@ -205,11 +214,6 @@ func OnVPNConnetced() {
             ioutil.WriteFile(consulConfigPath, buf, 0666)
         }
     }
-}
-
-// OnMasterIPChanged master IP 变化后执行
-func OnMasterIPChanged(masterip string) {
-
 }
 
 // AppendHostnameHosts 将更新后的 hostsname 写入 hosts 文件
@@ -242,6 +246,7 @@ func ParseIpInTxt(url string) (string, string) {
     txtRecords, err := net.LookupTXT(url)
     if err != nil {
         log.Error(err)
+        log.Info("Possible DNS configuration error")
     }
     //for _,txt :=range txtRecords{
     //    log.Info(txt)
@@ -257,6 +262,20 @@ func DnsmasqConfCheck(){
     lines:=strings.Split(string(rawData),"\n")
     for _,line :=range lines{
         strings.Contains(line,MasterHostName)
+    }
+    
+}
+
+func CheckResolvFile(){
+    // TODO check /etc/resolv.conf exists
+    if _, err := os.Stat(ResolvFile); err == nil {
+        ResolvGuard()
+    } else {
+        log.Info("Has no detect the resolv.conf")
+        ResetResolv()
+    }
+    for !network.CheckNetwork(){
+        time.Sleep(3*time.Second)
     }
     
 }

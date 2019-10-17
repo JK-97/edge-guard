@@ -3,7 +3,7 @@ package subprocess
 import (
     "bufio"
     "github.com/jessevdk/go-flags"
-    "jxcore/log"
+    log "jxcore/go-utils/logger"
     "jxcore/management/programmanage"
     "os"
     "os/signal"

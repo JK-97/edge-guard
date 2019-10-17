@@ -1,6 +1,6 @@
 package route
 import (
-    "jxcore/log"
+    log "jxcore/go-utils/logger"
     "net/http"
 )
 

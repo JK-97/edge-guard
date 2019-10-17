@@ -1,7 +1,7 @@
 package programmanage
 
 import (
-	"jxcore/log"
+    log "jxcore/go-utils/logger"
 	"strings"
 )
 

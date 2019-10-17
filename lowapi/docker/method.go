@@ -4,7 +4,7 @@ import (
     "encoding/json"
     "fmt"
     "io/ioutil"
-    "jxcore/log"
+    log "jxcore/go-utils/logger"
     "os"
     "path/filepath"
     "strings"

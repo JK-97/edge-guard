@@ -29,6 +29,16 @@ var BinFilesMAP = map[string]string{
     "watchdog":"/edge/tools/mcutools/watchdog/bin/watchdog",
     "powermanagement":"/edge/tools/mcutools/powermanagement/bin/powermanagement",
     "db":"/edge/mnt/db/bin/db",
-    "mcuserver":"/edge/tools/mcutools/mcuserver//bin/mcuserver",
+    "mcuserver":"/edge/tools/mcutools/mcuserver/bin/mcuserver",
     "telegraf":"/edge/monitor/telegraf/bin/telegraf",
+}
+
+
+var DependsFile = []string{
+    "docker",
+    "supervisord",
+    "openvpn",
+    "docker-compose",
+    "aptitude",
+    "dnsmasq",
 }

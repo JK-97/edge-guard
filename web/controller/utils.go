@@ -4,7 +4,7 @@ import (
     "encoding/json"
     "html/template"
     "io/ioutil"
-    "jxcore/log"
+    log "jxcore/go-utils/logger"
     "net/http"
 )
 

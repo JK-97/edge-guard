@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"jxcore/log"
+    log "jxcore/go-utils/logger"
 	"jxcore/lowapi/utils"
 	"jxcore/version"
 	"math/rand"

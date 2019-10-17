@@ -3,7 +3,7 @@ package network
 import (
     "fmt"
     "jxcore/core/device"
-    "jxcore/log"
+    log "jxcore/go-utils/logger"
     "jxcore/lowapi/utils"
     "jxcore/lowapi/vpn"
     "net"

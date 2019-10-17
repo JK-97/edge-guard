@@ -2,7 +2,7 @@ package utils
 
 import (
 	"io/ioutil"
-	"jxcore/log"
+    log "jxcore/go-utils/logger"
 	"testing"
 )
 

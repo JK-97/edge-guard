@@ -3,7 +3,7 @@ package pythonpkg
 import (
     "fmt"
     "io/ioutil"
-    "jxcore/log"
+    log "jxcore/go-utils/logger"
     "jxcore/lowapi/utils"
     "net/http"
     "os/exec"

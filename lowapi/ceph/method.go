@@ -2,7 +2,7 @@ package ceph
 
 import (
     "io/ioutil"
-    "jxcore/log"
+    log "jxcore/go-utils/logger"
     "os"
     "os/exec"
     "path/filepath"

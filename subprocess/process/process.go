@@ -8,7 +8,7 @@ import (
     "jxcore/subprocess/events"
 	"jxcore/subprocess/logger"
 	"jxcore/subprocess/signals"
-	"jxcore/log"
+    log "jxcore/go-utils/logger"
 	"os"
 	"os/exec"
     "os/user"

@@ -19,7 +19,7 @@ import (
     "jxcore/config"
     "jxcore/core"
     "jxcore/core/device"
-    "jxcore/log"
+    log "jxcore/go-utils/logger"
     "jxcore/lowapi/utils"
     "jxcore/subprocess"
     "jxcore/subprocess/gateway"

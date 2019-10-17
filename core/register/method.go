@@ -7,7 +7,7 @@ import (
     "io"
     "io/ioutil"
     "jxcore/core/device"
-    "jxcore/log"
+    log "jxcore/go-utils/logger"
     "jxcore/lowapi/dns"
     "jxcore/lowapi/utils"
     "jxcore/lowapi/vpn"
@@ -60,14 +60,7 @@ func FindMasterFromDHCPServer(workerid string, key string) (masterip string, err
     masterip = resp.Header.Get("X-Master-IP")
     defer resp.Body.Close()
 
-    if masterip != "" {
-        ip := dns.FindMasterFromHostFile()
 
-        dns.UpdateMasterIPToHosts(masterip)
-        if masterip != ip {
-            dns.OnMasterIPChanged(masterip)
-        }
-    }
 
     //获得加密wgkey zip
     buff, err := ioutil.ReadAll(resp.Body)
@@ -108,6 +101,15 @@ func FindMasterFromDHCPServer(workerid string, key string) (masterip string, err
         return
     }
 
+    if masterip != "" {
+        ip := dns.FindMasterFromHostFile()
+
+        dns.UpdateMasterIPToHosts(masterip)
+
+        if masterip != ip {
+            dns.OnMasterIPChanged(masterip)
+        }
+    }
     exec.Command("service", "dnsmasq", "restart").Run()
     return
 }

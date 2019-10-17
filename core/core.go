@@ -5,7 +5,8 @@ import (
     "jxcore/core/device"
     "jxcore/core/hearbeat"
     "jxcore/core/register"
-    "jxcore/log"
+    log "jxcore/go-utils/logger"
+    "jxcore/lowapi/dns"
     "jxcore/lowapi/network"
     "jxcore/lowapi/utils"
     "jxcore/management/updatemanage"
@@ -43,8 +44,14 @@ func (j *JxCore) ProCore() {
     var mymasterip string
     currentedvice, err := device.GetDevice()
     utils.CheckErr(err)
+   
     for {
+        dns.CheckResolvFile()
+        go DnsOnce.Do(dnsdetector.RunDnsDetector)
+        //dnsdetector.WaitLock.Wait()
+        dns.ResetHostFile(network.GetEthIP())
         for {
+            
             register.FindMasterFromDHCPServer(currentedvice.WorkerID, currentedvice.Key)
             mymasterip, err = register.GetMyMaster(currentedvice.WorkerID, currentedvice.Key)
             if err == nil {
@@ -54,7 +61,7 @@ func (j *JxCore) ProCore() {
             time.Sleep(3 * time.Second)
         }
         time.Sleep(3 * time.Second)
-        go DnsOnce.Do(dnsdetector.RunDnsDetector)
+        
         // VPN 就绪之后 启动 component 按照配置启动(同步工具集合)
         hearbeat.AliveReport(mymasterip)
     }

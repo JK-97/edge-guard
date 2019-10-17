@@ -1,6 +1,6 @@
 package utils
 
-import "jxcore/log"
+import log "jxcore/go-utils/logger"
 
 func CheckErr(err error)  {
     if err != nil {

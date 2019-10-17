@@ -2,7 +2,7 @@ package mongo
 
 import (
     "context"
-    "jxcore/log"
+    log "jxcore/go-utils/logger"
     "jxcore/lowapi/supervisor"
     "jxcore/lowapi/utils"
     "os/exec"

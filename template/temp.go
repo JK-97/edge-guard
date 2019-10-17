@@ -1,7 +1,7 @@
 package template
 
 import (
-	"jxcore/log"
+    log "jxcore/go-utils/logger"
 	"os"
 	"text/template"
 )

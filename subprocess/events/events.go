@@ -6,7 +6,7 @@ import (
 	"container/list"
 	"fmt"
 	"io"
-	"jxcore/log"
+    log "jxcore/go-utils/logger"
 	"strconv"
 	"strings"
 	"sync"
