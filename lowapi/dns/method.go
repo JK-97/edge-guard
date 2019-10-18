@@ -242,6 +242,7 @@ func AppendHostnameHosts(workerid string) {
     f.Close()
 }
 
+
 func ParseIpInTxt(url string) (string, string) {
     txtRecords, err := net.LookupTXT(url)
     if err != nil {

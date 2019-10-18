@@ -5,9 +5,11 @@ import (
     "encoding/json"
     "io/ioutil"
     "jxcore/core/device"
+
     log "jxcore/go-utils/logger"
     "jxcore/lowapi/dns"
     "jxcore/lowapi/utils"
+
     "net/http"
     "os/exec"
     "strings"
@@ -123,8 +125,10 @@ func (up *UpgradeProcess) UploadVersion() {
     if err != nil {
         log.Error(err)
     }
+
     ip, port := dns.ParseIpInTxt(UPLOADDOMAIN)
     _, err = http.Post("http://"+ip+":"+port+UPLOADPATH, "application/json", bytes.NewReader(respdata))
+
     if err != nil {
         log.Error(err)
     }
