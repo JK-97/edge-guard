@@ -15,34 +15,24 @@
 package cmd
 
 import (
-	"io/ioutil"
-	"jxcore/app/route"
-	"jxcore/config"
-	"jxcore/journal"
-	"jxcore/log"
-	"jxcore/monitor"
-	"jxcore/regeister"
-	"jxcore/utils"
-	"net/http"
-	"os"
-	"os/exec"
-	"os/signal"
-	"sync"
-	"syscall"
-	"time"
+    "io/ioutil"
+    "jxcore/config"
+    "jxcore/core"
+    "jxcore/core/device"
+    log "jxcore/go-utils/logger"
+    "jxcore/lowapi/utils"
+    "jxcore/subprocess"
+    "jxcore/subprocess/gateway"
+    "jxcore/version"
+    "jxcore/web/route"
+    "net/http"
+    "os"
 
-	// 调试
-	_ "net/http/pprof"
+    // 调试
+    _ "net/http/pprof"
 
-	// 日志采插件
-	_ "jxcore/journal/docker"
-	_ "jxcore/journal/rfile"
-	_ "jxcore/journal/systemd"
-
-	"github.com/spf13/cobra"
+    "github.com/spf13/cobra"
 )
-
-const logBase = "/edge/logs/"
 
 var start chan bool
 
@@ -57,78 +47,67 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		port, err := cmd.Flags().GetString("port")
-		if err != nil {
-			port = ":80"
-		}
-		forever := make(chan interface{}, 1)
-		go func() {
-			log.Info("Listen on", port)
-			log.Fatal(http.ListenAndServe(port, route.Routes()))
-			os.Exit(1)
-			forever <- nil
-		}()
+	    //Deamonize(func() {
+        //})
 
-		if debug, _ := cmd.Flags().GetBool("debug"); debug {
-			go func() {
-				port := ":10880"
-				log.Info("Enable Debug Mode Listen on", port)
-				log.Fatal(http.ListenAndServe(port, nil))
-				os.Exit(1)
-				forever <- nil
-			}()
-		}
+        core := core.GetJxCore()
+        go func() {
+            gateway.Setup()
+            gateway.ServeGateway()
+        }()
+        forever := make(chan interface{}, 1)
 
-		applySyncTools()
+        if utils.Exists(InitPath) {
+        } else {
+            log.Fatal("please run the bootstrap before serve")
+        }
+        currentdevice, err := device.GetDevice()
+        utils.CheckErr(err)
+        log.WithFields(log.Fields{"INFO": "Device"}).Info("workerid : ", currentdevice.WorkerID)
 
-		if _, err := os.Stat(logBase); err != nil && os.IsNotExist(err) {
-			os.MkdirAll(logBase, 0644)
-		}
 
-		signalChannel := make(chan os.Signal, 16)
-		signal.Notify(signalChannel)
-		go handleSignal(signalChannel, forever)
 
-		info, err := regeister.ReadDeviceInfo()
-		if err != nil {
-			log.Error(err)
-			return
-		}
+        if device.GetDeviceType() == version.Pro {
+            // online version
+            go core.ProCore()
+        }
+        core.UpdateCore(30)
+        core.BaseCore()
+        
+        //collection log
+        //core.CollectJournal(currentdevice.WorkerID)
 
-		workerID := info.WorkID
-		log.Info("Start Gateway")
-		monitor.GWEmitter()
-		go monitor.MutiFileMonitor(config.InterSettings.FileMonitor.OverSeePath)
-		go monitor.GateWayMonitor()
+        //start up all component process
+        go subprocess.Run()
+        log.Info("all process has run")
 
-		log.Info("Patternmatching")
-		go regeister.Patternmatching()
+        //web server
+        port, err := cmd.Flags().GetString("port")
+        if err != nil {
+            port = ":80"
+        }
+        go func() {
+            log.Info("Listen on", port)
+            log.Fatal(http.ListenAndServe(port, route.Routes()))
+            os.Exit(1)
+            forever <- nil
+        }()
+        if debug, _ := cmd.Flags().GetBool("debug"); debug {
+            go func() {
+                port := ":10880"
+                log.Info("Enable Debug Mode Listen on", port)
+                log.Fatal(http.ListenAndServe(port, nil))
+                os.Exit(1)
+                forever <- nil
+            }()
+        }
 
-		go monitor.ComponentMonitor()
-
-		go regeister.DnsFileListener()
-
-		//go component.CleanerAdministrator()
-		// monitor.StopGateway()
-		wg := new(sync.WaitGroup)
-		wg.Wait()
-
-		log.Info("Prepare to collect journal")
-		go collectJournal(workerID)
-
-		<-forever
+        <-forever  
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(serveCmd)
-	cmd := exec.Command("/bin/bash", "-c", "pgrep gateway | xargs kill -s 9")
-	cmd.Run()
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
 	serveCmd.PersistentFlags().String("port", ":80", "Port to run Application server on")
 	serveCmd.PersistentFlags().String("interface", "eth0", "gateway listen where")
 	serveCmd.PersistentFlags().String("config", "./settings.yaml", "yaml setting for component")
@@ -136,9 +115,7 @@ func init() {
 	cfg := config.Config()
 	cfg.BindPFlag("yamlsettings", serveCmd.PersistentFlags().Lookup("config"))
 	cfg.BindPFlag("interface", serveCmd.PersistentFlags().Lookup("interface"))
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// serveCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
 }
 
 // applySyncTools 配置同步工具
@@ -159,45 +136,3 @@ func applySyncTools() {
 		}
 	}
 }
-
-func collectJournal(workerID string) {
-
-	ttl := time.Hour * 24 * 30 // 日志只保留 30 天
-	journalConfig := map[string]interface{}{
-		"rotate-directory": []string{logBase},
-	}
-
-	arcFolder := "/data/edgebox/local/logs"
-	metaFolder := "/data/edgebox/remote/logs/" + workerID
-
-	os.MkdirAll(arcFolder, 0755)
-	os.MkdirAll(metaFolder, 0755)
-
-	journal.RunForever(&journalConfig, 20*time.Minute, arcFolder, metaFolder, ttl)
-}
-
-func handleSignal(c <-chan os.Signal, w chan<- interface{}) {
-	for sig := range c {
-		log.Info("Receive Signal", sig)
-		switch sig {
-		case syscall.SIGKILL, syscall.SIGABRT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT:
-			// log.Info("Get ready for exit.")
-			// log.Info("Stop Component.")
-
-			// monitor.StopGateway()
-
-			// log.Info("Umount")
-			// regeister.CephUmount()
-			os.Exit(1)
-			w <- sig
-		case syscall.SIGPIPE, SIGCHLD, SIGTSTP, SIGCONT:
-		}
-	}
-}
-
-// 信号
-var (
-	SIGCHLD os.Signal = syscall.Signal(0x11)
-	SIGTSTP os.Signal = syscall.Signal(0x14)
-	SIGCONT os.Signal = syscall.Signal(0x12)
-)

@@ -1,0 +1,3 @@
+[submodule "go-utils"]
+	path = go-utils
+	url = http://gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils.git

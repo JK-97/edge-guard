@@ -28,6 +28,7 @@
 .vscode/
 .local/
 .idea
+logfile
 go_build_jxcore
 # jxcore*
 /version/version_impl.go

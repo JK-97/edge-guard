@@ -14,7 +14,11 @@ build:
       - .cache
   stage: build
   before_script:
-    # cache needs to be inside $CI_PROJECT_DIR
+    - sed -i 's/http:\/\/gitlab\.jiangxingai\.com/..\/../' .gitmodules
+    - git submodule sync --recursive
+    - git submodule update --init --recursive
+
+      # cache needs to be inside $CI_PROJECT_DIR
     - mkdir -p .cache
     - export GOPATH="$CI_PROJECT_DIR/.cache"
 
