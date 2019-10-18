@@ -124,7 +124,7 @@ to quickly create a Cobra application.`,
         initcmd.Run()
 
         log.Info("Register to ", authHost)
-        //updatemanage.AddAptKey()
+
         CurrentDevice, err := device.GetDevice()
         
         utils.CheckErr(err)

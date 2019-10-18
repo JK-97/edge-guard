@@ -59,9 +59,7 @@ func FindMasterFromDHCPServer(workerid string, key string) (masterip string, err
 
     masterip = resp.Header.Get("X-Master-IP")
     defer resp.Body.Close()
-
-
-
+    
     //获得加密wgkey zip
     buff, err := ioutil.ReadAll(resp.Body)
     if err != nil {
@@ -166,7 +164,7 @@ func GetMyMaster(workerid, key string) (mymasterip string, err error) {
     dns.AppendHostnameHosts(workerid)
 
     log.Info("Finish Update VPN")
-    // _, errusb0 := GetMyIP("usb0")
+    
 
     return masterIp, err
 }

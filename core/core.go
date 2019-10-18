@@ -44,16 +44,17 @@ func (j *JxCore) ProCore() {
     var mymasterip string
     currentedvice, err := device.GetDevice()
     utils.CheckErr(err)
-   
+
     for {
         dns.CheckResolvFile()
         go DnsOnce.Do(dnsdetector.RunDnsDetector)
-        //dnsdetector.WaitLock.Wait()
         dns.ResetHostFile(network.GetEthIP())
         for {
-            
+
             register.FindMasterFromDHCPServer(currentedvice.WorkerID, currentedvice.Key)
+            //获取vpn key，连接vpn
             mymasterip, err = register.GetMyMaster(currentedvice.WorkerID, currentedvice.Key)
+            //校验新的master是否协力hossts文件
             if err == nil {
                 break
             }
@@ -61,7 +62,7 @@ func (j *JxCore) ProCore() {
             time.Sleep(3 * time.Second)
         }
         time.Sleep(3 * time.Second)
-        
+
         // VPN 就绪之后 启动 component 按照配置启动(同步工具集合)
         hearbeat.AliveReport(mymasterip)
     }
@@ -69,6 +70,18 @@ func (j *JxCore) ProCore() {
 
 //contrl the update 
 func (j JxCore) UpdateCore(timeout int) {
+
+    for !network.CheckMasterConnect() {
+        time.Sleep(3 * time.Second)
+        log.Info("Waiting for master connect")
+    }
+    log.Info("Master Connect")
+    if dns.CheckDnsmasqConf() {
+        log.Info("Normal Dnsmasq configuration ")
+    } else {
+        log.Error("Error Dnsmasq configuration ")
+    }
+    updatemanage.AddAptKey()
     if network.CheckNetwork() {
         starttime := time.Now()
         updateprocess := updatemanage.GetUpdateProcess()
@@ -88,7 +101,7 @@ func (j JxCore) UpdateCore(timeout int) {
             }
         }
         updateprocess.UploadVersion()
-        
+
     } else {
         log.Warn("The network is not working properly and automatically enters offline mode.")
     }

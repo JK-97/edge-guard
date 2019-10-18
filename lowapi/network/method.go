@@ -1,7 +1,6 @@
 package network
 
 import (
-    "fmt"
     "jxcore/core/device"
     log "jxcore/go-utils/logger"
     "jxcore/lowapi/utils"
@@ -121,11 +120,22 @@ func CheckNetwork() bool {
     cmd := exec.Command("ping", "baidu.com", "-c", "1", "-W", "5")
     err := cmd.Run()
     if err != nil {
-        fmt.Println(err.Error())
         return false
     } else {
-        log.WithFields(log.Fields{"Device":"NetWork Check"}).Info("Net Status , OK")
+        return true
     }
-    return true
+ 
 
+}
+
+
+func CheckMasterConnect() bool{
+    cmd := exec.Command("ping", "master.iotedge", "-c", "1", "-W", "5")
+    err := cmd.Run()
+    if err != nil {
+        return false
+    } else {
+        return true
+    }
+   
 }

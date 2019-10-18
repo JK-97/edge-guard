@@ -26,8 +26,7 @@ func AliveReport(masterip string) {
 	if err != nil {
 		logger.Error("disconnect my master", err)
 	}
-	log.Info("connected")
-
+	
 	defer conn.Close()
 	ticker := time.NewTicker(time.Millisecond * HeartBeatInterva)
 	select {

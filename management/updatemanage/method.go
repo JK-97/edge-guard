@@ -9,21 +9,29 @@ import (
     "jxcore/lowapi/dns"
     "jxcore/lowapi/utils"
     "net/http"
-    "os"
     "os/exec"
     "strings"
     "syscall"
     "time"
 )
 
-
 func AddAptKey() {
-    ip,_:=dns.ParseIpInTxt(UPLOADDOMAIN)
-    exec.Command("/bin/bash", "-c", "curl http://"+ip+"/public/gpg | sudo apt-key add -").Run()
-    file,err := os.OpenFile(TARGETVERSION,os.O_APPEND,0666)
-    defer file.Close()
+    ip, _ := dns.ParseIpInTxt(UPLOADDOMAIN)
+    file, err := ioutil.ReadFile(SourceList)
+
     utils.CheckErr(err)
-    file.WriteString("deb [arch=arm64] http://"+ip+" stable main")
+    lines := strings.Split(string(file), "\n")
+    for _, line := range lines {
+        if strings.Contains(line, "deb [arch=arm64] http://"+ip+" stable main") {
+            return
+        }
+    }
+    err = exec.Command("/bin/bash", "-c", "curl http://"+ip+"/public/gpg | sudo apt-key add -").Run()
+    utils.CheckErr(err)
+    lines = append(lines, "deb [arch=arm64] http://"+ip+" stable main")
+    out := strings.Join(lines, "\n")
+    ioutil.WriteFile(SourceList, []byte(out), 666)
+
 }
 
 func ParseVersionFile() (versioninfo map[string]string) {
@@ -44,9 +52,8 @@ func NewUpdateProcess() *UpgradeProcess {
     }
     targetinfo := targetversionfile{}
     json.Unmarshal(targetdata, &targetinfo.Target)
-    log.Info(targetinfo.Target)
+
     return &UpgradeProcess{
-        //Target:     targetinfo.Target["target"],
         Target:     targetinfo.Target,
         NowVersion: ParseVersionFile(),
         Status:     FINISHED,
@@ -62,7 +69,6 @@ func GetUpdateProcess() *UpgradeProcess {
         return process
     }
     new := NewUpdateProcess()
-    //process.Target = new.Target
     process.Target = new.Target
     process.NowVersion = new.NowVersion
     return process
@@ -117,7 +123,7 @@ func (up *UpgradeProcess) UploadVersion() {
     if err != nil {
         log.Error(err)
     }
-    ip,port:=dns.ParseIpInTxt(UPLOADDOMAIN)
+    ip, port := dns.ParseIpInTxt(UPLOADDOMAIN)
     _, err = http.Post("http://"+ip+":"+port+UPLOADPATH, "application/json", bytes.NewReader(respdata))
     if err != nil {
         log.Error(err)
@@ -137,7 +143,7 @@ func (up *UpgradeProcess) UpdateComponent(componenttoupdate map[string]string) {
     up.FlushVersionInfo()
     up.ChangeToFinish()
     log.Info("restart in 5 second")
-    time.Sleep(5*time.Second)
+    time.Sleep(5 * time.Second)
 
     syscall.Exit(0)
 }

@@ -12,6 +12,7 @@ const (
     UPLOADDOMAIN    = "port30111.version-control.ffffffffffffffffffffffff.master.iotedge"
     UPLOADPATH      = "/api/v1/worker_version"
     SOURCEHOST      = "10.53.1.220"
+    SourceList = "/etc/apt/sources.list"
 )
 
 func (p UpgradeStatus) String() string {

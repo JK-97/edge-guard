@@ -256,12 +256,23 @@ func ParseIpInTxt(url string) (string, string) {
 }
 
 
-func DnsmasqConfCheck(){
+func CheckDnsmasqConf() bool{
+    flag :=0
+    currentdeive,err:=device.GetDevice()
+    utils.CheckErr(err)
     rawData,err:=ioutil.ReadFile(HostsFile)
     utils.CheckErr(err)
     lines:=strings.Split(string(rawData),"\n")
     for _,line :=range lines{
-        strings.Contains(line,MasterHostName)
+        if  strings.Contains(line,MasterHostName)||strings.Contains(line,IotedgeHostName)||strings.Contains(line,LocalHostName)||strings.Contains(line,"worker-"+currentdeive.WorkerID){
+            flag+=1
+        }
+        
+    }
+    if flag ==4{
+        return true
+    }else {
+        return false
     }
     
 }
