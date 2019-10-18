@@ -31,6 +31,9 @@ var BinFilesMAP = map[string]string{
     "db":"/edge/mnt/db/bin/db",
     "mcuserver":"/edge/tools/mcutools/mcuserver/bin/mcuserver",
     "telegraf":"/edge/monitor/telegraf/bin/telegraf",
+    "jxserving":"/jxserving/run.py",
+    "filelistener":"/edge/tools/nodetools/filelistener/bin/filelistener",
+    "cleaner":"/edge/tools/nodetools/cleaner/bin/cleaner",
 }
 
 
@@ -41,4 +44,5 @@ var DependsFile = []string{
     "docker-compose",
     "aptitude",
     "dnsmasq",
+
 }

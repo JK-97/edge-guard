@@ -16,6 +16,7 @@ package cmd
 
 import (
     "fmt"
+    "jxcore/lowapi/dns"
     "jxcore/lowapi/docker"
     "jxcore/lowapi/utils"
     "net/http"
@@ -64,7 +65,7 @@ to quickly create a Cobra application.`,
             }
 
         }
-        fmt.Print(SetColor("Step TwO\n", 0, 0, TextBlue))
+        fmt.Print(SetColor("Step Two\n", 0, 0, TextBlue))
         fmt.Print(SetColor("****************Check the SDK****************\n", 0, 0, TextBlue))
         exec.Command("/bin/bash","-c","export LC_ALL=C")
         out, err := exec.Command("/bin/bash", "-c", "pip3 freeze | grep edgebox").Output()
@@ -74,6 +75,7 @@ to quickly create a Cobra application.`,
         } else {
             fmt.Print(SetColor("UNINSTALLED edgenode sdk"+"\n", 0, 0, TextYellow))
         }
+        fmt.Print(SetColor("Step Three\n", 0, 0, TextBlue))
         fmt.Print(SetColor("*********Check the docker container**********\n", 0, 0, TextBlue))
         dockerInstance := docker.NewClient()
         dockerImages, err := dockerInstance.ImagesList()
@@ -96,7 +98,9 @@ to quickly create a Cobra application.`,
             }
 
         }
-        fmt.Print(SetColor("Step Three\n", 0, 0, TextBlue))
+        
+        
+        fmt.Print(SetColor("Step Four\n", 0, 0, TextBlue))
         fmt.Print(SetColor("************Check network status*************\n", 0, 0, TextBlue))
         err = exec.Command("ping", "baidu.com", "-c", "1", "-W", "5").Run()
         if err != nil {
@@ -104,7 +108,18 @@ to quickly create a Cobra application.`,
         } else {
             fmt.Print(SetColor("NETWORKER CHECK STATUS OK \n", 0, 0, TextGreen))
         }
-        fmt.Print(SetColor("Step Four\n", 0, 0, TextBlue))
+        
+        
+        
+        fmt.Print(SetColor("Step Five\n", 0, 0, TextBlue))
+        fmt.Print(SetColor("***************Check Dns config**************\n", 0, 0, TextBlue))
+        if dns.CheckDnsmasqConf(){
+            fmt.Print(SetColor("DNS CONFIG CHECK OK \n", 0, 0, TextGreen))
+        }else {
+            fmt.Print(SetColor("DNS CONFIG CHECK BAD \n", 0, 0, TextRed))
+        }
+      
+        fmt.Print(SetColor("Step Six\n", 0, 0, TextBlue))
         fmt.Print(SetColor("******Check component operation status********\n", 0, 0, TextBlue))
         if out, _ := exec.Command("/bin/bash", "-c", "ps -ef | grep \"jxcore serve\" | grep -v grep | awk '{print $2}'").Output(); len(out) != 0 {
             fmt.Print(SetColor("has detect the jxcore running"+"\n", 0, 0, TextGreen))
