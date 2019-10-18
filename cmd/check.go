@@ -67,8 +67,7 @@ to quickly create a Cobra application.`,
         }
         fmt.Print(SetColor("Step Two\n", 0, 0, TextBlue))
         fmt.Print(SetColor("****************Check the SDK****************\n", 0, 0, TextBlue))
-        exec.Command("export"," LC_ALL=C").Run()
-        out, err := exec.Command("/bin/bash", "-c", "pip3 freeze | grep edgebox").Output()
+        out, err := exec.Command("/bin/bash", "-c", "export LC_ALL=C && pip3 freeze | grep edgebox").Output()
         utils.CheckErr(err)
         if strings.Contains(string(out), "edgebox==") {
             fmt.Print(SetColor("INSTALLED   edgenode sdk"+"\n", 0, 0, TextGreen))
