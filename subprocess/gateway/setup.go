@@ -10,7 +10,7 @@ import (
 
 var (
 	workingDir string = "/data/local/gateway"
-	configPath string = "/edge/gateway/bin/gateway.cfg"
+	configPath string = "/edge/jxcore/bin/gateway.cfg"
 )
 
 // Setup 配置 Gateway

@@ -17,8 +17,10 @@ package cmd
 
 import (
     "bufio"
+    "encoding/json"
     "fmt"
     "github.com/spf13/cobra"
+    "io/ioutil"
     "jxcore/core/device"
     "jxcore/core/register"
     log "jxcore/go-utils/logger"
@@ -122,11 +124,21 @@ to quickly create a Cobra application.`,
 
         initcmd := exec.Command("touch", "/edge/init")
         initcmd.Run()
-
-        log.Info("Register to ", authHost)
-
-        CurrentDevice, err := device.GetDevice()
         
+        if _,err := os.Stat(TargetVersionFile);err!=nil{
+            rawdata,err:=ioutil.ReadFile(CurrentVersionFile)
+            utils.CheckErr(err)
+            var currentversion = map[string]string{
+                "jx-toolset":string(rawdata),
+            }
+            out,err:=json.MarshalIndent(currentversion,"","  ")
+            utils.CheckErr(err)
+            ioutil.WriteFile(TargetVersionFile,out,666)
+        }
+        
+        
+        log.Info("Register to ", authHost)
+        CurrentDevice, err := device.GetDevice()
         utils.CheckErr(err)
         CurrentDevice.BuildDeviceInfo(vpnMode, ticket, authHost)
 

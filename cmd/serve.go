@@ -27,6 +27,7 @@ import (
     "jxcore/web/route"
     "net/http"
     "os"
+    "os/exec"
 
     // 调试
     _ "net/http/pprof"
@@ -75,6 +76,9 @@ to quickly create a Cobra application.`,
         core.BaseCore()
         
         //collection log
+        if _,err = os.Stat(LogsPath);err !=nil{
+            exec.Command("mkdir","-p",LogsPath)
+        }
         //core.CollectJournal(currentdevice.WorkerID)
 
         //start up all component process

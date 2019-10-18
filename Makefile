@@ -27,6 +27,7 @@ debian: check_version build
 	cp -r $(BINDIR)/$(NAME)-$(arch) $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin/$(NAME)
 	chmod +x $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin/$(NAME)
 	cp -r settings.yaml $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin
+	cp -r gateway.cfg $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin
 	cp -r scripts/jxcore_service.sh $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin
 	cp -r doc $(PACKAGE_DIR)/$(EXTRACT_DIR)/template
 	echo $(version) > $(PACKAGE_DIR)/$(EXTRACT_DIR)/VERSION

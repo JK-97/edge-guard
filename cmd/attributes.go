@@ -1,11 +1,11 @@
 package cmd
 
 const (
-    InitPath             = "/edge/init"
-  
+    InitPath = "/edge/init"
+    LogsPath = "/edge/logs"
+    TargetVersionFile = "/etc/edgetarget"
+    CurrentVersionFile= "/edge/VERSION"
 )
-
-
 
 var DependsImages = []string{
     "registry.jiangxingai.com:5000/cadvisor:arm64v8-cpu-0.1.0",
@@ -24,18 +24,16 @@ var DependsImages = []string{
     "edgexfoundry/docker-core-command-go-arm64:1.0.1",
 }
 
-
 var BinFilesMAP = map[string]string{
-    "watchdog":"/edge/tools/mcutools/watchdog/bin/watchdog",
-    "powermanagement":"/edge/tools/mcutools/powermanagement/bin/powermanagement",
-    "db":"/edge/mnt/db/bin/db",
-    "mcuserver":"/edge/tools/mcutools/mcuserver/bin/mcuserver",
-    "telegraf":"/edge/monitor/telegraf/bin/telegraf",
-    "jxserving":"/jxserving/run.py",
-    "filelistener":"/edge/tools/nodetools/filelistener/bin/filelistener",
-    "cleaner":"/edge/tools/nodetools/cleaner/bin/cleaner",
+    "watchdog":        "/edge/tools/mcutools/watchdog/bin/watchdog",
+    "powermanagement": "/edge/tools/mcutools/powermanagement/bin/powermanagement",
+    "db":              "/edge/mnt/db/bin/db",
+    "mcuserver":       "/edge/tools/mcutools/mcuserver/bin/mcuserver",
+    "telegraf":        "/edge/monitor/telegraf/bin/telegraf",
+    "jxserving":       "/jxserving/run.py",
+    "filelistener":    "/edge/tools/nodetools/filelistener/bin/filelistener",
+    "cleaner":         "/edge/tools/nodetools/cleaner/bin/cleaner",
 }
-
 
 var DependsFile = []string{
     "docker",
@@ -44,5 +42,4 @@ var DependsFile = []string{
     "docker-compose",
     "aptitude",
     "dnsmasq",
-
 }
