@@ -24,13 +24,13 @@ func AddAptKey() {
     utils.CheckErr(err)
     lines := strings.Split(string(file), "\n")
     for _, line := range lines {
-        if strings.Contains(line, "deb [arch=arm64] http://"+ip+" stable main") {
+        if strings.Contains(line, "deb [arch=arm64] http://"+ip+"/public stable main") {
             return
         }
     }
     err = exec.Command("/bin/bash", "-c", "curl http://"+ip+"/public/gpg | sudo apt-key add -").Run()
     utils.CheckErr(err)
-    lines = append(lines, "deb [arch=arm64] http://"+ip+" stable main")
+    lines = append(lines, "deb [arch=arm64] http://"+ip+"/public stable main")
     out := strings.Join(lines, "\n")
     ioutil.WriteFile(SourceList, []byte(out), 666)
 

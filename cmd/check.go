@@ -117,7 +117,12 @@ to quickly create a Cobra application.`,
         }else {
             fmt.Print(SetColor("DNS CONFIG CHECK BAD \n", 0, 0, TextRed))
         }
-      
+        if out,_:=exec.Command("pgrep","dnsmasq").Output();out!=nil{
+            fmt.Print(SetColor("RUNNING     "+"dnsmasq"+"\n", 0, 0, TextGreen))
+        }else {
+            fmt.Print(SetColor("dnsmasq RUNNING"+"\n", 0, 0, TextYellow))
+        }
+ 
         fmt.Print(SetColor("Step Six\n", 0, 0, TextBlue))
         fmt.Print(SetColor("******Check component operation status********\n", 0, 0, TextBlue))
         if out, _ := exec.Command("/bin/bash", "-c", "ps -ef | grep \"jxcore serve\" | grep -v grep | awk '{print $2}'").Output(); len(out) != 0 {
