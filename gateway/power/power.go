@@ -9,8 +9,8 @@ import (
 	"strings"
 )
 
-// ShutdownScript 关机脚本的位置
-var ShutdownScript = "/app/bootstrap/scripts/shutdown.sh"
+// PowerCycleBin MCU 工具
+var PowerCycleBin = "/edge/tools/mcutools/powermanagement/bin/powercycle"
 
 // getBattery 获取电池电量信息
 func getBattery() int {
@@ -39,7 +39,7 @@ func getBattery() int {
 }
 
 // SystemPowerOff 关机
-func SystemPowerOff(wakeTime int) {
+func SystemPowerOff(delayTime, wakeTime int) {
 
 	wakeTime *= 2
 
@@ -50,12 +50,10 @@ func SystemPowerOff(wakeTime int) {
 		shell = "/bin/sh"
 	}
 
-	cmd := exec.Command(shell, ShutdownScript, strconv.Itoa(wakeTime))
-	err := cmd.Start()
+	cmd := exec.Command(PowerCycleBin, strconv.Itoa(delayTime), strconv.Itoa(wakeTime))
+	err := cmd.Run()
 	if err != nil {
 		log.Println(err)
-	} else {
-		defer cmd.Wait()
 	}
 }
 
@@ -80,7 +78,8 @@ const (
 	ModeAutoWithTick
 )
 
-func getStartUpMode() StartUpMode {
+// GetStartUpMode 获取开机模式
+func GetStartUpMode() StartUpMode {
 	file, err := os.Open(startUpModePath)
 	if err != nil {
 		return 0
