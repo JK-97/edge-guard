@@ -8,11 +8,10 @@ monitor:
 tools:
   mcutools:
     watchdog: true
-    powermanagement: true
     mcuserver: true
   nodetools:
-#    cleaner: true
-#    usblistener: true
+    #    cleaner: true
+    #    usblistener: true
     filelistener: true
 synctools:
   db: true
