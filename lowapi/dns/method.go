@@ -159,6 +159,7 @@ func UpdateMasterIPToHosts(masterip string) {
 func FindMasterFromHostFile() string {
 	f, err := os.Open(HostsFile)
 	if err != nil {
+		utils.CheckErr(err)
 		return ""
 	}
 	defer f.Close()
@@ -175,14 +176,27 @@ func FindMasterFromHostFile() string {
 
 // OnVPNConnetced VPN 连接成功后执行
 func OnVPNConnetced() {
-	currentdevice, err := device.GetDevice()
-	utils.CheckErr(err)
+}
 
-	masterip := FindMasterFromHostFile()
-	if masterip == "" {
-		return
+// updateConsulConfig 更新 Consul 配置
+func updateConsulConfig(currentdevice *device.Device) {
+	config := consulConfig{
+		Server:           true,
+		ClientAddr:       "0.0.0.0",
+		AdvertiseAddrWan: network.GetClusterIP(),
+		BootstrapExpect:  1,
+		Datacenter:       "worker-" + currentdevice.WorkerID,
+		NodeName:         "worker-" + currentdevice.WorkerID,
+		RetryJoinWan:     []string{MasterHostName},
+		UI:               true,
 	}
-	// 生成conf
+	if buf, err := json.Marshal(config); err == nil {
+		ioutil.WriteFile(consulConfigPath, buf, 0666)
+	}
+}
+
+// updateTelegrafConfig 更新 Telegraf 和 InfluxDB 配置
+func updateTelegrafConfig(currentdevice *device.Device, masterip string) {
 	template.Telegrafcfg(masterip, currentdevice.WorkerID)
 	var VpnIP string
 	//确保4g 或 以太有一个起来的情况下
@@ -194,7 +208,6 @@ func OnVPNConnetced() {
 	if VpnIP != "" {
 		template.Statsitecfg(masterip, VpnIP)
 	}
-
 }
 
 // OnMasterIPChanged master IP 变化后执行
@@ -203,20 +216,10 @@ func OnMasterIPChanged(masterip string) {
 	utils.CheckErr(err)
 
 	if utils.Exists(consulConfigPath) {
-		config := consulConfig{
-			Server:           true,
-			ClientAddr:       "0.0.0.0",
-			AdvertiseAddrWan: network.GetClusterIP(),
-			BootstrapExpect:  1,
-			Datacenter:       "worker-" + currentdevice.WorkerID,
-			NodeName:         "worker-" + currentdevice.WorkerID,
-			RetryJoinWan:     []string{MasterHostName},
-			UI:               true,
-		}
-		if buf, err := json.Marshal(config); err == nil {
-			ioutil.WriteFile(consulConfigPath, buf, 0666)
-		}
+		updateConsulConfig(currentdevice)
 	}
+
+	updateTelegrafConfig(currentdevice, masterip)
 }
 
 // AppendHostnameHosts 将更新后的 hostsname 写入 hosts 文件
@@ -235,7 +238,7 @@ func AppendHostnameHosts(workerid string) {
 		}
 	}
 
-	var hostnameresolv = "\n" + hostnameRecord + "\n"
+	var hostnameresolv = "\n" + hostnameRecord + "\n 127.0.0.1 " + workerid
 	f, err := os.OpenFile(HostsFile, os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		log.Error(err)
