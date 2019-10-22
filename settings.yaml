@@ -1,25 +1,21 @@
 #cri: true
 monitor:
-#  telegraf: true
+  telegraf: true
 #devicemanagement:
 #  camera: true
 #  rs485: true
 #  aiserving: true
 tools:
-#  nettools:
-#    ifplugd: true
-#  mcutools:
-#    watchdog: true
-#    powermanagement: true
-#    mcuserver: true
+  mcutools:
+    watchdog: true
+    powermanagement: true
+    mcuserver: true
   nodetools:
 #    cleaner: true
 #    usblistener: true
-   filelistener: true
-#synctools:
-#  vpn: true
-#  db: true
-#  tsdb: true
-#  mq: true
-#  fs: true
-#  config: true
+    filelistener: true
+synctools:
+  db: true
+  tsdb: true
+  mq: true
+  fs: true

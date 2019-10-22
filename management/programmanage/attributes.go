@@ -1,7 +1,7 @@
 package programmanage
 
 const (
-	DependOnBase string = ""
+	DependOnBase string = "depends=Jxserving"
 )
 
 var ProgramMconfig = `[supervisord]
@@ -12,7 +12,7 @@ loglevel=info
 pidfile=/tmp/supervisord.pid
 `
 
-var BaseDepend = ``
+var BaseDepend = Jxserving
 
 var filelistener = `[program:filelistener]
 #directory=/edge/tools/nodetools/filelistener/bin/
