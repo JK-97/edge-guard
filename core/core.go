@@ -80,6 +80,7 @@ func (j JxCore) UpdateCore(timeout int) {
 	for !network.CheckMasterConnect() {
 		time.Sleep(3 * time.Second)
 		log.Info("Waiting for master connect")
+		dns.RestartDnsmasq()
 	}
 	log.Info("Master Connect")
 	if dns.CheckDnsmasqConf() {

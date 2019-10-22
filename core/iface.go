@@ -43,6 +43,11 @@ func SetUp() {
 	checkUSBEnable()
 }
 
+const (
+	testServer = "114.114.114.114"
+	testPort   = 53
+)
+
 // 检测 USB 网卡是否可用
 func checkUSBEnable() {
 
@@ -61,7 +66,7 @@ func checkUSBEnable() {
 
 	enableUSB()
 
-	if tcping("114.114.114.114", 53) {
+	if tcping(testServer, testPort) {
 		usbNetworkReachable = true
 	} else {
 		// if netlink.LinkByName()
@@ -69,7 +74,7 @@ func checkUSBEnable() {
 	enableEthernet()
 
 	// 有线网卡不通
-	if !tcping("114.114.114.114", 53) {
+	if !tcping(testServer, testPort) {
 		enableUSB()
 	}
 }
@@ -174,7 +179,7 @@ func tcping(s string, port int) bool {
 	addr := net.JoinHostPort(s, portStr)
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
-		log.Error(err)
+		log.Info("Error", err)
 		return false
 	}
 	defer conn.Close()
@@ -183,7 +188,7 @@ func tcping(s string, port int) bool {
 
 	err = tcpConn.CloseWrite()
 	if err != nil {
-		log.Error(err)
+		log.Info("Error", err)
 		return false
 	}
 
