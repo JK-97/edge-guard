@@ -6,20 +6,16 @@ monitor:
 #  rs485: true
 #  aiserving: true
 tools:
-#  nettools:
-#    ifplugd: true
-#  mcutools:
+  mcutools:
     watchdog: true
     powermanagement: true
     mcuserver: true
   nodetools:
 #    cleaner: true
 #    usblistener: true
-   filelistener: true
-#synctools:
-#  vpn: true
+    filelistener: true
+synctools:
   db: true
-#  tsdb: true
+  tsdb: true
   mq: true
-#  fs: true
-#  config: true
+  fs: true
