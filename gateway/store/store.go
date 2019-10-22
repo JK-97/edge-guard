@@ -2,9 +2,11 @@ package store
 
 import (
 	// "log"
+	"os"
 	"sync"
 
 	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb/util"
 
 	"jxcore/gateway/log"
@@ -76,7 +78,20 @@ func NewLevelDBStore(file string) *LevelDBStore {
 // Open 打开DB文件
 func (s *LevelDBStore) Open() error {
 	db, err := leveldb.OpenFile(s.File, nil)
+	if err != nil {
+		if errors.IsCorrupted(err) {
+			if err = os.RemoveAll(s.File); err != nil {
+				return err
+			}
+			db, err = leveldb.OpenFile(s.File, nil)
+			s.DB = db
+		} else {
+
+		}
+		return err
+	}
 	s.DB = db
+
 	return err
 }
 
