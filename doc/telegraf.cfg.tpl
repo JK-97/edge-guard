@@ -1295,12 +1295,15 @@
 #                            INPUT PLUGINS                                    #
 ###############################################################################
 
+
 # Read metrics about battery info
 [[inputs.jx_battery]]
   ## Read battery file path
-  battery_path = "/home/admin/uevent"
+  battery_path = "/sys/class/power_supply/bq3060-bat/uevent"
   ## Indicate if everything is fine
   ok = true
+
+
 
 # Read metrics about cpu usage
 [[inputs.cpu]]

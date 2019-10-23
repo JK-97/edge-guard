@@ -6,7 +6,7 @@ import (
 )
 
 func GetJxConfig() (config string) {
-	return ProgramMconfig + ProgramSetting // +BaseDepend
+	return ProgramMconfig + ProgramSetting  +BaseDepend
 }
 
 func GetBaseConfig() (config string) {
