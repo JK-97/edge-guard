@@ -195,9 +195,10 @@ func updateConsulConfig(currentdevice *device.Device) {
 	}
 }
 
-// updateTelegrafConfig 更新 Telegraf 和 InfluxDB 配置
+// updateTelegrafConfig 更新 Telegraf 和 InfluxDB ,cadvisor配置
 func updateTelegrafConfig(currentdevice *device.Device, masterip string) {
 	template.Telegrafcfg(masterip, currentdevice.WorkerID)
+	template.Cadvisorcfg(masterip, currentdevice.WorkerID)
 	var VpnIP string
 	//确保4g 或 以太有一个起来的情况下
 	if _, erreth0 := network.GetMyIP("eth0"); erreth0 == nil {

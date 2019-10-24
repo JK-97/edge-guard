@@ -12,7 +12,7 @@ loglevel=info
 pidfile=/tmp/supervisord.pid
 `
 
-var BaseDepend = Jxserving
+var BaseDepend = Jxserving+Cadvisor
 
 var filelistener = `[program:filelistener]
 #directory=/edge/tools/nodetools/filelistener/bin/
@@ -267,6 +267,23 @@ stderr_logfile_backups=10
 stderr_capture_maxbytes=0
 stderr_events_enabled=false
 `
+
+var Cadvisor = `[program:Cadvisor]
+command=docker-compose -f /jxbootstrap/worker/docker-compose.d/cadvisor/docker-compose.yaml up 
+process_name=%(program_name)s
+numprocs=1
+autostart=true
+startsecs=3
+startretries=3
+autorestart=true
+exitcodes=0,2
+stopsignal=TERM
+stopwaitsecs=10
+stopasgroup=true
+killasgroup=true
+user=root
+`
+
 var ProgramCfgMap = map[string]string{
 	"Filelistener": filelistener,
 	"Telegraf":     telegraf,
@@ -277,6 +294,7 @@ var ProgramCfgMap = map[string]string{
 	"Mq":           Mq,
 	"Jxserving":    Jxserving,
 	"Cleaner":      Cleaner,
+	"Cadvisor":     Cadvisor,
 }
 
 var ProgramSetting = ``
