@@ -36,6 +36,9 @@ func (j *JxCore) BaseCore() {
 	utils.CheckErr(err)
 	yaml.ParseAndCheck(startupProgram, "")
 
+	if startupProgram.FixedResolver != "" {
+		dns.LockResolver(startupProgram.FixedResolver)
+	}
 }
 
 //control the base version
@@ -44,12 +47,16 @@ func (j *JxCore) ProCore() {
 	var mymasterip string
 	currentedvice, err := device.GetDevice()
 	utils.CheckErr(err)
+	logger := log.WithFields(log.Fields{"Method": "ProCore"})
 
+	logger.Debug("Check USB Network")
 	SetUp()
 	if usbNetworkReachable {
+		logger.Debug("USB Network Reachable")
 		done := make(chan struct{})
 		go linkSubscribe(done)
 	}
+	logger.Debug("After Check USB Network")
 
 	for {
 		dns.CheckResolvFile()

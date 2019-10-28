@@ -10,3 +10,8 @@ const (
 
 	consulConfigPath string = "/data/edgex/consul/config/consul_conf.json"
 )
+
+// 全局变量
+var (
+	FixedResolver string = "" // 指定的固定 dns
+)

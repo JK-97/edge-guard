@@ -15,7 +15,7 @@ var PowerCycleBin = "/edge/tools/mcutools/powermanagement/bin/powercycle"
 // getBattery 获取电池电量信息
 func getBattery() int {
 	if batteryEventPath == "" {
-		batteryEventPath = "/sys/class/power_supply/bq3060-bat"
+		batteryEventPath = "/sys/class/power_supply/bq3060-bat/uevent"
 	}
 
 	file, err := os.Open(batteryEventPath)

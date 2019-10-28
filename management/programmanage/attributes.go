@@ -1,7 +1,7 @@
 package programmanage
 
 const (
-	DependOnBase string = "depends=Jxserving"
+	DependOnBase string = ""
 )
 
 var ProgramMconfig = `[supervisord]
@@ -12,7 +12,7 @@ loglevel=info
 pidfile=/tmp/supervisord.pid
 `
 
-var BaseDepend = Jxserving+Cadvisor
+var BaseDepend = ""
 
 var filelistener = `[program:filelistener]
 #directory=/edge/tools/nodetools/filelistener/bin/
@@ -289,12 +289,12 @@ var ProgramCfgMap = map[string]string{
 	"Telegraf":     telegraf,
 	"Db":           Db,
 	"Fs":           Fs,
-	"Mcuserver":    Mcuserver,
-	"Watchdog":     Watchdog,
-	"Mq":           Mq,
-	"Jxserving":    Jxserving,
-	"Cleaner":      Cleaner,
-	"Cadvisor":     Cadvisor,
+	// "Mcuserver":    Mcuserver,
+	// "Watchdog":     Watchdog,
+	"Mq": Mq,
+	// "Jxserving": Jxserving,
+	"Cleaner": Cleaner,
+	// "Cadvisor":  Cadvisor,
 }
 
 var ProgramSetting = ``

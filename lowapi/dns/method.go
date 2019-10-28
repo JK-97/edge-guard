@@ -81,7 +81,12 @@ func ResolvGuard() {
 			}
 			if pos := strings.Index(rawLine, "nameserver"); pos != -1 {
 				log.Info(pos)
-				server := strings.TrimSpace(rawLine[pos+10:])
+				var server string
+				if FixedResolver == "" {
+					server = strings.TrimSpace(rawLine[pos+10:])
+				} else {
+					server = FixedResolver
+				}
 				f.WriteString("server=" + server + "\n")
 			}
 		}
@@ -257,6 +262,9 @@ func ParseIpInTxt(url string) (string, string) {
 		log.Error(err)
 		log.Info("Possible DNS configuration error")
 	}
+	if len(txtRecords) == 0 {
+		return "", ""
+	}
 	//for _,txt :=range txtRecords{
 	//    log.Info(txt)
 	//}
@@ -264,6 +272,7 @@ func ParseIpInTxt(url string) (string, string) {
 	return res[0], res[1]
 }
 
+// CheckDnsmasqConf 检查 dnsmasq 的 hosts 文件
 func CheckDnsmasqConf() bool {
 	flag := 0
 	currentdeive, err := device.GetDevice()
@@ -272,19 +281,21 @@ func CheckDnsmasqConf() bool {
 	utils.CheckErr(err)
 	lines := strings.Split(string(rawData), "\n")
 	for _, line := range lines {
-		if strings.Contains(line, MasterHostName) || strings.Contains(line, IotedgeHostName) || strings.Contains(line, LocalHostName) || strings.Contains(line, "worker-"+currentdeive.WorkerID) {
-			flag += 1
+		if strings.Contains(line, MasterHostName) {
+			flag++
+		} else if strings.Contains(line, IotedgeHostName) {
+			flag++
+		} else if strings.Contains(line, LocalHostName) {
+			flag++
+		} else if strings.Contains(line, "worker-"+currentdeive.WorkerID) {
+			flag++
 		}
-
 	}
-	if flag == 4 {
-		return true
-	} else {
-		return false
-	}
+	return flag >= 3
 
 }
 
+// CheckResolvFile 检测 resolv 文件
 func CheckResolvFile() {
 	// TODO check /etc/resolv.conf exists
 	if _, err := os.Stat(ResolvFile); err == nil {
@@ -297,4 +308,12 @@ func CheckResolvFile() {
 		time.Sleep(3 * time.Second)
 	}
 
+}
+
+// LockResolver 锁定 DNS
+func LockResolver(resolver string) {
+	log.Info("Lock dns server to ", resolver)
+	FixedResolver = strings.TrimSpace(resolver)
+
+	ResolvGuard()
 }

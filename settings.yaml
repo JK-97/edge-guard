@@ -6,9 +6,9 @@ monitor:
 #  rs485: true
 #  aiserving: true
 tools:
-  mcutools:
-    watchdog: true
-    mcuserver: true
+  # mcutools:
+  #   watchdog: true
+  #   mcuserver: true
   nodetools:
     #    cleaner: true
     #    usblistener: true
@@ -18,3 +18,5 @@ synctools:
   tsdb: true
   mq: true
   fs: true
+
+fixedresolver: ""
