@@ -1,24 +1,47 @@
 package version
 
 import (
-    "fmt"
+	"fmt"
     "runtime"
+    "strings"
 )
 
-// GitCommit The git commit that was compiled. This will be filled in by the compiler.
-var GitCommit string
+var (
+	GitCommit = "unknown"
+	Version   = "unknown"
+    BuildDate = "unknown"
+    GitStatus = "unknown"
+	GoVersion = runtime.Version()
+    Type      = Pro
+	OsArch = fmt.Sprintf("%s %s", runtime.GOOS, runtime.GOARCH)
+)
 
-// Version The main version number that is being run at the moment.
-var Version = "1.0.0"
 
-// Type 
-var Type = Pro
 
-// BuildDate 编译日期
-var BuildDate = "2019.08.23"
+// 返回单行格式
+func StringifySingleLine() string {
+	return fmt.Sprintf("GitCommitLog=%s. GitStatus=%s. BuildTime=%s. GoVersion=%s. runtime=%s.",
+    GitCommit, GitStatus, BuildDate, GoVersion, OsArch)
+}
 
-// GoVersion Go version
-var GoVersion = runtime.Version()
+// 返回多行格式
+func StringifyMultiLine() string {
+	return fmt.Sprintf("GitCommitLog=%s\nGitStatus=%s\nBuildTime=%s\nGoVersion=%s\nruntime=%s\n",
+    GitCommit, GitStatus, BuildDate, GoVersion, OsArch)
+}
 
-// OsArch 架构
-var OsArch = fmt.Sprintf("%s %s", runtime.GOOS, runtime.GOARCH)
+// 对一些值做美化处理
+func beauty() {
+	if GitStatus == "" {
+		// GitStatus 为空时，说明本地源码与最近的 commit 记录一致，无修改
+		// 为它赋一个特殊值
+		GitStatus = "cleanly"
+	} else {
+		// 将多行结果合并为一行
+		GitStatus = strings.Replace(strings.Replace(GitStatus, "\r\n", " |", -1), "\n", " |", -1)
+	}
+}
+
+func init() {
+	beauty()
+}
