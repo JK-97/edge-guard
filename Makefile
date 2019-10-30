@@ -52,7 +52,7 @@ debian_base:
 	cp -r doc $(PACKAGE_DIR)/$(EXTRACT_DIR)/template
 	cp -r DEBIAN $(PACKAGE_DIR)/DEBIAN/
 
-debian: check_version build debian_base
+debian: check_version build debian_base changelog
 	cp  $(CHANGELOG) $(PACKAGE_DIR)/$(EXTRACT_DIR)/CHANGELOG.md
 	echo $(version) > $(PACKAGE_DIR)/$(EXTRACT_DIR)/VERSION
 	sed -e "s/REPLACE_VERSION/$(version)/g" \
