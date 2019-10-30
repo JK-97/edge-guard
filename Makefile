@@ -42,7 +42,6 @@ upload_changelog: changelog
 	curl -s --fail -F "changelog=@$(CHANGELOG)" "http://packages.debian.jiangxingai.com:8000/api/v1/packages/$(PACKAGE_NAME)/changelog"
 
 debian_base:
-	rm -r $(PACKAGE_DIR)
 	mkdir -p $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin
 	cp -r $(BINDIR)/$(NAME)-$(arch) $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin/$(NAME)
 	chmod +x $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin/$(NAME)
