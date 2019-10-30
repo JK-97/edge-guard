@@ -40,16 +40,18 @@ build:
     paths:
       - .cache
   stage: build
+  environment:
+    name: package
+    url: http://packages.debian.jiangxingai.com
   script:
     - make clean
     - make debian arch=amd64
     - make debian arch=arm64
-  artifacts:
-    paths:
-      - build/*
-    expire_in: 1 day
+    - make push_to_source
   only:
     - /^v[0-9](?:\.[0-9]){2,3}/
+  except:
+    - branches
 
 prerelease:
   stage: prerelease
