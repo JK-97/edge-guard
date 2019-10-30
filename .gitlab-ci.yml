@@ -1,32 +1,45 @@
 image: "golang:latest"
 
 variables:
-  GO111MODULE: "off"
-  GOPROXY: "https://mirrors.aliyun.com/goproxy/"
+  GO111MODULE: "on"
+  # GOPROXY: "https://mirrors.aliyun.com/goproxy/"
 
 stages:
+  - review
   - build
-  - deploy
+  - prerelease
 
+before_script:
+  - sed -i 's/http:\/\/gitlab\.jiangxingai\.com/..\/../' .gitmodules
+  - git submodule sync --recursive
+  - git submodule update --init --recursive
+
+  # cache needs to be inside $CI_PROJECT_DIR
+  - mkdir -p .cache
+  - export GOPATH="$CI_PROJECT_DIR/.cache"
+
+review:
+  stage: review
+  environment:
+    name: develop
+    url: http://10.53.1.220
+  
+  script:
+    - make clean
+    - make debian_rc arch=amd64
+    - make debian_rc arch=arm64
+    - make push_to_source
+    - make deploy_rc
+  only:
+    - /^rc-/
+  except:
+    - branches
+  
 build:
   cache:
     paths:
       - .cache
   stage: build
-  before_script:
-    - sed -i 's/http:\/\/gitlab\.jiangxingai\.com/..\/../' .gitmodules
-    - git submodule sync --recursive
-    - git submodule update --init --recursive
-
-      # cache needs to be inside $CI_PROJECT_DIR
-    - mkdir -p .cache
-    - export GOPATH="$CI_PROJECT_DIR/.cache"
-
-    - export WORKDIR=$GOPATH/src/jxcore
-    - mkdir -p $GOPATH/src
-    - rm -rf $WORKDIR
-    - ln -s $CI_PROJECT_DIR $WORKDIR
-    - cd $WORKDIR
   script:
     - make clean
     - make debian arch=amd64
@@ -38,13 +51,12 @@ build:
   only:
     - /^v[0-9](?:\.[0-9]){2,3}/
 
-deploy:
-  stage: deploy
-  environment:
-    name: package
-    url: https://packages.debian.jiangxingai.com
+prerelease:
+  stage: prerelease
   script:
-    - make push_to_source
-    
+    - make deploy_prerelease
+    - make upload_changelog
   only:
     - /^v[0-9](?:\.[0-9]){2,3}/
+  except:
+    - branches
