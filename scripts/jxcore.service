@@ -1,0 +1,10 @@
+[Unit]
+Description=Powerful jxcore
+
+[Service]
+Type=forking
+Restart=always
+ExecStart=/edge/jxcore/bin/jxcore serve --config=/edge/jxcore/bin/settings.yaml
+
+[Install]
+WantedBy=multi-user.target
