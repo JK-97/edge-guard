@@ -34,3 +34,4 @@ jxcore*
 /version/version_impl.go
 build/
 /dhclient*
+!jxcore.service
