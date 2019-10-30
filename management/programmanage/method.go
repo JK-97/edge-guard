@@ -1,16 +1,26 @@
 package programmanage
 
 import (
-    log "jxcore/go-utils/logger"
+	log "jxcore/go-utils/logger"
 	"strings"
 )
 
 func GetJxConfig() (config string) {
-	return ProgramMconfig + ProgramSetting // +BaseDepend
+	return ProgramMconfig + ProgramSetting + BaseDepend
 }
 
 func GetBaseConfig() (config string) {
 	return ProgramMconfig
+}
+
+// GetMucConfig 获取 mcu 相关程序的配置
+func GetMucConfig() string {
+	return Watchdog + Mcuserver
+}
+
+// GetJxserving 获取 jxserving 配置
+func GetJxserving() string {
+	return Jxserving
 }
 
 func AddToStart(programName string) {
@@ -35,7 +45,7 @@ func AddDependStart(programName string) {
 
 		ProgramSetting = ProgramSetting + ProgramCfgDepended
 	} else {
-		log.Info("Missibg "+programName + " config,maybe jxcore low version")
+		log.Info("Missibg " + programName + " config,maybe jxcore low version")
 	}
 
 }

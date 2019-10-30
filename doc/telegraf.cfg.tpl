@@ -1295,12 +1295,15 @@
 #                            INPUT PLUGINS                                    #
 ###############################################################################
 
+
 # Read metrics about battery info
 [[inputs.jx_battery]]
   ## Read battery file path
-  battery_path = "/home/admin/uevent"
+  battery_path = "/sys/class/power_supply/bq3060-bat/uevent"
   ## Indicate if everything is fine
   ok = true
+
+
 
 # Read metrics about cpu usage
 [[inputs.cpu]]
@@ -1923,17 +1926,19 @@
 #   # insecure_skip_verify = false
 
 
+
+
 # # Read metrics from one or more commands that can output to stdout
-# [[inputs.exec]]
+[[inputs.exec]]
 #   ## Commands array
-#   commands = [
+  commands = ["sh /edge/monitor/telegraf/bin/collect_temp.sh"]
 #     "/tmp/test.sh",
 #     "/usr/bin/mycollector --foo=bar",
 #     "/tmp/collect_*.sh"
-#   ]
+#  ]
 #
 #   ## Timeout for each command to complete.
-#   timeout = "5s"
+  timeout = "5s"
 #
 #   ## measurement name suffix (for separating different commands)
 #   name_suffix = "_mycollector"
@@ -1942,7 +1947,9 @@
 #   ## Each data format has its own unique set of configuration options, read
 #   ## more about them here:
 #   ## https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_INPUT.md
-#   data_format = "influx"
+  data_format = "influx"
+
+
 
 
 # # Read metrics from fail2ban.

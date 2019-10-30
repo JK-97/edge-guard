@@ -17,7 +17,6 @@ var DependsImages = []string{
     "registry.jiangxingai.com:5000/consul:arm64v8_cpu_1.5.3",
     "edgexfoundry/docker-edgex-volume-arm64:1.0.0",
     "edgexfoundry/docker-core-config-seed-go-arm64:1.0.0",
-    "docker-support-logging-go-arm64:1.0.1",
     "edgexfoundry/docker-support-logging-go-arm64:1.0.1",
     "edgexfoundry/docker-core-metadata-go-arm64:1.0.1",
     "edgexfoundry/docker-core-data-go-arm64:1.0.1",

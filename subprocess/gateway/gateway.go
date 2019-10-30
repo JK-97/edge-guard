@@ -165,6 +165,7 @@ func appendDynamicServiceRouter(r *mux.Router) {
 // appendPowerRouter 添加电源相关的路由
 func appendPowerRouter(r *mux.Router) {
 	r.Path("/api/v1/power/off").Methods(http.MethodPost).HandlerFunc(serve.PowerOffHTTP)
+	r.Path("/api/v1/power/mode").HandlerFunc(serve.StartUpMode)
 }
 
 // appendConfigAgentRouter 添加 Config Agent 相关的路由

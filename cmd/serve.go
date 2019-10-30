@@ -15,24 +15,28 @@
 package cmd
 
 import (
-    "io/ioutil"
-    "jxcore/config"
-    "jxcore/core"
-    "jxcore/core/device"
-    log "jxcore/go-utils/logger"
-    "jxcore/lowapi/utils"
-    "jxcore/subprocess"
-    "jxcore/subprocess/gateway"
-    "jxcore/version"
-    "jxcore/web/route"
-    "net/http"
-    "os"
-    "os/exec"
+	"io/ioutil"
+	"jxcore/config"
+	"jxcore/core"
+	"jxcore/core/device"
+	log "jxcore/go-utils/logger"
+	"jxcore/lowapi/dns"
+	"jxcore/lowapi/utils"
+	"jxcore/subprocess"
+	"jxcore/subprocess/gateway"
+	"jxcore/version"
+	"jxcore/web/route"
+	"net/http"
+	"os"
+	"os/exec"
+	"strconv"
+	"sync"
 
-    // 调试
-    _ "net/http/pprof"
+	// 调试
+	_ "net/http/pprof"
 
-    "github.com/spf13/cobra"
+	"github.com/spf13/cobra"
+	"github.com/vishvananda/netlink"
 )
 
 var start chan bool
@@ -48,65 +52,80 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-	    //Deamonize(func() {
-        //})
+		Deamonize(func() {
+			c := exec.Command("sed", "-i", "s/.*172.17.0.1/#listen/", "/etc/dnsmasq.conf")
+			c.Run()
+			dns.RestartDnsmasq()
 
-        core := core.GetJxCore()
-        go func() {
-            gateway.Setup()
-            gateway.ServeGateway()
-        }()
-        forever := make(chan interface{}, 1)
+			core := core.GetJxCore()
+			go func() {
+				gateway.Setup()
+				gateway.ServeGateway()
+			}()
+			forever := make(chan interface{}, 1)
 
-        if utils.Exists(InitPath) {
-        } else {
-            log.Fatal("please run the bootstrap before serve")
-        }
-        currentdevice, err := device.GetDevice()
-        utils.CheckErr(err)
-        log.WithFields(log.Fields{"INFO": "Device"}).Info("workerid : ", currentdevice.WorkerID)
+			if utils.Exists(InitPath) {
+			} else {
+				log.Fatal("please run the bootstrap before serve")
+			}
+			currentdevice, err := device.GetDevice()
+			utils.CheckErr(err)
+			log.WithFields(log.Fields{"INFO": "Device"}).Info("workerid : ", currentdevice.WorkerID)
 
+			go subprocess.RunMcuProcess()
 
+			once := &sync.Once{}
+			if device.GetDeviceType() == version.Pro {
+				// online version
+				go core.ProCore()
+			}
 
-        if device.GetDeviceType() == version.Pro {
-            // online version
-            go core.ProCore()
-        }
-        core.UpdateCore(30)
-        core.BaseCore()
-        
-        //collection log
-        if _,err = os.Stat(LogsPath);err !=nil{
-            exec.Command("mkdir","-p",LogsPath)
-        }
-        //core.CollectJournal(currentdevice.WorkerID)
+			ensureDocker()
+			go once.Do(func() {
+				subprocess.RunJxserving()
+			})
 
-        //start up all component process
-        go subprocess.Run()
-        log.Info("all process has run")
+			flags := cmd.Flags()
 
-        //web server
-        port, err := cmd.Flags().GetString("port")
-        if err != nil {
-            port = ":80"
-        }
-        go func() {
-            log.Info("Listen on", port)
-            log.Fatal(http.ListenAndServe(port, route.Routes()))
-            os.Exit(1)
-            forever <- nil
-        }()
-        if debug, _ := cmd.Flags().GetBool("debug"); debug {
-            go func() {
-                port := ":10880"
-                log.Info("Enable Debug Mode Listen on", port)
-                log.Fatal(http.ListenAndServe(port, nil))
-                os.Exit(1)
-                forever <- nil
-            }()
-        }
+			if noUpdate, _ := flags.GetBool("no-update"); !noUpdate {
+				core.UpdateCore(30)
+			}
+			core.BaseCore()
 
-        <-forever  
+			//collection log
+			if _, err = os.Stat(LogsPath); err != nil {
+				exec.Command("mkdir", "-p", LogsPath)
+			}
+			//core.CollectJournal(currentdevice.WorkerID)
+
+			//start up all component process
+			go subprocess.Run()
+			log.Info("all process has run")
+
+			//web server
+			port, err := flags.GetString("port")
+			if err != nil {
+				port = ":80"
+			}
+			go func() {
+				log.Info("Listen on", port)
+				log.Fatal(http.ListenAndServe(port, route.Routes()))
+				os.Exit(1)
+				forever <- nil
+			}()
+			if debug, _ := flags.GetBool("debug"); debug {
+				go func() {
+					port := ":10880"
+					log.Info("Enable Debug Mode Listen on", port)
+					log.Fatal(http.ListenAndServe(port, nil))
+					os.Exit(1)
+					forever <- nil
+				}()
+			}
+
+			<-forever
+		})
+
 	},
 }
 
@@ -116,6 +135,7 @@ func init() {
 	serveCmd.PersistentFlags().String("interface", "eth0", "gateway listen where")
 	serveCmd.PersistentFlags().String("config", "./settings.yaml", "yaml setting for component")
 	serveCmd.PersistentFlags().Bool("debug", false, "Whether to enable pprof")
+	serveCmd.PersistentFlags().Bool("no-update", false, "Whether to check for update")
 	cfg := config.Config()
 	cfg.BindPFlag("yamlsettings", serveCmd.PersistentFlags().Lookup("config"))
 	cfg.BindPFlag("interface", serveCmd.PersistentFlags().Lookup("interface"))
@@ -138,5 +158,27 @@ func applySyncTools() {
 				}
 			}
 		}
+	}
+}
+
+// ensureDocker 确保 docker 服务会启动
+func ensureDocker() {
+	var err error
+	data, err := ioutil.ReadFile("/var/run/docker.pid")
+	if err == nil {
+		pid, err := strconv.Atoi(string(data))
+		if err == nil {
+			_, err = os.FindProcess(pid)
+		}
+	}
+	if err != nil {
+		cmd := exec.Command("service", "docker", "restart")
+		cmd.Run()
+	}
+
+	if _, err = netlink.LinkByName("docker0"); err == nil {
+		cmd := exec.Command("sed", "-i", "s/#listen/listen-address=172.17.0.1/", "/etc/dnsmasq.conf")
+		cmd.Run()
+		dns.RestartDnsmasq()
 	}
 }
