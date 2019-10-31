@@ -36,7 +36,7 @@ build:
 changelog:
 	mkdir -p build
 	echo "# Changelog\n" > $(CHANGELOG)
-	git tag -l 'v*' --sort=-taggerdate --format='## %(tag) - %(taggerdate:short)%0a### Author: %(taggername) %(taggeremail)%0a%(contents)%0a' >> $(CHANGELOG)
+	TZ=UTC-8 git tag -l 'v*' --sort=-creatordate --format='## %(refname:short) - %(creatordate:iso-local)%0a### Author: %(taggername) %(taggeremail)%0a%(contents)%0a' >> $(CHANGELOG)
 
 upload_changelog: changelog
 	curl -s --fail -F "changelog=@$(CHANGELOG)" "http://packages.debian.jiangxingai.com:8000/api/v1/packages/$(PACKAGE_NAME)/changelog"
