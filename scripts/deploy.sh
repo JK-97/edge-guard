@@ -27,8 +27,9 @@ echo -e
 
 
 echo -e "Updating published local repo user_$user"
-curl -s -X PUT \
+curl -s --fail -X PUT \
   -H "Content-Type: application/json" \
-  -d "{}" \
+  -d '{"ForceOverwrite": true}' \
   "http://packages.debian.jiangxingai.com:8081/api/publish/user_$user/stable"
 echo -e
+
