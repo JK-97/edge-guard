@@ -6,12 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-    log "jxcore/go-utils/logger"
+	log "jxcore/go-utils/logger"
 	"jxcore/lowapi/utils"
 	"jxcore/version"
 	"math/rand"
 	"net/http"
+	"os/exec"
 	"runtime"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v2"
@@ -37,10 +39,32 @@ func BuildWokerID() string {
 	} else {
 		perfilx = perfilx + "01"
 	}
-	content, err := ioutil.ReadFile("/proc/cpuinfo")
+	var cpuInfoFile string = "/proc/cpuinfo"
+	var GpsInfoScript string = "python /jxbootstrap/worker/scripts/G8100_NoMCU.py CMD AT+CGSN"
+	var md5info [16]byte 
+	content, err := ioutil.ReadFile(cpuInfoFile)
 	utils.CheckErr(err)
-	md5info := md5.Sum(content[len(content)-17:])
+	if strings.Contains(string(content), "serial") {
+		md5info = md5.Sum(content[len(string(content))-17:])
+	} else {
+		for index := 0; index < 10; index++ {
+			//小概率会获得空的数据,需重试
+			gpsInfo, err := exec.Command("/bin/sh", "-c", GpsInfoScript).Output()
+			utils.CheckErr(err)
+			result := strings.ReplaceAll(string(gpsInfo), "\n", "")
+			result = strings.TrimSpace(result)
+			if len(result) >10 {
+				md5info = md5.Sum([]byte(result))
+				break
+			}
+
+		}
+	}
+
 	md5str := fmt.Sprintf("%x", md5info)
+	if len(md5str)<7{
+		panic("can't generate workerid'")
+	}
 	workerid := perfilx + md5str[len(md5str)-7:]
 	return workerid
 }

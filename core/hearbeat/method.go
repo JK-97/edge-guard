@@ -3,7 +3,7 @@ package hearbeat
 import (
 	"fmt"
 	"jxcore/core/device"
-    log "jxcore/go-utils/logger"
+	log "jxcore/go-utils/logger"
 	"jxcore/lowapi/network"
 	"jxcore/lowapi/utils"
 	"net"
@@ -22,31 +22,35 @@ func AliveReport(masterip string) {
 	vpninterface, err := network.GetMyIP(vpn)
 	utils.CheckErr(err)
 	msg = fmt.Sprintf(vpninterface + ":" + currentdevice.WorkerID)
-	conn, err := net.Dial("tcp", masterip+":30431")
-	if err != nil {
-		logger.Error("disconnect my master", err)
-	}
-	
-	defer conn.Close()
-	ticker := time.NewTicker(time.Millisecond * HeartBeatInterva)
-	select {
-	case <-ticker.C:
-
-		for index := 0; index < 5; index++ {
-			for range ticker.C {
-				_, err := conn.Write([]byte(msg))
-				if err != nil {
-					log.WithFields(log.Fields{"Operating": "AliveReport"}).Error("disconnect my master", err)
-					//心跳断联,获取新master
-					time.Sleep(3 * time.Second)
-					ticker.Stop()
-					break
-				}
-			}
-
+	for index := 0; index < 5; {
+		if err := tryToSend(masterip, msg); err != nil {
+			index++
+		} else {
+			index = 0
 		}
-		log.WithFields(log.Fields{"Operating": "AliveReport"}).Error(" will get a new master in 5 second ", err)
 	}
+	log.WithFields(log.Fields{"Operating": "AliveReport"}).Error(" will get a new master in 5 second ", err)
 	time.Sleep(5 * time.Second)
+}
 
+func tryToSend(masterip string, msg string) error {
+	conn, err := net.Dial("tcp", masterip+":30431")
+
+	defer conn.Close()
+	if err != nil {
+		log.Error("disconnect my master ", err)
+	} else {
+		ticker := time.NewTicker(time.Millisecond * HeartBeatInterva)
+		defer ticker.Stop()
+		for range ticker.C {
+			_, err = conn.Write([]byte(msg))
+			if err != nil {
+				log.WithFields(log.Fields{"Operating": "AliveReport"}).Error("disconnect my master", err)
+				//心跳断联,获取新master
+				time.Sleep(3 * time.Second)
+				break
+			}
+		}
+	}
+	return err
 }
