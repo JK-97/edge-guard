@@ -68,11 +68,12 @@ func (j *JxCore) ProCore() {
 			//获取vpn key，连接vpn
 			mymasterip, err = register.GetMyMaster(currentedvice.WorkerID, currentedvice.Key)
 			//校验新的master是否协力hossts文件
+			dns.RestartDnsmasq()
+			time.Sleep(3 * time.Second)
 			if err == nil {
 				break
 			}
 			log.Error("Register Worker Net", err)
-			time.Sleep(3 * time.Second)
 		}
 		time.Sleep(3 * time.Second)
 
@@ -87,7 +88,7 @@ func (j JxCore) UpdateCore(timeout int) {
 	for !network.CheckMasterConnect() {
 		time.Sleep(3 * time.Second)
 		log.Info("Waiting for master connect")
-		dns.RestartDnsmasq()
+		// dns.RestartDnsmasq()
 	}
 	log.Info("Master Connect")
 	if dns.CheckDnsmasqConf() {
