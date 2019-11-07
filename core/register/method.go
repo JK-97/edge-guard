@@ -13,7 +13,7 @@ import (
     "jxcore/lowapi/vpn"
     "jxcore/version"
     "net/http"
-    "os/exec"
+    // "os/exec"
     "time"
 )
 
@@ -49,7 +49,7 @@ func FindMasterFromDHCPServer(workerid string, key string) (masterip string, err
     resp, err := http.Post(url, "application/json", reqbody)
     if err != nil {
         log.Error(err, "restart dnsmasq")
-        exec.Command("service", "dnsmasq", "restart").Run()
+        dns.RestartDnsmasq()
         GetMyMaster(workerid, key)
         return
     } else if resp.StatusCode != http.StatusOK {
@@ -108,7 +108,7 @@ func FindMasterFromDHCPServer(workerid string, key string) (masterip string, err
             dns.OnMasterIPChanged(masterip)
         }
     }
-    exec.Command("service", "dnsmasq", "restart").Run()
+    dns.RestartDnsmasq()
     return
 }
 

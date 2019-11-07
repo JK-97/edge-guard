@@ -24,7 +24,7 @@ func DnsDetector() {
     }
 }
 func RunDnsDetector() {
-    dns.RestartDnsmasq()
+    // dns.RestartDnsmasq()
     
     DnsDetector()
 }

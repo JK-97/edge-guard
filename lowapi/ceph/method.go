@@ -3,6 +3,7 @@ package ceph
 import (
 	"io/ioutil"
 	log "jxcore/go-utils/logger"
+	"jxcore/lowapi/utils"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -53,5 +54,25 @@ func Cephmount() {
 		} else {
 			log.Error("Move back", cmd.Args, err)
 		}
+	}
+}
+
+func TmpFsMount() {
+	if utils.Exists(tmpfsPath) {
+		os.Remove(tmpfsPath)
+		os.Mkdir(tmpfsPath, 0755)
+	}
+	exec.Command("/bin/bash", "-c", "mount -t tmpfs  tmpfs /data/tmpfs").Run()
+}
+
+func CheckTmpFs() {
+	rawdata, err := ioutil.ReadFile(fstabFilePath)
+	utils.CheckErr(err)
+	if !strings.Contains(string(rawdata), fstabRecord) {
+		TmpFsMount()
+		output := string(rawdata) + "\n" + fstabRecord
+		ioutil.WriteFile(fstabFilePath, []byte(output), 0644)
+	}else{
+		log.Info("Mount tmpfs success")
 	}
 }

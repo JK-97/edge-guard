@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"jxcore/lowapi/ceph"
 	"io/ioutil"
 	"jxcore/config"
 	"jxcore/core"
@@ -56,7 +57,7 @@ to quickly create a Cobra application.`,
 			c := exec.Command("sed", "-i", "s/.*172.17.0.1/#listen/", "/etc/dnsmasq.conf")
 			c.Run()
 			dns.RestartDnsmasq()
-
+			ceph.CheckTmpFs()
 			core := core.GetJxCore()
 			go func() {
 				gateway.Setup()
@@ -88,7 +89,7 @@ to quickly create a Cobra application.`,
 			flags := cmd.Flags()
 
 			if noUpdate, _ := flags.GetBool("no-update"); !noUpdate {
-				core.UpdateCore(30)
+				core.UpdateCore(300)
 			}
 			core.BaseCore()
 
