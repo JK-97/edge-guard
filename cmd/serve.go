@@ -15,12 +15,12 @@
 package cmd
 
 import (
-	"jxcore/lowapi/ceph"
 	"io/ioutil"
 	"jxcore/config"
 	"jxcore/core"
 	"jxcore/core/device"
 	log "jxcore/go-utils/logger"
+	"jxcore/lowapi/ceph"
 	"jxcore/lowapi/dns"
 	"jxcore/lowapi/utils"
 	"jxcore/subprocess"
@@ -89,7 +89,7 @@ to quickly create a Cobra application.`,
 			flags := cmd.Flags()
 
 			if noUpdate, _ := flags.GetBool("no-update"); !noUpdate {
-				core.UpdateCore(300)
+				core.UpdateCore()
 			}
 			core.BaseCore()
 

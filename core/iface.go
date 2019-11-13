@@ -2,7 +2,12 @@ package core
 
 import (
 	"bufio"
+	"errors"
+	"io/ioutil"
+	"jxcore/config/yaml"
+	"jxcore/core/device"
 	"net"
+	"net/url"
 	"os"
 	"os/exec"
 	"strconv"
@@ -11,16 +16,18 @@ import (
 	log "jxcore/go-utils/logger"
 	"jxcore/lowapi/dns"
 
+	"github.com/rjeczalik/notify"
 	"github.com/vishvananda/netlink"
 )
 
 // 推荐网卡名/次要网卡名
 var (
+	routeEchoFile  = "/edge/route"
 	RecommendIface = "eth0"
 	SecondaryIface = "usb0"
 
 	usbNetworkReachable = false // USB 网卡不可用
-
+	debug               = false
 )
 
 func main() {
@@ -212,19 +219,21 @@ func linkSubscribe(done <-chan struct{}) {
 
 			switch attrs.OperState {
 			case netlink.OperUp:
-				log.Info("Name: ", attrs.Name, " Up")
-				if attrs.Name == RecommendIface {
-					enableEthernet()
-					// 有线网卡不通
-					if !tcping(testServer, testPort) {
-						enableUSB()
-					}
-				}
+				// log.Info("Name: ", attrs.Name, " Up")
+				// if defaultRouter, err := getDefaultRouter(); err != nil {
+
+				// } else {
+				// 	dhcpHost := getDhcpHost()
+				// 	if router, err := LookUpIface(attrs.Name, dhcpHost); err == nil {
+				// 		routeList := []route{defaultRouter, router}
+				// 		recommendRoute := sortRouteByPriority(routeList)
+				// 		exec.Command("dhclient", recommendRoute.router).Run()
+
+				// 	}
+
+				// }
 			case netlink.OperDown:
-				log.Info("Name: ", attrs.Name, " Down")
-				if attrs.Name == RecommendIface {
-					enableUSB()
-				}
+				initRoute()
 			default:
 				log.Info("Name: ", attrs.Name, " OperState: ", attrs.OperState)
 			}
@@ -270,4 +279,217 @@ func tcping(s string, port int) bool {
 	}
 
 	return true
+}
+
+// RouteDetector 检测 rouote 文件的改动,并设置路由
+func routeDetector() {
+	c := make(chan notify.EventInfo, 2)
+	if err := notify.Watch(routeEchoFile, c, notify.All); err != nil {
+		log.Error(err)
+	}
+	for ei := range c {
+		switch ei.Event() {
+		case notify.Remove:
+			go routeHandler()
+			notify.Stop(c)
+			routeDetector()
+		}
+
+	}
+}
+
+func RunRouteDetector() {
+	if err := initRoute(); err != nil {
+		log.Error("no Available interface cant be use")
+	}
+	log.Info("finished init route")
+	go routeDetector()
+
+}
+
+type route struct {
+	router string
+	iface  string
+}
+
+var ifacePriority = map[string]int{"eth0": 1, "usb0": 2, "usb1": 3}
+
+// routeHandler 处理函数, 自动选择优先级最高
+func routeHandler() {
+	// 根据优先级 配置 路由
+	toChangeRoute, err := getRouterFromFile()
+	if err != nil {
+		return
+	}
+
+	if defaultRouter, err := getDefaultRouter(); err == nil {
+		log.Info("wantToUseRoute: ", toChangeRoute.iface)
+		log.Info("currentDefaultRoute: ", defaultRouter.iface)
+
+		if isHigherThan(toChangeRoute.iface, defaultRouter.iface) {
+			setDefaultRoute(toChangeRoute.iface, toChangeRoute.router)
+		} else {
+			log.Info("The currently used interface has a higher priority and does not change.")
+		}
+
+	} else {
+		setDefaultRoute(toChangeRoute.iface, toChangeRoute.router)
+	}
+
+	// finish <- true
+}
+
+// setDefaultRoute 设置默认路由
+func setDefaultRoute(iface, router string) (err error) {
+	log.Info("use " + router + "--" + iface)
+	err = exec.Command("ip", "route", "replace", "default", "via", router, "dev", iface).Run()
+	log.Info("set defalu route failed ", err)
+	return err
+}
+func getDhcpHost() (dhcpHost string) {
+	currentdevice, _ := device.GetDevice()
+
+	//解析dhcp url ， 获取 host
+	dhcpServerInfo, err := url.Parse(currentdevice.DhcpServer)
+	if err != nil {
+		log.Info(err)
+		return
+	}
+	dhcpHost, _, _ = net.SplitHostPort(dhcpServerInfo.Host)
+	if debug {
+		dhcpHost = "114.114.114.114"
+	}
+
+	return
+}
+
+// getAbleRouter 获取所有可用的 interface route
+func getRouterFromFile() (changeRoute route, err error) {
+
+	if _, err = os.Stat(routeEchoFile); err != nil {
+		log.Error(err)
+		return
+	}
+	dataByte, err := ioutil.ReadFile(routeEchoFile)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	routeLine := strings.Split(string(dataByte), " ")
+	// 10.55.2.253 rth0
+	netRoute := routeLine[0]
+	netInterface := routeLine[1]
+
+	dhcpHost := getDhcpHost()
+	if err := checkRoute(netRoute, netInterface, dhcpHost); err == nil {
+		log.Info("Available : ", netInterface)
+	}
+
+	changeRoute = route{router: netRoute,
+		iface: netInterface}
+	return
+}
+
+func setIPRoute(netRoute, netInterface string) (err error) {
+	err = exec.Command("ip", "route", "add", "114.114.114.114/32", "via", netRoute, "dev", netInterface).Run()
+	if err != nil {
+		log.Info(err)
+	}
+	return
+}
+
+func removeIPRoute(netRoute, netInterface string) (err error) {
+	err = exec.Command("ip", "route", "del", "114.114.114.114/32", "via", netRoute, "dev", netInterface).Run()
+	if err != nil {
+		log.Info(err)
+	}
+	return
+}
+
+func checkRoute(netRoute, netInterface, dhcpHost string) (err error) {
+	setIPRoute(netRoute, netInterface)
+	if err = exec.Command("ping", "-c", "1", "-I", netInterface, dhcpHost).Run(); err != nil {
+		log.Info("Unavailable : ", netInterface)
+	}
+	removeIPRoute(netRoute, netInterface)
+	return err
+}
+
+func getDefaultRouter() (defaultRoute route, err error) {
+	output, _ := exec.Command("ip", "route").Output()
+	currentRouteInfo := strings.Split(string(output), "\n")
+	if strings.Contains(currentRouteInfo[0], "default") {
+		tmp := strings.Split(currentRouteInfo[0], " ")
+		netInterface := tmp[len(tmp)-2]
+		netRouter := tmp[len(tmp)-4]
+		defaultRoute = route{router: netRouter, iface: netInterface}
+		return
+	} else {
+		err = errors.New("can not find default interface")
+		return
+	}
+}
+
+func sortRouteByPriority(routeList []route) (recommendRoute route) {
+	//比较优先级别,
+	var min = ifacePriority[routeList[0].iface]
+	for _, route := range routeList {
+		if ifacePriority[route.iface] < min {
+			min = ifacePriority[route.iface]
+			recommendRoute = route
+		}
+	}
+	return
+}
+
+func isHigherThan(primary, secondary string) bool {
+	return ifacePriority[primary] <= ifacePriority[secondary]
+}
+
+func initRoute() (err error) {
+	dhcpHost := getDhcpHost()
+	routerList := []route{}
+	for iface, _ := range ifacePriority {
+		route, err := LookUpIface(iface, dhcpHost)
+		if err != nil {
+
+		} else {
+			routerList = append(routerList, route)
+		}
+
+	}
+	if len(routerList) != 0 {
+		recommendRoute := sortRouteByPriority(routerList)
+		err = setDefaultRoute(recommendRoute.iface, recommendRoute.router)
+	}
+	return
+}
+
+func LookUpIface(iface, dhcpHost string) (theRoute route, err error) {
+	theRoute = route{}
+	err = exec.Command("dhclient", iface).Run()
+	if err != nil {
+		log.Info(iface, err)
+		return
+	}
+
+	theRoute, err = getRouterFromFile()
+	if err != nil {
+		log.Info(err)
+		return
+	}
+
+	err = checkRoute(theRoute.router, theRoute.iface, dhcpHost)
+	if err != nil {
+		log.Info(err)
+		return
+	}
+	return
+}
+
+func init() {
+	if settings, err := yaml.LoadYaml("./settings.yaml"); err != nil {
+		debug = settings.Debug
+	}
+
 }

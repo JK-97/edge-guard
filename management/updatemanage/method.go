@@ -111,7 +111,7 @@ func (up *UpgradeProcess) CheckUpdate() map[string]string {
 
 }
 
-func (up *UpgradeProcess) UploadVersion() {
+func (up *UpgradeProcess) ReportVersion() {
 
 	deviceinfo, _ := device.GetDevice()
 
