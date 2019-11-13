@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
 	log "jxcore/go-utils/logger"
 	"jxcore/lowapi/dns"
@@ -219,21 +220,10 @@ func linkSubscribe(done <-chan struct{}) {
 
 			switch attrs.OperState {
 			case netlink.OperUp:
-				// log.Info("Name: ", attrs.Name, " Up")
-				// if defaultRouter, err := getDefaultRouter(); err != nil {
+				routeHandler()
 
-				// } else {
-				// 	dhcpHost := getDhcpHost()
-				// 	if router, err := LookUpIface(attrs.Name, dhcpHost); err == nil {
-				// 		routeList := []route{defaultRouter, router}
-				// 		recommendRoute := sortRouteByPriority(routeList)
-				// 		exec.Command("dhclient", recommendRoute.router).Run()
-
-				// 	}
-
-				// }
 			case netlink.OperDown:
-				initRoute()
+				// initRoute()
 			default:
 				log.Info("Name: ", attrs.Name, " OperState: ", attrs.OperState)
 			}
@@ -343,7 +333,7 @@ func routeHandler() {
 func setDefaultRoute(iface, router string) (err error) {
 	log.Info("use " + router + "--" + iface)
 	err = exec.Command("ip", "route", "replace", "default", "via", router, "dev", iface).Run()
-	log.Info("set defalu route failed ", err)
+	waitForSetDefault(iface)
 	return err
 }
 func getDhcpHost() (dhcpHost string) {
@@ -375,15 +365,10 @@ func getRouterFromFile() (changeRoute route, err error) {
 		log.Error(err)
 		return
 	}
-	routeLine := strings.Split(string(dataByte), " ")
-	// 10.55.2.253 rth0
-	netRoute := routeLine[0]
-	netInterface := routeLine[1]
-
-	dhcpHost := getDhcpHost()
-	if err := checkRoute(netRoute, netInterface, dhcpHost); err == nil {
-		log.Info("Available : ", netInterface)
-	}
+	routeLine := strings.Split(strings.TrimSpace(string(dataByte)), " ")
+	// 10.55.2.253 eth0
+	netRoute := strings.TrimSpace(routeLine[0])
+	netInterface := strings.TrimSpace(routeLine[1])
 
 	changeRoute = route{router: netRoute,
 		iface: netInterface}
@@ -391,28 +376,38 @@ func getRouterFromFile() (changeRoute route, err error) {
 }
 
 func setIPRoute(netRoute, netInterface string) (err error) {
-	err = exec.Command("ip", "route", "add", "114.114.114.114/32", "via", netRoute, "dev", netInterface).Run()
-	if err != nil {
-		log.Info(err)
-	}
+	// err = exec.Command("ip", "route", "add", "114.114.114.114/32", "via", netRoute, "dev", netInterface).Run()
+	err = exec.Command("/bin/bash", "-c", "ip route replace 114.114.114.114/32 via "+netRoute+" dev "+netInterface).Run()
+	log.Info("setIPRoute:", netInterface)
+	waitForSet(netInterface)
 	return
 }
 
 func removeIPRoute(netRoute, netInterface string) (err error) {
-	err = exec.Command("ip", "route", "del", "114.114.114.114/32", "via", netRoute, "dev", netInterface).Run()
-	if err != nil {
-		log.Info(err)
-	}
+	err = exec.Command("/bin/bash", "-c", "ip route del 114.114.114.114/32 via "+netRoute+" dev "+netInterface).Run()
+	log.Info("removeIPRoute :", netInterface)
+	waitForRemove(netInterface)
 	return
 }
 
 func checkRoute(netRoute, netInterface, dhcpHost string) (err error) {
 	setIPRoute(netRoute, netInterface)
-	if err = exec.Command("ping", "-c", "1", "-I", netInterface, dhcpHost).Run(); err != nil {
-		log.Info("Unavailable : ", netInterface)
+	err = exec.Command("ping", "-c", "1", "-I", netInterface, dhcpHost).Run()
+
+	if err != nil {
+		// 还在 调试中，ping -c时以code2 退出
+		if err.Error() == "exit status 2" {
+			err = nil
+		} else {
+			log.Info("checkRoute Unavailable : ", netInterface)
+		}
+
 	}
+
+	// time.Sleep(30 * time.Second)
 	removeIPRoute(netRoute, netInterface)
-	return err
+
+	return
 }
 
 func getDefaultRouter() (defaultRoute route, err error) {
@@ -434,11 +429,13 @@ func sortRouteByPriority(routeList []route) (recommendRoute route) {
 	//比较优先级别,
 	var min = ifacePriority[routeList[0].iface]
 	for _, route := range routeList {
-		if ifacePriority[route.iface] < min {
+		if ifacePriority[route.iface] <= min {
 			min = ifacePriority[route.iface]
 			recommendRoute = route
+			log.Info(recommendRoute.router, recommendRoute.iface)
 		}
 	}
+
 	return
 }
 
@@ -450,28 +447,31 @@ func initRoute() (err error) {
 	dhcpHost := getDhcpHost()
 	routerList := []route{}
 	for iface, _ := range ifacePriority {
-		route, err := LookUpIface(iface, dhcpHost)
-		if err != nil {
 
+		route, err := LookUpIface(iface, dhcpHost)
+		log.Info("find route : ", iface, route.router, route.iface)
+		if err != nil {
+			log.Info(err)
 		} else {
 			routerList = append(routerList, route)
 		}
 
 	}
+	log.Info(routerList)
 	if len(routerList) != 0 {
 		recommendRoute := sortRouteByPriority(routerList)
+		log.Info("recommendRoute", recommendRoute, len(routerList))
 		err = setDefaultRoute(recommendRoute.iface, recommendRoute.router)
+	} else {
+		err = errors.New("no route can find")
 	}
 	return
 }
 
 func LookUpIface(iface, dhcpHost string) (theRoute route, err error) {
 	theRoute = route{}
-	err = exec.Command("dhclient", iface).Run()
-	if err != nil {
-		log.Info(iface, err)
-		return
-	}
+	exec.Command("dhclient", iface).Run()
+	time.Sleep(2 * time.Second)
 
 	theRoute, err = getRouterFromFile()
 	if err != nil {
@@ -479,17 +479,77 @@ func LookUpIface(iface, dhcpHost string) (theRoute route, err error) {
 		return
 	}
 
-	err = checkRoute(theRoute.router, theRoute.iface, dhcpHost)
+	if theRoute.iface != iface {
+		err = errors.New("cant not find " + iface)
+		return
+	}
+
+	// err = checkRoute(theRoute.router, theRoute.iface, dhcpHost)
+	checkRoute(theRoute.router, theRoute.iface, dhcpHost)
+
 	if err != nil {
 		log.Info(err)
 		return
 	}
+	log.Info(err)
 	return
 }
 
+func waitForSet(netInterface string) {
+
+	for {
+		output, err := exec.Command("ip", "route").Output()
+		if err != nil {
+			log.Info(err)
+			return
+		}
+
+		lines := strings.Split(string(output), "\n")
+
+		for _, line := range lines {
+			if strings.Contains(line, "114.114.114.114") || strings.Contains(line, netInterface) {
+				log.Info(line)
+				goto endfor
+			}
+		}
+	endfor:
+		break
+	}
+
+}
+
+func waitForRemove(netInterface string) {
+	for {
+		output, err := exec.Command("ip", "route").Output()
+		if err != nil {
+			log.Info(err)
+			return
+		}
+
+		if !strings.Contains(string(output), "114.114.114.114") {
+			break
+		}
+	}
+
+}
+func waitForSetDefault(netInterface string) {
+	for {
+		output, err := exec.Command("ip", "route").Output()
+		if err != nil {
+			log.Info(err)
+			return
+		}
+
+		if !strings.Contains(string(output), "defalut") {
+			break
+		}
+	}
+
+}
 func init() {
-	if settings, err := yaml.LoadYaml("./settings.yaml"); err != nil {
+	if settings, err := yaml.LoadYaml("/edge/jxcore/bin/settings.yaml"); err == nil {
 		debug = settings.Debug
+		log.Info("debug model ", debug)
 	}
 
 }
