@@ -220,10 +220,35 @@ func linkSubscribe(done <-chan struct{}) {
 
 			switch attrs.OperState {
 			case netlink.OperUp:
-				routeHandler()
+				log.Info("Name: ", attrs.Name, "UP", " OperState: ", attrs.OperState)
+				// _ = exec.Command("dhclient", attrs.Name).Run()
+				if ifacePriority[attrs.Name] != 0 {
+					//起来的 interface 是否是配置中制定的  可能有 tun0 wg0  , map 默认 0 值
+					if defaultRouter, err := getDefaultRouter(); err == nil {
+						//获取当前 默认路由
+						if !isHigherThan(defaultRouter.iface, attrs.Name) {
+							//比较优先级
+							dhcpHost := getDhcpHost()
+							if upRoute, err := LookUpIface(attrs.Name, dhcpHost); err == nil {
+								// 检查并教研 新增加的iface 是否可以联网
+								exec.Command("dhclient", upRoute.iface).Run()
+							}
+						}
+					}
+
+				}
 
 			case netlink.OperDown:
-				// initRoute()
+				log.Info("Name: ", attrs.Name, "DOWN", " OperState: ", attrs.OperState)
+				if ifacePriority[attrs.Name] != 0 {
+					//起来的 interface 是否是配置中制定的  可能有 tun0 wg0  , map 默认 0 值
+					if _, err := getDefaultRouter(); err != nil {
+						//获取当前 默认路由
+						_ = initRoute()
+					}
+
+				}
+
 			default:
 				log.Info("Name: ", attrs.Name, " OperState: ", attrs.OperState)
 			}
@@ -331,7 +356,7 @@ func routeHandler() {
 
 // setDefaultRoute 设置默认路由
 func setDefaultRoute(iface, router string) (err error) {
-	log.Info("use " + router + "--" + iface)
+	log.Info("use " + router + "" + iface)
 	err = exec.Command("ip", "route", "replace", "default", "via", router, "dev", iface).Run()
 	waitForSetDefault(iface)
 	return err
@@ -378,15 +403,15 @@ func getRouterFromFile() (changeRoute route, err error) {
 func setIPRoute(netRoute, netInterface string) (err error) {
 	// err = exec.Command("ip", "route", "add", "114.114.114.114/32", "via", netRoute, "dev", netInterface).Run()
 	err = exec.Command("/bin/bash", "-c", "ip route replace 114.114.114.114/32 via "+netRoute+" dev "+netInterface).Run()
-	log.Info("setIPRoute:", netInterface)
-	waitForSet(netInterface)
+	log.Info("setIPRoute:", netInterface+"114.114.114.114/32 router")
+	// waitForSet(netInterface)
 	return
 }
 
 func removeIPRoute(netRoute, netInterface string) (err error) {
 	err = exec.Command("/bin/bash", "-c", "ip route del 114.114.114.114/32 via "+netRoute+" dev "+netInterface).Run()
-	log.Info("removeIPRoute :", netInterface)
-	waitForRemove(netInterface)
+	log.Info("removeIPRoute :", netInterface+"114.114.114.114/32 router")
+	// waitForRemove(netInterface)
 	return
 }
 
@@ -413,14 +438,14 @@ func checkRoute(netRoute, netInterface, dhcpHost string) (err error) {
 func getDefaultRouter() (defaultRoute route, err error) {
 	output, _ := exec.Command("ip", "route").Output()
 	currentRouteInfo := strings.Split(string(output), "\n")
-	if strings.Contains(currentRouteInfo[0], "default") {
+	if strings.Contains(currentRouteInfo[0], "default") && strings.Contains(currentRouteInfo[0], "linkdown") {
 		tmp := strings.Split(currentRouteInfo[0], " ")
 		netInterface := tmp[len(tmp)-2]
 		netRouter := tmp[len(tmp)-4]
 		defaultRoute = route{router: netRouter, iface: netInterface}
 		return
 	} else {
-		err = errors.New("can not find default interface")
+		err = errors.New("can not find default interface or has linkdown")
 		return
 	}
 }
@@ -432,7 +457,6 @@ func sortRouteByPriority(routeList []route) (recommendRoute route) {
 		if ifacePriority[route.iface] <= min {
 			min = ifacePriority[route.iface]
 			recommendRoute = route
-			log.Info(recommendRoute.router, recommendRoute.iface)
 		}
 	}
 
@@ -449,18 +473,19 @@ func initRoute() (err error) {
 	for iface, _ := range ifacePriority {
 
 		route, err := LookUpIface(iface, dhcpHost)
-		log.Info("find route : ", iface, route.router, route.iface)
 		if err != nil {
 			log.Info(err)
 		} else {
+			log.Info("find route : ", route.router, route.iface)
 			routerList = append(routerList, route)
 		}
 
 	}
-	log.Info(routerList)
+
 	if len(routerList) != 0 {
+		log.Info("available : ", routerList)
 		recommendRoute := sortRouteByPriority(routerList)
-		log.Info("recommendRoute", recommendRoute, len(routerList))
+		log.Info("recommendRoute", recommendRoute)
 		err = setDefaultRoute(recommendRoute.iface, recommendRoute.router)
 	} else {
 		err = errors.New("no route can find")
@@ -480,7 +505,7 @@ func LookUpIface(iface, dhcpHost string) (theRoute route, err error) {
 	}
 
 	if theRoute.iface != iface {
-		err = errors.New("cant not find " + iface)
+		err = errors.New(iface + " is unaviaible")
 		return
 	}
 
@@ -491,7 +516,7 @@ func LookUpIface(iface, dhcpHost string) (theRoute route, err error) {
 		log.Info(err)
 		return
 	}
-	log.Info(err)
+
 	return
 }
 
