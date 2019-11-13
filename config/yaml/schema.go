@@ -34,4 +34,5 @@ type YamlSchema struct {
 		Config bool `yaml:"config"`
 	} `yaml:"synctools"`
 	FixedResolver string `yaml:"fixedresolver"`
+	Debug         bool   `yaml:"debug"`
 }

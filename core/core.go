@@ -48,32 +48,27 @@ func (j *JxCore) ProCore() {
 	currentedvice, err := device.GetDevice()
 	utils.CheckErr(err)
 	logger := log.WithFields(log.Fields{"Method": "ProCore"})
-
+	RunRouteDetector()
+	dnsdetector.RunDnsDetector()
 	logger.Debug("Check USB Network")
-	SetUp()
-	if usbNetworkReachable {
-		logger.Debug("USB Network Reachable")
-		done := make(chan struct{})
-		go linkSubscribe(done)
-	}
+	done := make(chan struct{})
+	go linkSubscribe(done)
 	logger.Debug("After Check USB Network")
-
+	dns.ResetHostFile(network.GetEthIP())
 	for {
 		dns.CheckResolvFile()
-		go DnsOnce.Do(dnsdetector.RunDnsDetector)
-		dns.ResetHostFile(network.GetEthIP())
 		for {
 
 			register.FindMasterFromDHCPServer(currentedvice.WorkerID, currentedvice.Key)
 			//获取vpn key，连接vpn
 			mymasterip, err = register.GetMyMaster(currentedvice.WorkerID, currentedvice.Key)
 			//校验新的master是否协力hossts文件
-			dns.RestartDnsmasq()
 			time.Sleep(3 * time.Second)
+			log.Info("Register Worker Net", mymasterip)
 			if err == nil {
 				break
 			}
-			log.Error("Register Worker Net", err)
+
 		}
 		time.Sleep(3 * time.Second)
 
@@ -83,12 +78,12 @@ func (j *JxCore) ProCore() {
 }
 
 //contrl the update
-func (j JxCore) UpdateCore(timeout int) {
+func (j JxCore) UpdateCore() {
 
 	for !network.CheckMasterConnect() {
-		time.Sleep(3 * time.Second)
+		time.Sleep(5 * time.Second)
 		log.Info("Waiting for master connect")
-		// dns.RestartDnsmasq()
+		dns.RestartDnsmasq()
 	}
 	log.Info("Master Connect")
 	if dns.CheckDnsmasqConf() {
@@ -97,28 +92,12 @@ func (j JxCore) UpdateCore(timeout int) {
 		log.Error("Error Dnsmasq configuration ")
 	}
 	updatemanage.AddAptKey()
-	if network.CheckNetwork() {
-		starttime := time.Now()
-		updateprocess := updatemanage.GetUpdateProcess()
-		//updateprocess.UploadVersion()
-		pkgneedupdate := updateprocess.CheckUpdate()
-		if len(pkgneedupdate) != 0 {
-			updateprocess.UpdateSource()
-			updateprocess.UpdateComponent(pkgneedupdate)
-		}
-		for {
-			if updateprocess.GetStatus() == updatemanage.FINISHED {
-				break
-			}
-			if time.Now().Unix() > starttime.Add(time.Duration(timeout)*time.Second).Unix() {
-				log.Error("update time out ")
-				break
-			}
-		}
-		updateprocess.UploadVersion()
-
-	} else {
-		log.Warn("The network is not working properly and automatically enters offline mode.")
+	updateprocess := updatemanage.GetUpdateProcess()
+	//updateprocess.UploadVersion()
+	pkgneedupdate := updateprocess.CheckUpdate()
+	if len(pkgneedupdate) != 0 {
+		updateprocess.UpdateSource()
+		updateprocess.UpdateComponent(pkgneedupdate)
 	}
-
+	updateprocess.ReportVersion()
 }
