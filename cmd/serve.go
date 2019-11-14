@@ -77,8 +77,7 @@ to quickly create a Cobra application.`,
 
 			once := &sync.Once{}
 			if device.GetDeviceType() == version.Pro {
-				// online version
-				go core.ProCore()
+				core.ConfigNetwork()
 			}
 
 			ensureDocker()
@@ -91,7 +90,7 @@ to quickly create a Cobra application.`,
 			if noUpdate, _ := flags.GetBool("no-update"); !noUpdate {
 				core.UpdateCore()
 			}
-			core.BaseCore()
+			core.ConfigSupervisor()
 
 			//collection log
 			if _, err = os.Stat(LogsPath); err != nil {
