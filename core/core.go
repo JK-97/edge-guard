@@ -29,8 +29,7 @@ func GetJxCore() *JxCore {
 	return jxcore
 }
 
-//control the base version
-func (j *JxCore) BaseCore() {
+func (j *JxCore) ConfigSupervisor() {
 	//UpdateCore(10)
 	startupProgram, err := yaml.LoadYaml(YamlComponentSetting)
 	utils.CheckErr(err)
@@ -41,40 +40,13 @@ func (j *JxCore) BaseCore() {
 	}
 }
 
-//control the base version
-func (j *JxCore) ProCore() {
-	var err error
-	var mymasterip string
-	currentedvice, err := device.GetDevice()
+func (j *JxCore) ConfigNetwork() {
+	err := network.InitIFace()
 	utils.CheckErr(err)
-	logger := log.WithFields(log.Fields{"Method": "ProCore"})
-	RunRouteDetector()
-	dnsdetector.RunDnsDetector()
-	logger.Debug("Check USB Network")
-	done := make(chan struct{})
-	go linkSubscribe(done)
-	logger.Debug("After Check USB Network")
+	go network.MaintainBestIFace()
+	go dnsdetector.DnsDetector()
 	dns.ResetHostFile(network.GetEthIP())
-	for {
-		dns.CheckResolvFile()
-		for {
-
-			register.FindMasterFromDHCPServer(currentedvice.WorkerID, currentedvice.Key)
-			//获取vpn key，连接vpn
-			mymasterip, err = register.GetMyMaster(currentedvice.WorkerID, currentedvice.Key)
-			//校验新的master是否协力hossts文件
-			time.Sleep(3 * time.Second)
-			log.Info("Register Worker Net", mymasterip)
-			if err == nil {
-				break
-			}
-
-		}
-		time.Sleep(3 * time.Second)
-
-		// VPN 就绪之后 启动 component 按照配置启动(同步工具集合)
-		hearbeat.AliveReport(mymasterip)
-	}
+	go maintainVPN()
 }
 
 //contrl the update
@@ -100,4 +72,29 @@ func (j JxCore) UpdateCore() {
 		updateprocess.UpdateComponent(pkgneedupdate)
 	}
 	updateprocess.ReportVersion()
+}
+
+func maintainVPN() {
+	var mymasterip string
+	currentedvice, err := device.GetDevice()
+	utils.CheckErr(err)
+	for {
+		dns.CheckResolvFile()
+		for {
+			register.FindMasterFromDHCPServer(currentedvice.WorkerID, currentedvice.Key)
+			//获取vpn key，连接vpn
+			mymasterip, err = register.GetMyMaster(currentedvice.WorkerID, currentedvice.Key)
+			//校验新的master是否协力hossts文件
+			time.Sleep(3 * time.Second)
+			log.Info("Register Worker Net", mymasterip)
+			if err == nil {
+				break
+			}
+
+		}
+		time.Sleep(3 * time.Second)
+
+		// VPN 就绪之后 启动 component 按照配置启动(同步工具集合)
+		hearbeat.AliveReport(mymasterip)
+	}
 }

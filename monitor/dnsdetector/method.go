@@ -23,8 +23,3 @@ func DnsDetector() {
 		}
 	}
 }
-func RunDnsDetector() {
-	// dns.RestartDnsmasq()
-
-	go DnsDetector()
-}
