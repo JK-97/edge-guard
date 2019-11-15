@@ -41,10 +41,10 @@ func BuildWokerID() string {
 	}
 	var cpuInfoFile string = "/proc/cpuinfo"
 	var GpsInfoScript string = "python /jxbootstrap/worker/scripts/G8100_NoMCU.py CMD AT+CGSN"
-	var md5info [16]byte 
+	var md5info [16]byte
 	content, err := ioutil.ReadFile(cpuInfoFile)
 	utils.CheckErr(err)
-	if strings.Contains(string(content), "serial") {
+	if strings.Contains(string(content), "Serial") {
 		md5info = md5.Sum(content[len(string(content))-17:])
 	} else {
 		for index := 0; index < 10; index++ {
@@ -53,7 +53,7 @@ func BuildWokerID() string {
 			utils.CheckErr(err)
 			result := strings.ReplaceAll(string(gpsInfo), "\n", "")
 			result = strings.TrimSpace(result)
-			if len(result) >10 {
+			if len(result) > 10 {
 				md5info = md5.Sum([]byte(result))
 				break
 			}
@@ -62,7 +62,7 @@ func BuildWokerID() string {
 	}
 
 	md5str := fmt.Sprintf("%x", md5info)
-	if len(md5str)<7{
+	if len(md5str) < 7 {
 		panic("can't generate workerid'")
 	}
 	workerid := perfilx + md5str[len(md5str)-7:]

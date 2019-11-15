@@ -304,9 +304,6 @@ func CheckResolvFile() {
 		log.Info("Has no detect the resolv.conf")
 		ResetResolv()
 	}
-	for !network.CheckNetwork() {
-		time.Sleep(3 * time.Second)
-	}
 
 }
 
