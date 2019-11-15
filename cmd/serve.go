@@ -40,8 +40,6 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-var start chan bool
-
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
 	Use:   "serve",

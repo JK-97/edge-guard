@@ -35,4 +35,10 @@ type YamlSchema struct {
 	} `yaml:"synctools"`
 	FixedResolver string `yaml:"fixedresolver"`
 	Debug         bool   `yaml:"debug"`
+
+	IFace struct {
+		Priority       []string `yaml:"priority"`
+		Backup         string   `yaml:"backup"`
+		SwitchInterval string   `yaml:"switch_interval"`
+	} `yaml:"iface"`
 }

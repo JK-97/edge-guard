@@ -2,100 +2,130 @@ package network
 
 import (
 	"fmt"
+	"jxcore/config/yaml"
 	log "jxcore/go-utils/logger"
+	"net"
 	"os/exec"
 	"time"
+
+	"github.com/vishvananda/netlink"
 )
 
 const (
-	checkBestIFaceInterval = time.Second * 5
-	testServer             = "114.114.114.114"
+	testServer   = "114.114.114.114"
+	highPriority = 5
 )
 
 var (
-	currentIFace  string
-	ifacePriority = []string{"eth0", "eth1", "usb0", "usb1"}
+	currentIFace           string
+	checkBestIFaceInterval = time.Second * 5
+	ifacePriority          = yaml.Config.IFace.Priority
+	backupIFace            = yaml.Config.IFace.Backup
 )
 
-func findBestIFace() string {
-	for _, iface := range ifacePriority {
-		connected, err := testConnect(iface, testServer)
-		if err != nil {
-			log.Error("Test connect err:", err)
-		}
-		if connected {
-			return iface
-		}
+func init() {
+	interval, err := time.ParseDuration(yaml.Config.IFace.SwitchInterval)
+	if err == nil {
+		checkBestIFaceInterval = interval
 	}
-	return ifacePriority[len(ifacePriority)-1]
 }
 
-func switchIFace(iFace string) (err error) {
-	err = exec.Command("ifdown", currentIFace).Run()
-	if err != nil {
-		return
-	}
-	err = exec.Command("ifup", iFace, "--force").Run()
-	if err != nil {
-		return
-	}
-	currentIFace = iFace
-	return
-}
-
+// 方案:
+// 所有网卡连接上后，操作系统自动添加一条默认路由，metric（优先级）为100。
+// jxcore选定的网卡，会添加metric为5的默认路由
+// jxcore启动时调用InitIFace，选择优先级最高，能ping通外网的网卡
+// 每隔checkBestIFaceInterval间隔，重新选择优先级最高，能ping通外网的网卡
 func InitIFace() error {
 	return switchIFace(findBestIFace())
 }
 
 func MaintainBestIFace() error {
-	timer := time.NewTicker(checkBestIFaceInterval)
-	defer timer.Stop()
-
-	for range timer.C {
+	for {
 		bestIFace := findBestIFace()
-		if currentIFace != bestIFace {
-			err := switchIFace(bestIFace)
-			log.Error("Failed to switch network interface", err)
+		err := switchIFace(bestIFace)
+		if err != nil {
+			log.Error("Failed to switch network interface: ", err)
+		}
+		time.Sleep(checkBestIFaceInterval)
+	}
+}
+
+func findBestIFace() string {
+	for _, iface := range ifacePriority {
+		connected := testConnect(iface, testServer)
+		if connected {
+			return iface
 		}
 	}
-	return nil
+	return backupIFace
 }
 
-func setIPRoute(netInterface string) (err error) {
-	// err = exec.Command("ip", "route", "add", "114.114.114.114/32", "via", netRoute, "dev", netInterface).Run()
-	err = exec.Command("/bin/bash", "-c", fmt.Sprintf("ip route replace %s/32 dev %s", testServer, netInterface)).Run()
-	log.Info("setIPRoute:", netInterface+"114.114.114.114/32 router")
-	// waitForSet(netInterface)
-	return
-}
-
-func removeIPRoute(netInterface string) (err error) {
-	err = exec.Command("/bin/bash", "-c", fmt.Sprintf("ip route del %s/32 dev %s", testServer, netInterface)).Run()
-	log.Info("removeIPRoute :", netInterface+"114.114.114.114/32 router")
-	// waitForRemove(netInterface)
-	return
-}
-
-func testConnect(netInterface, dhcpHost string) (connected bool, err error) {
-	err = setIPRoute(netInterface)
+func switchIFace(iFace string) (err error) {
+	route, err := getGWRoute(iFace)
 	if err != nil {
-		return
+		return err
 	}
-	pingErr := exec.Command("ping", "-c", "1", dhcpHost).Run()
+	route.Priority = highPriority
+	err = netlink.RouteReplace(route)
+	if err != nil {
+		return err
+	}
+
+	currentIFace = iFace
+	return
+}
+
+func testConnect(netInterface, dhcpHost string) bool {
+	if netInterface != currentIFace {
+		_ = exec.Command("ifup", "--force", netInterface).Run()
+		// 	_ = exec.Command("dhclient", "-d", "-1", "-e", fmt.Sprintf("IF_METRIC=%d", lowPriority+ifacePriorityHash[netInterface]), netInterface).Run()
+	}
+	gwRoute, err := getGWRoute(netInterface)
+	if err != nil {
+		if _, ok := err.(netlink.LinkNotFoundError); !ok {
+			log.Info(err)
+		}
+		return false
+	}
+	dst := net.IPNet{
+		IP:   net.ParseIP(testServer),
+		Mask: net.CIDRMask(32, 32),
+	}
+	route := netlink.Route{
+		Dst: &dst,
+		Gw:  gwRoute.Gw,
+	}
+
+	err = netlink.RouteReplace(&route)
+	if err != nil {
+		log.Info(err)
+		return false
+	}
+	err = exec.Command("ping", "-c", "1", "-W", "1", dhcpHost).Run()
 
 	if err != nil {
-		if exitError, ok := pingErr.(*exec.ExitError); ok {
+		if exitError, ok := err.(*exec.ExitError); ok {
 			log.Infof("Ping from interface %v to %v exited with code %v", netInterface, dhcpHost, exitError.ExitCode())
-			connected = false
 		} else {
-			err = pingErr
+			log.Info(err)
 		}
-	} else {
-		connected = true
-		log.Info("checkRoute OK : ", netInterface)
+		return false
 	}
+	log.Info("checkRoute OK : ", netInterface)
+	return true
+}
 
-	// err = removeIPRoute(netRoute, netInterface)
-
-	return
+// getGWRoute 获取网卡的默认路由
+func getGWRoute(netInterface string) (*netlink.Route, error) {
+	link, err := netlink.LinkByName(netInterface)
+	if err != nil {
+		return nil, err
+	}
+	routes, _ := netlink.RouteList(link, netlink.FAMILY_V4)
+	for _, r := range routes {
+		if r.Gw != nil {
+			return &r, nil
+		}
+	}
+	return nil, fmt.Errorf("Gateway route of %v not found", netInterface)
 }

@@ -20,3 +20,10 @@ synctools:
   fs: true
 
 fixedresolver: ""
+
+iface:
+  priority:
+    - "eth0"
+    - "usb0"
+  backup: "usb0"
+  switch_interval: 5s

@@ -19,7 +19,6 @@ func NewJxCore() *JxCore {
 }
 
 func GetJxCore() *JxCore {
-
 	lock.Lock()
 	defer lock.Unlock()
 	if jxcore == nil {
@@ -31,8 +30,7 @@ func GetJxCore() *JxCore {
 
 func (j *JxCore) ConfigSupervisor() {
 	//UpdateCore(10)
-	startupProgram, err := yaml.LoadYaml(YamlComponentSetting)
-	utils.CheckErr(err)
+	startupProgram := yaml.Config
 	yaml.ParseAndCheck(startupProgram, "")
 
 	if startupProgram.FixedResolver != "" {
