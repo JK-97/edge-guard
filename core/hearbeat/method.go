@@ -40,7 +40,7 @@ func tryToSend(masterip string, msg string) error {
 	if err != nil {
 		log.Error("disconnect my master ", err)
 	} else {
-		ticker := time.NewTicker(time.Millisecond * HeartBeatInterva)
+		ticker := time.NewTicker(time.Second * HeartBeatInterva)
 		defer ticker.Stop()
 		for range ticker.C {
 			_, err = conn.Write([]byte(msg))
