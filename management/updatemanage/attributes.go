@@ -3,27 +3,27 @@ package updatemanage
 import "sync"
 
 const (
-    FINISHED UpgradeStatus = iota
-    UPDATING UpgradeStatus = 10
+	FINISHED UpgradeStatus = iota
+	UPDATING UpgradeStatus = 10
 )
 const (
-    EDGEVERSIONFILE = "/edge/VERSION"
-    TARGETVERSION   = "/etc/edgetarget"
-    UPLOADDOMAIN    = "port30111.version-control.ffffffffffffffffffffffff.master.iotedge"
-    UPLOADPATH      = "/api/v1/worker_version"
-    SOURCEHOST      = "10.53.1.220"
-    SourceList      = "/etc/apt/sources.list"
+	EDGEVERSIONFILE = "/edge/VERSION"
+	TARGETVERSION   = "/etc/edgetarget"
+	UPLOADDOMAIN    = "port30111.version-control.ffffffffffffffffffffffff.master.iotedge"
+	UPLOADPATH      = "/api/v1/worker_version"
+	SOURCEHOST      = "10.53.1.220"
+	SourceList      = "/etc/apt/sources.list"
 )
 
 func (p UpgradeStatus) String() string {
-    switch p {
-    case FINISHED:
-        return "finished"
-    case UPDATING:
-        return "updating"
-    default:
-        return "unknow"
-    }
+	switch p {
+	case FINISHED:
+		return "finished"
+	case UPDATING:
+		return "updating"
+	default:
+		return "unknow"
+	}
 
 }
 

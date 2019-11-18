@@ -80,7 +80,6 @@ func ResolvGuard() {
 				continue
 			}
 			if pos := strings.Index(rawLine, "nameserver"); pos != -1 {
-				log.Info(pos)
 				var server string
 				if FixedResolver == "" {
 					server = strings.TrimSpace(rawLine[pos+10:])
@@ -119,7 +118,7 @@ func ResetHostFile(ethIp string) {
 	f.WriteString(ethIp + " " + LocalHostName + "\n")
 	f.WriteString(ethIp + " " + IotedgeHostName + "\n")
 
-	RestartDnsmasq()
+	// RestartDnsmasq()
 }
 
 func UpdateMasterIPToHosts(masterip string) {
@@ -230,7 +229,7 @@ func OnMasterIPChanged(masterip string) {
 
 // AppendHostnameHosts 将更新后的 hostsname 写入 hosts 文件
 func AppendHostnameHosts(workerid string) {
-	hostnameRecord := "127.0.0.1 worker-" + workerid
+	hostnameRecord := "127.0.0.1" + workerid
 	content, err := ioutil.ReadFile(HostsFile)
 	if err != nil {
 		log.Error(err)
@@ -244,7 +243,7 @@ func AppendHostnameHosts(workerid string) {
 		}
 	}
 
-	var hostnameresolv = "\n" + hostnameRecord + "\n 127.0.0.1 " + workerid
+	var hostnameresolv = "\n" + hostnameRecord + "\n127.0.0.1 " + workerid
 	f, err := os.OpenFile(HostsFile, os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		log.Error(err)
@@ -253,7 +252,7 @@ func AppendHostnameHosts(workerid string) {
 	f.WriteString(hostnameresolv)
 	f.Close()
 
-	RestartDnsmasq()
+	// RestartDnsmasq()
 }
 
 func ParseIpInTxt(url string) (string, string) {

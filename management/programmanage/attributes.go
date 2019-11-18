@@ -70,9 +70,9 @@ restart_when_binary_changed=true
 `
 
 var Db = `[program:Db]
-directory=/edge/mnt/db/bin
+#directory=/edge/mnt/db/bin
 restart_when_binary_changed=true
-command=/edge/mnt/db/bin/db serve
+command=/edge/mnt/db/bin/db serve --config /edge/mnt/db/bin/db.toml
 process_name=%(program_name)s
 numprocs=1
 autostart=true
