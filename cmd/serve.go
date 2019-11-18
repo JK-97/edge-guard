@@ -15,12 +15,12 @@
 package cmd
 
 import (
-	"jxcore/lowapi/ceph"
 	"io/ioutil"
 	"jxcore/config"
 	"jxcore/core"
 	"jxcore/core/device"
 	log "jxcore/go-utils/logger"
+	"jxcore/lowapi/ceph"
 	"jxcore/lowapi/dns"
 	"jxcore/lowapi/utils"
 	"jxcore/subprocess"
@@ -39,8 +39,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/vishvananda/netlink"
 )
-
-var start chan bool
 
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
@@ -72,13 +70,13 @@ to quickly create a Cobra application.`,
 			currentdevice, err := device.GetDevice()
 			utils.CheckErr(err)
 			log.WithFields(log.Fields{"INFO": "Device"}).Info("workerid : ", currentdevice.WorkerID)
-
-			go subprocess.RunMcuProcess()
+			if device.IfRunMcu() {
+				go subprocess.RunMcuProcess()
+			}
 
 			once := &sync.Once{}
 			if device.GetDeviceType() == version.Pro {
-				// online version
-				go core.ProCore()
+				core.ConfigNetwork()
 			}
 
 			ensureDocker()
@@ -89,9 +87,9 @@ to quickly create a Cobra application.`,
 			flags := cmd.Flags()
 
 			if noUpdate, _ := flags.GetBool("no-update"); !noUpdate {
-				core.UpdateCore(300)
+				core.UpdateCore()
 			}
-			core.BaseCore()
+			core.ConfigSupervisor()
 
 			//collection log
 			if _, err = os.Stat(LogsPath); err != nil {

@@ -2,18 +2,27 @@ package yaml
 
 import (
 	"io/ioutil"
+	"jxcore/gateway/log"
 	"jxcore/management/programmanage"
 	"reflect"
 
 	"gopkg.in/yaml.v2"
 )
 
-func LoadYaml(path string) (Yamlsetting YamlSchema, err error) {
+func init() {
+	err := loadYaml(configPath)
+	if err != nil {
+		panic(err)
+	}
+	log.Infof("Config: %+v", Config)
+}
+
+func loadYaml(path string) (err error) {
 	content, err := ioutil.ReadFile(path)
 	if err != nil {
 		return
 	}
-	yaml.Unmarshal(content, &Yamlsetting)
+	err = yaml.Unmarshal(content, Config)
 	return
 }
 

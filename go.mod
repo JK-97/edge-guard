@@ -34,6 +34,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/pelletier/go-toml v1.6.0 // indirect
+	github.com/pkg/errors v0.8.1
 	github.com/ramya-rao-a/go-outline v0.0.0-20181122025142-7182a932836a // indirect
 	github.com/rjeczalik/notify v0.9.2
 	github.com/sevlyar/go-daemon v0.1.5
@@ -46,6 +47,7 @@ require (
 	github.com/stretchr/testify v1.4.0 // indirect
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/tidwall/pretty v1.0.0 // indirect
+	github.com/varstr/uaparser v0.0.0-20170929040706-6aabb7c4e98c // indirect
 	github.com/vishvananda/netlink v1.0.0
 	github.com/vishvananda/netns v0.0.0-20190625233234-7109fa855b0f // indirect
 	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
