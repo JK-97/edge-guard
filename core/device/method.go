@@ -19,6 +19,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+var cpuInfoFile string = "/proc/cpuinfo"
+
 func GetDeviceType() (devicetype string) {
 	return version.Type
 }
@@ -39,30 +41,43 @@ func BuildWokerID() string {
 	} else {
 		perfilx = perfilx + "01"
 	}
-	var cpuInfoFile string = "/proc/cpuinfo"
+
 	var GpsInfoScript string = "python /jxbootstrap/worker/scripts/G8100_NoMCU.py CMD AT+CGSN"
 	var md5info [16]byte
-	content, err := ioutil.ReadFile(cpuInfoFile)
-	utils.CheckErr(err)
-	if strings.Contains(string(content), "Serial") {
-		md5info = md5.Sum(content[len(string(content))-17:])
-	} else {
-		for index := 0; index < 10; index++ {
-			//小概率会获得空的数据,需重试
-			gpsInfo, err := exec.Command("/bin/sh", "-c", GpsInfoScript).Output()
-			utils.CheckErr(err)
-			result := strings.ReplaceAll(string(gpsInfo), "\n", "")
-			result = strings.TrimSpace(result)
-			if len(result) > 10 {
-				md5info = md5.Sum([]byte(result))
-				break
-			}
+	// x86平台
+	if runtime.GOARCH == "amd64" {
+		var X86IdInfoScript string = "dmidecode | grep 'Serial Number' | head -1 | awk -F\":\" '{gsub(\" ^ \", \"\", $2); print $2}'"
+		context, err := exec.Command("/bin/bash", "-c", X86IdInfoScript).Output()
+		if err != nil {
+			log.Error(err)
+		}
+		md5info = md5.Sum([]byte(context))
 
+	} else {
+		content, err := ioutil.ReadFile(cpuInfoFile)
+		utils.CheckErr(err)
+
+		if strings.Contains(string(content), "Serial") {
+			// RK品台
+			md5info = md5.Sum(content[len(string(content))-17:])
+		} else {
+			for index := 0; index < 10; index++ {
+				//小概率会获得空的数据,需重试
+				gpsInfo, err := exec.Command("/bin/sh", "-c", GpsInfoScript).Output()
+				utils.CheckErr(err)
+				result := strings.ReplaceAll(string(gpsInfo), "\n", "")
+				result = strings.TrimSpace(result)
+				if len(result) > 10 {
+					md5info = md5.Sum([]byte(result))
+					break
+				}
+
+			}
 		}
 	}
 
 	md5str := fmt.Sprintf("%x", md5info)
-	if len(md5str) < 7 {
+	if md5str == "0000000" {
 		panic("can't generate workerid'")
 	}
 	workerid := perfilx + md5str[len(md5str)-7:]
@@ -137,4 +152,17 @@ func (d *Device) BuildDeviceInfo(vpnmodel Vpn, ticket string, authHost string) {
 	utils.CheckErr(err)
 	ioutil.WriteFile("/edge/init", outputdata, 0666)
 
+}
+func IfRunMcu() bool {
+	content, err := ioutil.ReadFile(cpuInfoFile)
+	utils.CheckErr(err)
+	if strings.Contains(string(content), "Serial") {
+		// rk
+		return true
+	} else if runtime.GOARCH == "amd64" || !strings.Contains(string(content), "Serial") {
+		// nano 或则 x86 没有mcu
+		return false
+	} else {
+		return true
+	}
 }
