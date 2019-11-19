@@ -1,7 +1,7 @@
 package programmanage
 
 import (
-	log "jxcore/go-utils/logger"
+	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 	"strings"
 )
 
@@ -14,7 +14,7 @@ func GetBaseConfig() (config string) {
 }
 
 // GetMucConfig 获取 mcu 相关程序的配置
-func GetMucConfig() string {
+func GetMcuConfig() string {
 	return Watchdog + Mcuserver
 }
 
@@ -27,7 +27,7 @@ func AddToStart(programName string) {
 	if _, ok := ProgramCfgMap[programName]; ok == true {
 		ProgramSetting = ProgramSetting + ProgramCfgMap[programName]
 	} else {
-		log.Info("this jxcore  version does not suppoted this commponent,please update")
+		log.Info("this jxcore version does not suppoted this commponent,please update")
 	}
 
 }

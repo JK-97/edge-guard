@@ -4,16 +4,16 @@ import (
 	"context"
 	"fmt"
 	"jxcore/config/yaml"
-	log "jxcore/go-utils/logger"
 	"net"
 	"os/exec"
 	"time"
+
+	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 
 	"github.com/vishvananda/netlink"
 )
 
 const (
-	testServer   = "114.114.114.114"
 	highPriority = 5
 )
 
@@ -53,7 +53,7 @@ func MaintainBestIFace() error {
 
 func findBestIFace() string {
 	for _, iface := range ifacePriority {
-		connected := testConnect(iface, testServer)
+		connected := testConnect(iface)
 		if connected {
 			return iface
 		}
@@ -62,6 +62,9 @@ func findBestIFace() string {
 }
 
 func switchIFace(iFace string) (err error) {
+	UnlockResolvConf()
+	IFaceUp(iFace)
+	LockResolvConf()
 	route, err := getGWRoute(iFace)
 	if err != nil {
 		return err
@@ -76,12 +79,9 @@ func switchIFace(iFace string) (err error) {
 	return
 }
 
-func testConnect(netInterface, dhcpHost string) bool {
+func testConnect(netInterface string) bool {
 	if netInterface != currentIFace {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-		defer cancel()
-		_ = exec.CommandContext(ctx, "ifup", "--force", netInterface).Run()
-		// 	_ = exec.Command("dhclient", "-d", "-1", "-e", fmt.Sprintf("IF_METRIC=%d", lowPriority+ifacePriorityHash[netInterface]), netInterface).Run()
+		IFaceUp(netInterface)
 	}
 	gwRoute, err := getGWRoute(netInterface)
 	if err != nil {
@@ -91,7 +91,7 @@ func testConnect(netInterface, dhcpHost string) bool {
 		return false
 	}
 	dst := net.IPNet{
-		IP:   net.ParseIP(testServer),
+		IP:   net.ParseIP(testIP),
 		Mask: net.CIDRMask(32, 32),
 	}
 	route := netlink.Route{
@@ -104,18 +104,7 @@ func testConnect(netInterface, dhcpHost string) bool {
 		log.Info(err)
 		return false
 	}
-	err = exec.Command("ping", "-c", "1", "-W", "1", dhcpHost).Run()
-
-	if err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
-			log.Infof("Ping from interface %v to %v exited with code %v", netInterface, dhcpHost, exitError.ExitCode())
-		} else {
-			log.Info(err)
-		}
-		return false
-	}
-	log.Info("checkRoute OK : ", netInterface)
-	return true
+	return ping(testIP)
 }
 
 // getGWRoute 获取网卡的默认路由
@@ -131,4 +120,10 @@ func getGWRoute(netInterface string) (*netlink.Route, error) {
 		}
 	}
 	return nil, fmt.Errorf("Gateway route of %v not found", netInterface)
+}
+
+func IFaceUp(netInterface string) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	_ = exec.CommandContext(ctx, "ifup", "--force", netInterface).Run()
+	cancel()
 }
