@@ -4,7 +4,7 @@ import (
     "encoding/json"
     "html/template"
     "io/ioutil"
-    log "jxcore/go-utils/logger"
+    log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
     "net/http"
 )
 

@@ -15,29 +15,44 @@
 package cmd
 
 import (
+	"context"
+	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 	"io/ioutil"
 	"jxcore/config"
 	"jxcore/core"
 	"jxcore/core/device"
-	log "jxcore/go-utils/logger"
 	"jxcore/lowapi/ceph"
 	"jxcore/lowapi/dns"
 	"jxcore/lowapi/utils"
 	"jxcore/subprocess"
 	"jxcore/subprocess/gateway"
 	"jxcore/version"
+	"jxcore/web"
 	"jxcore/web/route"
-	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strconv"
-	"sync"
+	"syscall"
+	"time"
 
 	// 调试
+	"net/http"
 	_ "net/http/pprof"
 
 	"github.com/spf13/cobra"
 	"github.com/vishvananda/netlink"
+	"golang.org/x/sync/errgroup"
+)
+
+const (
+	graceful = time.Second * 15
+)
+
+var (
+	debug    bool   = false
+	port     string = ":80"
+	noUpdate bool   = false
 )
 
 // serveCmd represents the serve command
@@ -52,93 +67,95 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		Deamonize(func() {
-			c := exec.Command("sed", "-i", "s/.*172.17.0.1/#listen/", "/etc/dnsmasq.conf")
-			c.Run()
-			dns.RestartDnsmasq()
-			ceph.CheckTmpFs()
-			core := core.GetJxCore()
-			go func() {
-				gateway.Setup()
-				gateway.ServeGateway()
-			}()
-			forever := make(chan interface{}, 1)
+			log.Info("==================Jxcore Serve Starting=====================")
 
-			if utils.Exists(InitPath) {
-			} else {
+			log.Info("================Checking Edgenode Status===================")
+			if !utils.Exists(InitPath) {
 				log.Fatal("please run the bootstrap before serve")
 			}
 			currentdevice, err := device.GetDevice()
-			utils.CheckErr(err)
-			log.WithFields(log.Fields{"INFO": "Device"}).Info("workerid : ", currentdevice.WorkerID)
-			if device.IfRunMcu() {
-				go subprocess.RunMcuProcess()
+			if err != nil {
+				log.Fatal(err)
 			}
+			log.WithFields(log.Fields{"INFO": "Device"}).Info("workerid : ", currentdevice.WorkerID)
 
-			once := &sync.Once{}
+			ctx, cancel := context.WithCancel(context.Background())
+			errGroup, ctx := errgroup.WithContext(ctx)
+
+			core := core.GetJxCore()
 			if device.GetDeviceType() == version.Pro {
+				log.Info("=======================Configuring Network============================")
 				core.ConfigNetwork()
 			}
 
-			ensureDocker()
-			go once.Do(func() {
-				subprocess.RunJxserving()
-			})
+			// Network interface auto switch
+			// Auto update /etc/resolv.conf to dnsmasq config
+			// IoTEdge VPN auto reconnect
+			errGroup.Go(core.MaintainNetwork)
 
-			flags := cmd.Flags()
-
-			if noUpdate, _ := flags.GetBool("no-update"); !noUpdate {
+			if !noUpdate {
+				log.Info("================Checking JxToolset Update===================")
 				core.UpdateCore()
+			}
+
+			log.Info("================Configuring Environment===================")
+			// ensure tmpfs is mounted
+			err = ceph.EnsureTmpFs()
+			if err != nil {
+				log.Fatal(err)
+			}
+			// ensure docker start with correct dnsmasq setup
+			err = ensureDocker()
+			if err != nil {
+				log.Fatal(err)
 			}
 			core.ConfigSupervisor()
 
-			//collection log
-			if _, err = os.Stat(LogsPath); err != nil {
-				exec.Command("mkdir", "-p", LogsPath)
-			}
-			//core.CollectJournal(currentdevice.WorkerID)
+			log.Info("================Starting Subprocesses===================")
 
-			//start up all component process
-			go subprocess.Run()
-			log.Info("all process has run")
+			// start up all component process
+			errGroup.Go(func() error { return subprocess.RunServer(ctx) })
+			errGroup.Go(func() error { return subprocess.RunJxserving(ctx) })
+			errGroup.Go(func() error { return subprocess.RunMcuProcess(ctx) })
 
-			//web server
-			port, err := flags.GetString("port")
-			if err != nil {
-				port = ":80"
-			}
+			// web server
+			errGroup.Go(gateway.ServeGateway)
+			errGroup.Go(func() error { return web.Serve(ctx, port, route.Routes(), graceful) })
+			errGroup.Go(func() error { return web.Serve(ctx, ":10880", http.DefaultServeMux, graceful) })
+
+			// handle SIGTERM and SIGINT
 			go func() {
-				log.Info("Listen on", port)
-				log.Fatal(http.ListenAndServe(port, route.Routes()))
-				os.Exit(1)
-				forever <- nil
+				termChan := make(chan os.Signal, 1)
+				signal.Notify(termChan, syscall.SIGINT, syscall.SIGTERM)
+				sig := <-termChan
+				log.WithFields(log.Fields{"signal": sig}).Info("receive a signal to stop all process & exit")
+				cancel()
+
+				time.Sleep(graceful)
+				log.Info("===============Jxcore exited===============")
+				log.Fatal("Jxcore cannot exit within graceful period: ", graceful.String())
 			}()
-			if debug, _ := flags.GetBool("debug"); debug {
-				go func() {
-					port := ":10880"
-					log.Info("Enable Debug Mode Listen on", port)
-					log.Fatal(http.ListenAndServe(port, nil))
-					os.Exit(1)
-					forever <- nil
-				}()
+
+			err = errGroup.Wait()
+			log.Info("===============Jxcore exited===============")
+			if err != nil {
+				log.Error("Exited with error: %+v", err)
 			}
-
-			<-forever
 		})
-
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(serveCmd)
-	serveCmd.PersistentFlags().String("port", ":80", "Port to run Application server on")
+	serveCmd.PersistentFlags().StringVar(&port, "port", port, "Port to run Application server on")
+	serveCmd.PersistentFlags().BoolVar(&debug, "debug", debug, "Whether to enable pprof")
+	serveCmd.PersistentFlags().BoolVar(&noUpdate, "no-update", noUpdate, "Whether to check for update")
+
 	serveCmd.PersistentFlags().String("interface", "eth0", "gateway listen where")
 	serveCmd.PersistentFlags().String("config", "./settings.yaml", "yaml setting for component")
-	serveCmd.PersistentFlags().Bool("debug", false, "Whether to enable pprof")
-	serveCmd.PersistentFlags().Bool("no-update", false, "Whether to check for update")
 	cfg := config.Config()
-	cfg.BindPFlag("yamlsettings", serveCmd.PersistentFlags().Lookup("config"))
-	cfg.BindPFlag("interface", serveCmd.PersistentFlags().Lookup("interface"))
-
+	_ = cfg.BindPFlag("yamlsettings", serveCmd.PersistentFlags().Lookup("config"))
+	_ = cfg.BindPFlag("interface", serveCmd.PersistentFlags().Lookup("interface"))
 }
 
 // applySyncTools 配置同步工具
@@ -161,23 +178,35 @@ func applySyncTools() {
 }
 
 // ensureDocker 确保 docker 服务会启动
-func ensureDocker() {
-	var err error
-	data, err := ioutil.ReadFile("/var/run/docker.pid")
-	if err == nil {
-		pid, err := strconv.Atoi(string(data))
-		if err == nil {
-			_, err = os.FindProcess(pid)
+func ensureDocker() error {
+	exec.Command("sed", "-i", "s/.*172.17.0.1/#listen/", "/etc/dnsmasq.conf").Run()
+	dns.RestartDnsmasq()
+
+	if dockerNeedRestart() {
+		if err := exec.Command("service", "docker", "restart").Run(); err != nil {
+			return err
 		}
 	}
-	if err != nil {
-		cmd := exec.Command("service", "docker", "restart")
-		cmd.Run()
-	}
 
-	if _, err = netlink.LinkByName("docker0"); err == nil {
-		cmd := exec.Command("sed", "-i", "s/#listen/listen-address=172.17.0.1/", "/etc/dnsmasq.conf")
-		cmd.Run()
-		dns.RestartDnsmasq()
+	if _, err := netlink.LinkByName("docker0"); err != nil {
+		return err
 	}
+	if err := exec.Command("sed", "-i", "s/#listen/listen-address=172.17.0.1/", "/etc/dnsmasq.conf").Run(); err != nil {
+		return err
+	}
+	dns.RestartDnsmasq()
+	return nil
+}
+
+func dockerNeedRestart() bool {
+	data, err := ioutil.ReadFile("/var/run/docker.pid")
+	if err != nil {
+		return true
+	}
+	pid, err := strconv.Atoi(string(data))
+	if err != nil {
+		return true
+	}
+	_, err = os.FindProcess(pid)
+	return err != nil
 }

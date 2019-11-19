@@ -18,7 +18,7 @@ import (
     "jxcore/lowapi/mongo"
     "jxcore/lowapi/docker"
     "jxcore/lowapi/pythonpkg"
-    log "jxcore/go-utils/logger"
+    log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
     "os/exec"
 
     "github.com/spf13/cobra"

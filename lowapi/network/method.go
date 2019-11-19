@@ -1,14 +1,20 @@
 package network
 
 import (
+	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 	"jxcore/core/device"
-	log "jxcore/go-utils/logger"
 	"jxcore/lowapi/utils"
 	"jxcore/lowapi/vpn"
 	"net"
 	"os/exec"
 	"strings"
 	"time"
+)
+
+const (
+	testIP       = "114.114.114.114"
+	testDomain   = "baidu.com"
+	masterDomain = "master.iotedge"
 )
 
 func GetMyIP(name string) (string, error) {
@@ -114,23 +120,14 @@ func GetClusterIP() string {
 }
 
 func CheckNetwork() bool {
-	cmd := exec.Command("ping", "baidu.com", "-c", "1", "-W", "5")
-	err := cmd.Run()
-	if err != nil {
-		return false
-	} else {
-		return true
-	}
-
+	return ping(testDomain)
 }
 
 func CheckMasterConnect() bool {
-	cmd := exec.Command("ping", "master.iotedge", "-c", "1", "-W", "5")
-	err := cmd.Run()
-	if err != nil {
-		return false
-	} else {
-		return true
-	}
+	return ping(masterDomain)
+}
 
+func ping(hostName string) bool {
+	err := exec.Command("ping", hostName, "-c", "1", "-W", "5").Run()
+	return err == nil
 }

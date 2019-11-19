@@ -5,13 +5,15 @@ import (
 	"jxcore/core/device"
 	"jxcore/core/hearbeat"
 	"jxcore/core/register"
-	log "jxcore/go-utils/logger"
+	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 	"jxcore/lowapi/dns"
 	"jxcore/lowapi/network"
 	"jxcore/lowapi/utils"
 	"jxcore/management/updatemanage"
 	"jxcore/monitor/dnsdetector"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 )
 
 func NewJxCore() *JxCore {
@@ -19,12 +21,6 @@ func NewJxCore() *JxCore {
 }
 
 func GetJxCore() *JxCore {
-	lock.Lock()
-	defer lock.Unlock()
-	if jxcore == nil {
-		jxcore = NewJxCore()
-		return jxcore
-	}
 	return jxcore
 }
 
@@ -42,15 +38,19 @@ func (j *JxCore) ConfigNetwork() {
 	network.SetupNetwork()
 	err := network.InitIFace()
 	utils.CheckErr(err)
-	go network.MaintainBestIFace()
-	go dnsdetector.DnsDetector()
 	dns.ResetHostFile(network.GetEthIP())
-	go maintainVPN()
+}
+
+func (j *JxCore) MaintainNetwork() error {
+	errGroup := errgroup.Group{}
+	errGroup.Go(network.MaintainBestIFace)
+	errGroup.Go(dnsdetector.DnsDetector)
+	errGroup.Go(maintainVPN)
+	return errGroup.Wait()
 }
 
 //contrl the update
 func (j JxCore) UpdateCore() {
-
 	for !network.CheckMasterConnect() {
 		time.Sleep(5 * time.Second)
 		log.Info("Waiting for master connect")
@@ -73,7 +73,7 @@ func (j JxCore) UpdateCore() {
 	updateprocess.ReportVersion()
 }
 
-func maintainVPN() {
+func maintainVPN() error {
 	var mymasterip string
 	currentedvice, err := device.GetDevice()
 	utils.CheckErr(err)
@@ -96,4 +96,5 @@ func maintainVPN() {
 		// VPN 就绪之后 启动 component 按照配置启动(同步工具集合)
 		hearbeat.AliveReport(mymasterip)
 	}
+	return nil
 }
