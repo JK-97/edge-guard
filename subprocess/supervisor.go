@@ -1,6 +1,7 @@
 package subprocess
 
 import (
+	"context"
 	"fmt"
 	"jxcore/subprocess/config"
 	"jxcore/subprocess/events"
@@ -427,14 +428,26 @@ func (s *Supervisor) Reload() (error, []string, []string, []string) {
 
 }
 
-func (s *Supervisor) WaitForExit() {
+func (s *Supervisor) WaitForExit(ctx context.Context) {
+	// 如果ctx 结束或者supervisor重启，停止所有子进程
+	ticker := time.NewTicker(10 * time.Second)
+	defer func() {
+		ticker.Stop()
+		log.Info("Stopping supervisor processes")
+		s.procMgr.StopAllProcesses()
+	}()
+
 	for {
-		if s.IsRestarting() {
-			s.procMgr.StopAllProcesses()
-			break
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if s.IsRestarting() {
+				return
+			}
 		}
-		time.Sleep(10 * time.Second)
 	}
+
 }
 
 func (s *Supervisor) createPrograms(prevPrograms []string) {

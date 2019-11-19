@@ -2,7 +2,7 @@ package ceph
 
 import (
 	"io/ioutil"
-	log "jxcore/go-utils/logger"
+	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 	"jxcore/lowapi/utils"
 	"os"
 	"os/exec"
@@ -57,22 +57,32 @@ func Cephmount() {
 	}
 }
 
-func TmpFsMount() {
+func TmpFsMount() error {
 	if utils.Exists(tmpfsPath) {
 		os.Remove(tmpfsPath)
-		os.Mkdir(tmpfsPath, 0755)
+		err := os.Mkdir(tmpfsPath, 0755)
+		if err != nil {
+			return err
+		}
 	}
-	exec.Command("/bin/bash", "-c", "mount -t tmpfs  tmpfs /data/tmpfs").Run()
+	return exec.Command("/bin/bash", "-c", "mount -t tmpfs tmpfs /data/tmpfs").Run()
 }
 
-func CheckTmpFs() {
+func EnsureTmpFs() error {
+	log.Info("Checking tmpfs")
 	rawdata, err := ioutil.ReadFile(fstabFilePath)
-	utils.CheckErr(err)
+	if err != nil {
+		return err
+	}
 	if !strings.Contains(string(rawdata), fstabRecord) {
-		TmpFsMount()
+		if err := TmpFsMount(); err != nil {
+			return err
+		}
 		output := string(rawdata) + "\n" + fstabRecord
-		ioutil.WriteFile(fstabFilePath, []byte(output), 0644)
-	}else{
+		if err = ioutil.WriteFile(fstabFilePath, []byte(output), 0644); err != nil {
+			return err
+		}
 		log.Info("Mount tmpfs success")
 	}
+	return nil
 }
