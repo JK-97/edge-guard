@@ -3,7 +3,7 @@ package pythonpkg
 import (
     "fmt"
     "io/ioutil"
-    log "jxcore/go-utils/logger"
+    log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
     "jxcore/lowapi/utils"
     "net/http"
     "os/exec"

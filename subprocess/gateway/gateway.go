@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"jxcore/go-utils/logger"
+	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 
 	"jxcore/gateway/option"
 	"jxcore/gateway/serve"
@@ -248,6 +248,7 @@ func listenUnix(router http.Handler) {
 
 // ServeGateway 启动 Gateway
 func ServeGateway() error {
+	Setup()
 	router := makeRouter()
 
 	// 监听 Unix Socket

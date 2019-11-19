@@ -4,7 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"io"
-    log "jxcore/go-utils/logger"
+    log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 	"os"
 	"path/filepath"
 )

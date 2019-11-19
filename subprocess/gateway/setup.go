@@ -3,7 +3,7 @@ package gateway
 import (
 	"jxcore/gateway/option"
 	"jxcore/gateway/store"
-	"jxcore/go-utils/logger"
+	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 	"os"
 	"path/filepath"
 )

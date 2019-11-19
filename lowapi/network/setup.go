@@ -1,7 +1,7 @@
 package network
 
 import (
-	log "jxcore/go-utils/logger"
+	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 	"os"
 	"os/exec"
 )
@@ -32,8 +32,5 @@ func disableSystemdResolved() {
 }
 
 func removeDHCPEnterHooks() {
-	err := os.Rename(dhcpEnterHooksDir, dhcpEnterHooksDir+".bak")
-	if err != nil {
-		log.Error(err)
-	}
+	_ = os.Rename(dhcpEnterHooksDir, dhcpEnterHooksDir+".bak")
 }

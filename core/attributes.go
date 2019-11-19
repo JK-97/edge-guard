@@ -3,8 +3,7 @@ package core
 import "sync"
 
 var DnsOnce sync.Once
-var jxcore *JxCore
-var lock *sync.Mutex = &sync.Mutex{}
+var jxcore = NewJxCore()
 
 const (
 	logBase = "/edge/logs/"
