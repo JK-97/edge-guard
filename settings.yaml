@@ -24,6 +24,8 @@ fixedresolver: ""
 iface:
   priority:
     - "eth0"
+    - "eth1"
     - "usb0"
+    - "usb1"
   backup: "usb0"
   switch_interval: 5s

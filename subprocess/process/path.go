@@ -4,6 +4,7 @@ import (
 	"os/user"
 	"path/filepath"
 )
+
 func path_split(path string) []string {
 	r := make([]string, 0)
 	cur_path := path
