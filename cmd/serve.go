@@ -18,6 +18,7 @@ import (
 	"context"
 	"io/ioutil"
 	"jxcore/config"
+	"jxcore/config/yaml"
 	"jxcore/core"
 	"jxcore/core/device"
 	"jxcore/lowapi/ceph"
@@ -65,6 +66,7 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		Deamonize(func() {
 			log.Info("==================Jxcore Serve Starting=====================")
+			log.Infof("Config: %+v", yaml.Config)
 
 			log.Info("================Checking Edgenode Status===================")
 			currentdevice, err := device.GetDevice()

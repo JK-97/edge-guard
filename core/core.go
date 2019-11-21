@@ -9,6 +9,7 @@ import (
 	"jxcore/internal/network"
 	"jxcore/internal/network/dns"
 	"jxcore/internal/network/iface"
+	"jxcore/lowapi/docker"
 	"jxcore/management/updatemanage"
 	"time"
 
@@ -49,6 +50,11 @@ func (j *JxCore) ConfigNetwork() {
 		log.Error(err)
 	}
 	dns.ResetHostFile(network.GetEthIP())
+
+	err = docker.EnsureDockerDNSConfig()
+	if err != nil {
+		log.Error("Failed to configure docker DNS: ", err)
+	}
 }
 
 func (j *JxCore) MaintainNetwork(ctx context.Context) error {

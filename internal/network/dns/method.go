@@ -49,6 +49,7 @@ func RestartDnsmasq() {
 	exec.Command("/bin/bash", "-c", "systemctl restart dnsmasq").Run()
 }
 
+// 重设 /etc/dnsmasq.hosts
 func ResetHostFile(ethIp string) error {
 	content := fmt.Sprintf("%s %s\n", ethIp, LocalHostName)
 	content += fmt.Sprintf("%s %s\n", ethIp, IotedgeHostName)

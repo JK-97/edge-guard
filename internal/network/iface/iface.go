@@ -20,6 +20,7 @@ import (
 // jxcore启动时调用InitIFace，选择优先级最高，能ping通外网的网卡
 // 每隔checkBestIFaceInterval间隔，重新选择优先级最高，能ping通外网的网卡
 
+// 选择初始网口
 func InitIFace() error {
 	return switchIFace(findBestIFace())
 }
