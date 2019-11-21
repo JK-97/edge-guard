@@ -5,8 +5,8 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
+	"io/ioutil"
 	"jxcore/lowapi/utils"
 	"jxcore/version"
 	"math/rand"
@@ -19,18 +19,32 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var cpuInfoFile string = "/proc/cpuinfo"
+const (
+	initPath    = "/edge/init"
+	cpuInfoFile = "/proc/cpuinfo"
+)
+
+var device *Device
 
 func GetDeviceType() (devicetype string) {
 	return version.Type
 }
 
-func GetDevice() (device *Device, err error) {
-	readdata, err := ioutil.ReadFile("/edge/init")
-	utils.CheckErr(err)
-	err = yaml.Unmarshal(readdata, &device)
-	utils.CheckErr(err)
-	return
+func getDevice() error {
+	readdata, err := ioutil.ReadFile(initPath)
+	if err != nil {
+		return err
+	}
+	return yaml.Unmarshal(readdata, &device)
+}
+
+// GetDevice 获取节点信息，从/edge/init读取一次后存入cache
+func GetDevice() (*Device, error) {
+	var err error
+	if device == nil {
+		err = getDevice()
+	}
+	return device, err
 }
 
 // BuildWokerID 生成wokerid

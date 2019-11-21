@@ -3,10 +3,10 @@
 package process
 
 import (
-    "syscall"
+	"syscall"
 )
 
 func set_deathsig(sysProcAttr *syscall.SysProcAttr) {
-    sysProcAttr.Setpgid = true
-    sysProcAttr.Pdeathsig = syscall.SIGKILL
+	sysProcAttr.Setpgid = true
+	sysProcAttr.Pdeathsig = syscall.SIGKILL
 }

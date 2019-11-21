@@ -2,9 +2,9 @@ package hearbeat
 
 import (
 	"fmt"
-	"jxcore/core/device"
 	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
-	"jxcore/lowapi/network"
+	"jxcore/core/device"
+	"jxcore/internal/network"
 	"jxcore/lowapi/utils"
 	"net"
 	"time"

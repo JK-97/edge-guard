@@ -16,13 +16,11 @@ package cmd
 
 import (
 	"context"
-	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 	"io/ioutil"
 	"jxcore/config"
 	"jxcore/core"
 	"jxcore/core/device"
 	"jxcore/lowapi/ceph"
-	"jxcore/lowapi/dns"
 	"jxcore/lowapi/utils"
 	"jxcore/subprocess"
 	"jxcore/subprocess/gateway"
@@ -30,23 +28,22 @@ import (
 	"jxcore/web"
 	"jxcore/web/route"
 	"os"
-	"os/exec"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
+
+	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 
 	// 调试
 	"net/http"
 	_ "net/http/pprof"
 
 	"github.com/spf13/cobra"
-	"github.com/vishvananda/netlink"
 	"golang.org/x/sync/errgroup"
 )
 
 const (
-	graceful = time.Second * 15
+	graceful = time.Second * 1
 )
 
 var (
@@ -70,9 +67,6 @@ to quickly create a Cobra application.`,
 			log.Info("==================Jxcore Serve Starting=====================")
 
 			log.Info("================Checking Edgenode Status===================")
-			if !utils.Exists(InitPath) {
-				log.Fatal("please run the bootstrap before serve")
-			}
 			currentdevice, err := device.GetDevice()
 			if err != nil {
 				log.Fatal(err)
@@ -86,12 +80,12 @@ to quickly create a Cobra application.`,
 			if device.GetDeviceType() == version.Pro {
 				log.Info("=======================Configuring Network============================")
 				core.ConfigNetwork()
-			}
 
-			// Network interface auto switch
-			// Auto update /etc/resolv.conf to dnsmasq config
-			// IoTEdge VPN auto reconnect
-			errGroup.Go(core.MaintainNetwork)
+				// Network interface auto switch
+				// Auto update /etc/resolv.conf to dnsmasq config
+				// IoTEdge VPN auto reconnect
+				errGroup.Go(func() error { return core.MaintainNetwork(ctx) })
+			}
 
 			if !noUpdate {
 				log.Info("================Checking JxToolset Update===================")
@@ -99,16 +93,13 @@ to quickly create a Cobra application.`,
 			}
 
 			log.Info("================Configuring Environment===================")
-			// ensure tmpfs is mounted
+
+			log.Info("ensure tmpfs is mounted")
 			err = ceph.EnsureTmpFs()
 			if err != nil {
 				log.Fatal(err)
 			}
-			// ensure docker start with correct dnsmasq setup
-			err = ensureDocker()
-			if err != nil {
-				log.Fatal(err)
-			}
+
 			core.ConfigSupervisor()
 
 			log.Info("================Starting Subprocesses===================")
@@ -175,38 +166,4 @@ func applySyncTools() {
 			}
 		}
 	}
-}
-
-// ensureDocker 确保 docker 服务会启动
-func ensureDocker() error {
-	exec.Command("sed", "-i", "s/.*172.17.0.1/#listen/", "/etc/dnsmasq.conf").Run()
-	dns.RestartDnsmasq()
-
-	if dockerNeedRestart() {
-		if err := exec.Command("service", "docker", "restart").Run(); err != nil {
-			return err
-		}
-	}
-
-	if _, err := netlink.LinkByName("docker0"); err != nil {
-		return err
-	}
-	if err := exec.Command("sed", "-i", "s/#listen/listen-address=172.17.0.1/", "/etc/dnsmasq.conf").Run(); err != nil {
-		return err
-	}
-	dns.RestartDnsmasq()
-	return nil
-}
-
-func dockerNeedRestart() bool {
-	data, err := ioutil.ReadFile("/var/run/docker.pid")
-	if err != nil {
-		return true
-	}
-	pid, err := strconv.Atoi(string(data))
-	if err != nil {
-		return true
-	}
-	_, err = os.FindProcess(pid)
-	return err != nil
 }

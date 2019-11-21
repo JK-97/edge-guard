@@ -2,10 +2,10 @@ package controller
 
 import (
 	"encoding/json"
+	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 	"io/ioutil"
 	"jxcore/core"
 	"jxcore/core/device"
-	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 	"jxcore/lowapi/utils"
 	"jxcore/management/updatemanage"
 	"net/http"

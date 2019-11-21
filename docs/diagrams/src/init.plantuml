@@ -1,0 +1,44 @@
+' http://plantuml.com/activity-diagram-beta
+
+@startuml init
+!startsub BASIC
+
+:创建Deamon进程;
+note right: 用于systemctl控制
+
+partition 检查设备信息 {
+  if (已经初始化，/etc/init 存在) then (yes)
+    :保证tmpfs挂载;
+  else (no)
+    stop
+  endif
+}
+
+if (Pro 版本) then (yes)
+  partition 配置网络 {
+    :network.SetupNetwork;
+    :network.InitIFace;
+    :dns.ResetHostFile;
+  }
+endif
+
+split
+  if (Pro 版本) then (yes)
+    !includesub network.plantuml!BASIC
+  else
+    end
+  endif
+
+split again
+  partition 初始化 {
+    if (flag --noUpdate 开启) then (no)
+      :检查更新;
+    endif
+    :保证tmpfs挂载;
+    :保证dnsmasq监听docker网络端口172.17.0.1;
+  }
+end split
+
+!endsub
+@enduml
+
