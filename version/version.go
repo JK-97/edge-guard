@@ -2,32 +2,30 @@ package version
 
 import (
 	"fmt"
-    "runtime"
-    "strings"
+	"runtime"
+	"strings"
 )
 
 var (
 	GitCommit = "unknown"
 	Version   = "unknown"
-    BuildDate = "unknown"
-    GitStatus = "unknown"
+	BuildDate = "unknown"
+	GitStatus = "unknown"
 	GoVersion = runtime.Version()
-    Type      = Pro
-	OsArch = fmt.Sprintf("%s %s", runtime.GOOS, runtime.GOARCH)
+	Type      = Pro
+	OsArch    = fmt.Sprintf("%s %s", runtime.GOOS, runtime.GOARCH)
 )
-
-
 
 // 返回单行格式
 func StringifySingleLine() string {
 	return fmt.Sprintf("GitCommitLog=%s. GitStatus=%s. BuildTime=%s. GoVersion=%s. runtime=%s.",
-    GitCommit, GitStatus, BuildDate, GoVersion, OsArch)
+		GitCommit, GitStatus, BuildDate, GoVersion, OsArch)
 }
 
 // 返回多行格式
 func StringifyMultiLine() string {
 	return fmt.Sprintf("GitCommitLog=%s\nGitStatus=%s\nBuildTime=%s\nGoVersion=%s\nruntime=%s\n",
-    GitCommit, GitStatus, BuildDate, GoVersion, OsArch)
+		GitCommit, GitStatus, BuildDate, GoVersion, OsArch)
 }
 
 // 对一些值做美化处理

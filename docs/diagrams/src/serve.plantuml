@@ -1,0 +1,25 @@
+' http://plantuml.com/activity-diagram-beta
+
+@startuml serve
+start
+!includesub init.plantuml!BASIC
+
+partition 子模块 {
+  :配置Supervisor子模块;
+  split
+  :根据配置文件启动子模块;
+  split again
+  :Jxserving;
+  split again
+  :MCU;
+  split again
+  :gateway;
+  split again
+  :http更新接口;
+  split again
+  :debug接口;
+  end split
+}
+
+@enduml
+ 

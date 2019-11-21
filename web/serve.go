@@ -2,9 +2,11 @@ package web
 
 import (
 	"context"
-	"jxcore/gateway/log"
+
 	"net/http"
 	"time"
+
+	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 )
 
 func Serve(ctx context.Context, port string, handler http.Handler, wait time.Duration) error {
@@ -17,7 +19,7 @@ func Serve(ctx context.Context, port string, handler http.Handler, wait time.Dur
 	}
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
-			log.Error(err)
+			logger.Error(err)
 		}
 	}()
 	<-ctx.Done()

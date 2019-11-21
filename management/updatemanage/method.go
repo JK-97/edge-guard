@@ -7,7 +7,7 @@ import (
 	"jxcore/core/device"
 
 	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
-	"jxcore/lowapi/dns"
+	"jxcore/internal/network/dns"
 	"jxcore/lowapi/utils"
 
 	"net/http"
