@@ -2,7 +2,6 @@ package yaml
 
 import (
 	"io/ioutil"
-	"jxcore/gateway/log"
 	"jxcore/management/programmanage"
 	"reflect"
 
@@ -14,7 +13,6 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	log.Infof("Config: %+v", Config)
 }
 
 func loadYaml(path string) (err error) {

@@ -18,6 +18,8 @@ const (
 	dhclientResolvHookPath = dhcpEnterHooksDir + "/nodnsupdate"
 
 	ifacePath = "/etc/network/interfaces"
+
+	DnsmasqListenIP = "172.18.1.1"
 )
 
 // 全局变量
