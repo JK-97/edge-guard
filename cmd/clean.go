@@ -15,13 +15,13 @@
 package cmd
 
 import (
-    "jxcore/lowapi/mongo"
-    "jxcore/lowapi/docker"
-    "jxcore/lowapi/pythonpkg"
-    log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
-    "os/exec"
+	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
+	"jxcore/lowapi/docker"
+	"jxcore/lowapi/mongo"
+	"jxcore/lowapi/pythonpkg"
+	"os/exec"
 
-    "github.com/spf13/cobra"
+	"github.com/spf13/cobra"
 )
 
 var ifall = "true"
@@ -31,59 +31,59 @@ var ifmongo = "false"
 
 // bootstrapCmd represents the bootstrap command
 var cleanCmd = &cobra.Command{
-    Use:   "clean",
-    Short: "clean http backend for jxcore",
-    Long: `A longer description that spans multiple lines and likely contains examples
+	Use:   "clean",
+	Short: "clean http backend for jxcore",
+	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-    Run: func(cmd *cobra.Command, args []string) {
-        if ifall == "true" {
-            ifdocker = "true"
-            ifpython = "true"
-            ifmongo = "true"
+	Run: func(cmd *cobra.Command, args []string) {
+		if ifall == "true" {
+			ifdocker = "true"
+			ifpython = "true"
+			ifmongo = "true"
 
-        }
-        if ifdocker == "true" {
-            var dockerobj = docker.NewClient()
-            dockerobj.ContainerAllRemove()
-            dockerobj.ImageAllRemove()
+		}
+		if ifdocker == "true" {
+			var dockerobj = docker.NewClient()
+			dockerobj.ContainerAllRemove()
+			dockerobj.ImageAllRemove()
 
-        }
-        if ifmongo == "true" {
-            mongo.UnInstallMongo()
-            exec.Command("/bin/bash", "-c", "rm -r /var/lib/mongodb/*").Output()
+		}
+		if ifmongo == "true" {
+			mongo.UnInstallMongo()
+			exec.Command("/bin/bash", "-c", "rm -r /var/lib/mongodb/*").Output()
 
-            exec.Command("/bin/bash", "-c", "rm -r /var/log/mongodb/*").Output()
+			exec.Command("/bin/bash", "-c", "rm -r /var/log/mongodb/*").Output()
 
-        }
-        if ifpython == "true" {
-            var c = pythonpkg.NewPkgClient()
-            err := c.DeletePyPkg()
-            if err != nil {
-                log.Error(err)
-            }
-        }
-        exec.Command("/bin/bash", "-c", "rm -r /tmp").Output()
-        exec.Command("/bin/bash", "-c", "rm /edge/init").Output()
+		}
+		if ifpython == "true" {
+			var c = pythonpkg.NewPkgClient()
+			err := c.DeletePyPkg()
+			if err != nil {
+				log.Error(err)
+			}
+		}
+		exec.Command("/bin/bash", "-c", "rm -r /tmp").Output()
+		exec.Command("/bin/bash", "-c", "rm /edge/init").Output()
 
-        exec.Command("fusermount", "-uz", "/data/edgebox/remote/").Output()
-        exec.Command("rm", "/edge/init").Start()
-    }}
+		exec.Command("fusermount", "-uz", "/data/edgebox/remote/").Output()
+		exec.Command("rm", "/edge/init").Start()
+	}}
 
 func init() {
-    // Here you will define your flags and configuration settings.
-    rootCmd.AddCommand(cleanCmd)
-    // Cobra supports Persistent Flags which will work for this command
-    // and all subcommands, e.g.:
-    cleanCmd.PersistentFlags().StringVarP(&ifall, "all", "a", "true", "openvpn or wireguard or local")
-    cleanCmd.PersistentFlags().StringVarP(&ifdocker, "docker", "d", "false", "openvpn or wireguard or local")
-    cleanCmd.PersistentFlags().StringVarP(&ifpython, "python", "p", "false", "ticket for bootstrap")
-    cleanCmd.PersistentFlags().StringVarP(&ifmongo, "mongo", "m", "false", "ticket for bootstrap")
+	// Here you will define your flags and configuration settings.
+	rootCmd.AddCommand(cleanCmd)
+	// Cobra supports Persistent Flags which will work for this command
+	// and all subcommands, e.g.:
+	cleanCmd.PersistentFlags().StringVarP(&ifall, "all", "a", "true", "openvpn or wireguard or local")
+	cleanCmd.PersistentFlags().StringVarP(&ifdocker, "docker", "d", "false", "openvpn or wireguard or local")
+	cleanCmd.PersistentFlags().StringVarP(&ifpython, "python", "p", "false", "ticket for bootstrap")
+	cleanCmd.PersistentFlags().StringVarP(&ifmongo, "mongo", "m", "false", "ticket for bootstrap")
 
-    // Cobra supports local flags which will only run when this command
-    // is called directly, e.g.:
-    // initCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// Cobra supports local flags which will only run when this command
+	// is called directly, e.g.:
+	// initCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

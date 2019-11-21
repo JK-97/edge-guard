@@ -41,7 +41,6 @@ func getBattery() int {
 // SystemPowerOff 关机
 func SystemPowerOff(delayTime, wakeTime int) {
 
-
 	log.Printf("shutting down. wake up after %d seconds", wakeTime)
 
 	shell := os.Getenv("SHELL")

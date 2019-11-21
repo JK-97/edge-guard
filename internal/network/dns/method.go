@@ -4,11 +4,10 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"io"
+	"fmt"
 	"io/ioutil"
 	"jxcore/core/device"
-	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
-	"jxcore/lowapi/network"
+	"jxcore/internal/network"
 	"jxcore/lowapi/utils"
 	"jxcore/template"
 	"math/rand"
@@ -17,6 +16,8 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+
+	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 )
 
 func LookUpDns(domain string) {
@@ -31,7 +32,6 @@ func LookUpDns(domain string) {
 	for _, ip := range ipRecords {
 		f.WriteString("server=/.iotedge/" + ip.String() + "\n")
 	}
-
 }
 
 // Shuffle 打乱 DNS 记录
@@ -45,80 +45,14 @@ func Shuffle(slice []net.IP) {
 	}
 }
 
-// ResolvGuard 控制 resolv.conf
-func ResolvGuard() {
-	data, err := ioutil.ReadFile("/etc/resolv.conf")
-	if err != nil {
-		log.Error(err)
-	}
-	datastr := string(data)
-	if datastr == hostsRecord {
-		return
-	}
-	//每一行
-	res := strings.Split(string(datastr), "\n")
-
-	f, err := os.OpenFile("/etc/dnsmasq.d/resolv.conf", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	if err != nil {
-		log.Error("Open /etc/dnsmasq.d/resolv.conf", err)
-	} else {
-		f.Seek(0, io.SeekStart)
-	}
-	defer f.Close()
-
-	// }
-	//每一行
-	res = strings.Split(string(datastr), "\n")
-	for _, rawLine := range res {
-		rawLine = strings.TrimSpace(rawLine)
-		if len(rawLine) >= 8 {
-
-			if string(rawLine[0]) == "#" {
-				continue
-			}
-			if strings.Contains(rawLine, "127.0.0.1") {
-				continue
-			}
-			if pos := strings.Index(rawLine, "nameserver"); pos != -1 {
-				var server string
-				if FixedResolver == "" {
-					server = strings.TrimSpace(rawLine[pos+10:])
-				} else {
-					server = FixedResolver
-				}
-				f.WriteString("server=" + server + "\n")
-			}
-		}
-
-	}
-
-	ResetResolv()
-	RestartDnsmasq()
-}
-
 func RestartDnsmasq() {
 	exec.Command("/bin/bash", "-c", "systemctl restart dnsmasq").Run()
 }
 
-func ResetResolv() {
-	datatowrite := []byte(hostsRecord)
-
-	log.Info("Write /etc/resolv.conf")
-	err := ioutil.WriteFile("/etc/resolv.conf", datatowrite, 0644)
-	if err != nil {
-		log.Error(err)
-	}
-
-}
-func ResetHostFile(ethIp string) {
-
-	f, err := os.OpenFile(HostsFile, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-	defer f.Close()
-	utils.CheckErr(err)
-	f.WriteString(ethIp + " " + LocalHostName + "\n")
-	f.WriteString(ethIp + " " + IotedgeHostName + "\n")
-
-	// RestartDnsmasq()
+func ResetHostFile(ethIp string) error {
+	content := fmt.Sprintf("%s %s\n", ethIp, LocalHostName)
+	content += fmt.Sprintf("%s %s\n", ethIp, IotedgeHostName)
+	return ioutil.WriteFile(HostsFile, []byte(content), 0644)
 }
 
 func UpdateMasterIPToHosts(masterip string) {
@@ -229,7 +163,7 @@ func OnMasterIPChanged(masterip string) {
 
 // AppendHostnameHosts 将更新后的 hostsname 写入 hosts 文件
 func AppendHostnameHosts(workerid string) {
-	hostnameRecord := "127.0.0.1" + workerid
+	hostnameRecord := "127.0.0.1 " + workerid
 	content, err := ioutil.ReadFile(HostsFile)
 	if err != nil {
 		log.Error(err)
@@ -251,8 +185,6 @@ func AppendHostnameHosts(workerid string) {
 	}
 	f.WriteString(hostnameresolv)
 	f.Close()
-
-	// RestartDnsmasq()
 }
 
 func ParseIpInTxt(url string) (string, string) {
@@ -264,9 +196,6 @@ func ParseIpInTxt(url string) (string, string) {
 	if len(txtRecords) == 0 {
 		return "", ""
 	}
-	//for _,txt :=range txtRecords{
-	//    log.Info(txt)
-	//}
 	res := strings.Split(txtRecords[0], ":")
 	return res[0], res[1]
 }
@@ -292,24 +221,4 @@ func CheckDnsmasqConf() bool {
 	}
 	return flag >= 3
 
-}
-
-// CheckResolvFile 检测 resolv 文件
-func CheckResolvFile() {
-	// TODO check /etc/resolv.conf exists
-	if _, err := os.Stat(ResolvFile); err == nil {
-		ResolvGuard()
-	} else {
-		log.Info("Has no detect the resolv.conf")
-		ResetResolv()
-	}
-
-}
-
-// LockResolver 锁定 DNS
-func LockResolver(resolver string) {
-	log.Info("Lock dns server to ", resolver)
-	FixedResolver = strings.TrimSpace(resolver)
-
-	ResolvGuard()
 }

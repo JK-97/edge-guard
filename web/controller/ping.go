@@ -1,10 +1,10 @@
 package controller
 
 import (
-    "net/http"
+	"net/http"
 )
 
 func Ping(w http.ResponseWriter, r *http.Request) {
-    respondJSON("pong", w, r)
+	respondJSON("pong", w, r)
 
 }

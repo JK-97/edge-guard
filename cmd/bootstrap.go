@@ -24,7 +24,7 @@ import (
 	"io/ioutil"
 	"jxcore/core/device"
 	"jxcore/core/register"
-	"jxcore/lowapi/dns"
+	"jxcore/internal/network/dns"
 	"jxcore/lowapi/docker"
 	"jxcore/lowapi/utils"
 	"jxcore/version"

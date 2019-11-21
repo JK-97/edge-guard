@@ -1,17 +1,18 @@
 package core
 
 import (
+	"context"
 	"jxcore/config/yaml"
 	"jxcore/core/device"
 	"jxcore/core/hearbeat"
 	"jxcore/core/register"
-	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
-	"jxcore/lowapi/dns"
-	"jxcore/lowapi/network"
-	"jxcore/lowapi/utils"
+	"jxcore/internal/network"
+	"jxcore/internal/network/dns"
+	"jxcore/internal/network/iface"
 	"jxcore/management/updatemanage"
-	"jxcore/monitor/dnsdetector"
 	"time"
+
+	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -25,27 +26,35 @@ func GetJxCore() *JxCore {
 }
 
 func (j *JxCore) ConfigSupervisor() {
-	//UpdateCore(10)
 	startupProgram := yaml.Config
 	yaml.ParseAndCheck(*startupProgram, "")
-
-	if startupProgram.FixedResolver != "" {
-		dns.LockResolver(startupProgram.FixedResolver)
-	}
 }
 
 func (j *JxCore) ConfigNetwork() {
-	network.SetupNetwork()
-	err := network.InitIFace()
-	utils.CheckErr(err)
+	// NetworkManager 和 systemd-resolved 会更改 /etc/resolv.conf，使dns不可控。需要停止
+	network.DisableNetworkManager()
+	network.DisableSystemdResolved()
+
+	// nano: /etc/dhcp/dhclient-enter-hooks.d 里的脚本需要被移除。
+	// 如果脚本存在，`ifup`时不会更新 /etc/resolv.conf
+	dns.RemoveDHCPEnterHooks()
+
+	// 将dhcp 获取的resolv 信息重定向到 /edge/resolv.d
+	dns.ApplyDHCPResolveUpdateHooks()
+	dns.ResetResolv()
+	dns.ResetDNSMasqConf()
+
+	err := iface.InitIFace()
+	if err != nil {
+		log.Error(err)
+	}
 	dns.ResetHostFile(network.GetEthIP())
 }
 
-func (j *JxCore) MaintainNetwork() error {
+func (j *JxCore) MaintainNetwork(ctx context.Context) error {
 	errGroup := errgroup.Group{}
-	errGroup.Go(network.MaintainBestIFace)
-	errGroup.Go(dnsdetector.DnsDetector)
-	errGroup.Go(maintainVPN)
+	errGroup.Go(iface.MaintainBestIFace)
+	errGroup.Go(func() error { return maintainMasterConnection(ctx) })
 	return errGroup.Wait()
 }
 
@@ -64,7 +73,6 @@ func (j JxCore) UpdateCore() {
 	}
 	updatemanage.AddAptKey()
 	updateprocess := updatemanage.GetUpdateProcess()
-	//updateprocess.UploadVersion()
 	pkgneedupdate := updateprocess.CheckUpdate()
 	if len(pkgneedupdate) != 0 {
 		updateprocess.UpdateSource()
@@ -73,12 +81,13 @@ func (j JxCore) UpdateCore() {
 	updateprocess.ReportVersion()
 }
 
-func maintainVPN() error {
+func maintainMasterConnection(ctx context.Context) error {
 	var mymasterip string
 	currentedvice, err := device.GetDevice()
-	utils.CheckErr(err)
+	if err != nil {
+		return err
+	}
 	for {
-		dns.CheckResolvFile()
 		for {
 			register.FindMasterFromDHCPServer(currentedvice.WorkerID, currentedvice.Key)
 			//获取vpn key，连接vpn
@@ -96,5 +105,4 @@ func maintainVPN() error {
 		// VPN 就绪之后 启动 component 按照配置启动(同步工具集合)
 		hearbeat.AliveReport(mymasterip)
 	}
-	return nil
 }

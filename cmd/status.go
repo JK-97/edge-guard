@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 	"jxcore/core/device"
-    log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
-	"jxcore/lowapi/network"
-	"jxcore/lowapi/vpn"
+	"jxcore/internal/network"
+	"jxcore/internal/network/vpn"
 	"net/http"
 	"os"
 
@@ -72,12 +72,12 @@ var statusCmd = &cobra.Command{
 				exitCode |= exitCodeVPNFailed
 				log.Error("VPN Test Failed!")
 			}
-            switch info.Vpn {
-            case device.VPNModeOPENVPN:
-                vpn.Closeopenvpn()
-            case device.VPNModeWG:
-                vpn.CloseWg()
-            }
+			switch info.Vpn {
+			case device.VPNModeOPENVPN:
+				vpn.Closeopenvpn()
+			case device.VPNModeWG:
+				vpn.CloseWg()
+			}
 		}
 
 		os.Exit(exitCode)
