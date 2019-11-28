@@ -17,7 +17,6 @@ package cmd
 import (
 	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 	"jxcore/lowapi/docker"
-	"jxcore/lowapi/mongo"
 	"jxcore/lowapi/pythonpkg"
 	"os/exec"
 
@@ -27,7 +26,6 @@ import (
 var ifall = "true"
 var ifdocker = "false"
 var ifpython = "false"
-var ifmongo = "false"
 
 // bootstrapCmd represents the bootstrap command
 var cleanCmd = &cobra.Command{
@@ -43,21 +41,11 @@ to quickly create a Cobra application.`,
 		if ifall == "true" {
 			ifdocker = "true"
 			ifpython = "true"
-			ifmongo = "true"
-
 		}
 		if ifdocker == "true" {
 			var dockerobj = docker.NewClient()
 			dockerobj.ContainerAllRemove()
 			dockerobj.ImageAllRemove()
-
-		}
-		if ifmongo == "true" {
-			mongo.UnInstallMongo()
-			exec.Command("/bin/bash", "-c", "rm -r /var/lib/mongodb/*").Output()
-
-			exec.Command("/bin/bash", "-c", "rm -r /var/log/mongodb/*").Output()
-
 		}
 		if ifpython == "true" {
 			var c = pythonpkg.NewPkgClient()
@@ -81,7 +69,6 @@ func init() {
 	cleanCmd.PersistentFlags().StringVarP(&ifall, "all", "a", "true", "openvpn or wireguard or local")
 	cleanCmd.PersistentFlags().StringVarP(&ifdocker, "docker", "d", "false", "openvpn or wireguard or local")
 	cleanCmd.PersistentFlags().StringVarP(&ifpython, "python", "p", "false", "ticket for bootstrap")
-	cleanCmd.PersistentFlags().StringVarP(&ifmongo, "mongo", "m", "false", "ticket for bootstrap")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:

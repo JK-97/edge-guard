@@ -10,6 +10,8 @@ logfile_maxbytes=50MB
 logfile_backups=10
 loglevel=info
 pidfile=/tmp/supervisord.pid
+[inet_http_server]
+port = :9001
 `
 
 var BaseDepend = ""
