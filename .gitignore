@@ -26,8 +26,11 @@
 
 ## ignore docs build result
 .vscode/
+*.vscdb
+*.log
 .local/
 .idea
+*.backup
 logfile
 go_build_jxcore
 jxcore*
