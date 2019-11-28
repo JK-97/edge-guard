@@ -25,9 +25,9 @@ const (
 )
 
 type Supervisor struct {
-	config  *config.Config
-	procMgr *process.ProcessManager
-	//xmlRPC     *XmlRPC
+	config     *config.Config
+	procMgr    *process.ProcessManager
+	xmlRPC     *XmlRPC
 	logger     logger.Logger
 	restarting bool
 }
@@ -71,16 +71,16 @@ type ProcessLogReadInfo struct {
 }
 
 type ProcessTailLog struct {
-	LogData  string
-	Offset   int64
-	Overflow bool
+	LogData  string `xml:"logdata" json:"logdata" `
+	Offset   int64  `xml:"offset" json:"offset"`
+	Overflow bool   `xml:"overflow" json:"overflow"`
 }
 
 func NewSupervisor(configstr string) *Supervisor {
 	return &Supervisor{
-		config:  config.NewConfig(configstr),
-		procMgr: process.NewProcessManager(),
-		//xmlRPC:     NewXmlRPC(),
+		config:     config.NewConfig(configstr),
+		procMgr:    process.NewProcessManager(),
+		xmlRPC:     NewXmlRPC(),
 		restarting: false,
 	}
 }
@@ -408,7 +408,7 @@ func (s *Supervisor) Reload() (error, []string, []string, []string) {
 		s.setSupervisordInfo()
 		s.startEventListeners()
 		s.createPrograms(prevPrograms)
-		//s.startHttpServer()
+		s.startHttpServer()
 		s.startAutoStartPrograms()
 	} else {
 		log.Error(err)
@@ -478,27 +478,26 @@ func (s *Supervisor) startEventListeners() {
 	}
 }
 
-//
-//func (s *Supervisor) startHttpServer() {
-//   httpServerConfig, ok := s.config.GetInetHttpServer()
-//   s.xmlRPC.Stop()
-//   if ok {
-//       addr := httpServerConfig.GetString("port", "")
-//       if addr != "" {
-//           go s.xmlRPC.StartInetHttpServer(httpServerConfig.GetString("username", ""), httpServerConfig.GetString("password", ""), addr, s)
-//       }
-//   }
-//
-//   httpServerConfig, ok = s.config.GetUnixHttpServer()
-//   if ok {
-//       env := config.NewStringExpression("here", s.config.GetConfigFileDir())
-//       sockFile, err := env.Eval(httpServerConfig.GetString("file", "/tmp/supervisord.sock"))
-//       if err == nil {
-//           go s.xmlRPC.StartUnixHttpServer(httpServerConfig.GetString("username", ""), httpServerConfig.GetString("password", ""), sockFile, s)
-//       }
-//   }
-//
-//}
+func (s *Supervisor) startHttpServer() {
+	httpServerConfig, ok := s.config.GetInetHttpServer()
+	s.xmlRPC.Stop()
+	if ok {
+		addr := httpServerConfig.GetString("port", "")
+		if addr != "" {
+			go s.xmlRPC.StartInetHttpServer(httpServerConfig.GetString("username", ""), httpServerConfig.GetString("password", ""), addr, s)
+		}
+	}
+
+	httpServerConfig, ok = s.config.GetUnixHttpServer()
+	if ok {
+		env := config.NewStringExpression("here", s.config.GetConfigFileDir())
+		sockFile, err := env.Eval(httpServerConfig.GetString("file", "/tmp/supervisord.sock"))
+		if err == nil {
+			go s.xmlRPC.StartUnixHttpServer(httpServerConfig.GetString("username", ""), httpServerConfig.GetString("password", ""), sockFile, s)
+		}
+	}
+
+}
 
 func (s *Supervisor) setSupervisordInfo() {
 	supervisordConf, ok := s.config.GetSupervisord()
@@ -601,7 +600,7 @@ func (s *Supervisor) ReadProcessStderrLog(r *http.Request, args *ProcessLogReadI
 	return err
 }
 
-func (s *Supervisor) TailProcessStdoutLog(r *http.Request, args *ProcessLogReadInfo, reply *ProcessTailLog) error {
+func (s *Supervisor) TailProcessStdoutLog(r *http.Request, args *ProcessLogReadInfo, reply *struct{ ProcessTailLog }) error {
 	proc := s.procMgr.Find(args.Name)
 	if proc == nil {
 		return fmt.Errorf("No such process %s", args.Name)
@@ -611,7 +610,7 @@ func (s *Supervisor) TailProcessStdoutLog(r *http.Request, args *ProcessLogReadI
 	return err
 }
 
-func (s *Supervisor) TailProcessStderrLog(r *http.Request, args *ProcessLogReadInfo, reply *ProcessTailLog) error {
+func (s *Supervisor) TailProcessStderrLog(r *http.Request, args *ProcessLogReadInfo, reply *struct{ ProcessTailLog }) error {
 	proc := s.procMgr.Find(args.Name)
 	if proc == nil {
 		return fmt.Errorf("No such process %s", args.Name)
