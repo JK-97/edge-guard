@@ -100,8 +100,6 @@ to quickly create a Cobra application.`,
 
 			// start up all component process
 			errGroup.Go(func() error { return subprocess.RunServer(ctx) })
-			errGroup.Go(func() error { return subprocess.RunJxserving(ctx) })
-			errGroup.Go(func() error { return subprocess.RunMcuProcess(ctx) })
 
 			// web server
 			errGroup.Go(gateway.ServeGateway)
