@@ -2,15 +2,16 @@ package core
 
 import (
 	"context"
+	"io/ioutil"
 	"jxcore/config/yaml"
-	"jxcore/core/device"
-	"jxcore/core/hearbeat"
 	"jxcore/core/register"
 	"jxcore/internal/network"
 	"jxcore/internal/network/dns"
 	"jxcore/internal/network/iface"
 	"jxcore/lowapi/docker"
+	"jxcore/lowapi/utils"
 	"jxcore/management/updatemanage"
+	"os"
 	"time"
 
 	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
@@ -18,20 +19,12 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func NewJxCore() *JxCore {
-	return &JxCore{}
-}
-
-func GetJxCore() *JxCore {
-	return jxcore
-}
-
-func (j *JxCore) ConfigSupervisor() {
+func ConfigSupervisor() {
 	startupProgram := yaml.Config
 	yaml.ParseAndCheck(*startupProgram, "")
 }
 
-func (j *JxCore) ConfigNetwork() {
+func ConfigNetwork() {
 	// NetworkManager 和 systemd-resolved 会更改 /etc/resolv.conf，使dns不可控。需要停止
 	network.DisableNetworkManager()
 	network.DisableSystemdResolved()
@@ -44,12 +37,16 @@ func (j *JxCore) ConfigNetwork() {
 	dns.ApplyDHCPResolveUpdateHooks()
 	dns.ResetResolv()
 	dns.ResetDNSMasqConf()
+	dns.AppendHostnameHosts()
 
 	err := iface.InitIFace()
 	if err != nil {
 		log.Error(err)
 	}
-	dns.ResetHostFile(network.GetEthIP())
+	err = dns.ResetHostFile()
+	if err != nil {
+		log.Error(err)
+	}
 
 	err = docker.EnsureDockerDNSConfig()
 	if err != nil {
@@ -57,15 +54,15 @@ func (j *JxCore) ConfigNetwork() {
 	}
 }
 
-func (j *JxCore) MaintainNetwork(ctx context.Context) error {
+func MaintainNetwork(ctx context.Context) error {
 	errGroup := errgroup.Group{}
 	errGroup.Go(iface.MaintainBestIFace)
-	errGroup.Go(func() error { return maintainMasterConnection(ctx) })
+	errGroup.Go(func() error { return register.MaintainMasterConnection(ctx) })
 	return errGroup.Wait()
 }
 
 //contrl the update
-func (j JxCore) UpdateCore() {
+func UpdateCore() {
 	for !network.CheckMasterConnect() {
 		time.Sleep(5 * time.Second)
 		log.Info("Waiting for master connect")
@@ -87,28 +84,21 @@ func (j JxCore) UpdateCore() {
 	updateprocess.ReportVersion()
 }
 
-func maintainMasterConnection(ctx context.Context) error {
-	var mymasterip string
-	currentedvice, err := device.GetDevice()
-	if err != nil {
-		return err
-	}
-	for {
-		for {
-			register.FindMasterFromDHCPServer(currentedvice.WorkerID, currentedvice.Key)
-			//获取vpn key，连接vpn
-			mymasterip, err = register.GetMyMaster(currentedvice.WorkerID, currentedvice.Key)
-			//校验新的master是否协力hossts文件
-			time.Sleep(3 * time.Second)
-			log.Info("Register Worker Net", mymasterip)
+// applySyncTools 更新配置同步工具
+func applySyncTools() {
+	if utils.Exists("/edge/synctools.zip") {
+		data, err := ioutil.ReadFile("/edge/synctools.zip")
+		if err != nil {
+			log.Error(err)
+		} else {
+			err = utils.Unzip(data, "/edge/mnt")
 			if err == nil {
-				break
+				log.Info("has find the synctools.zip")
+				os.Remove("/edge/synctools.zip.old")
+				if err = os.Rename("/edge/synctools.zip", "/edge/synctools.zip.old"); err != nil {
+					log.Error("Fail to move /edge/synctools.zip to /edge/synctools.zip.old", err)
+				}
 			}
-
 		}
-		time.Sleep(3 * time.Second)
-
-		// VPN 就绪之后 启动 component 按照配置启动(同步工具集合)
-		hearbeat.AliveReport(mymasterip)
 	}
 }

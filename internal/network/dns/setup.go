@@ -1,13 +1,17 @@
 package dns
 
 import (
+	"bufio"
+	"bytes"
 	"io/ioutil"
+	"jxcore/core/device"
 	"jxcore/internal/network/dns/dnsfile"
 	"os"
 	"os/exec"
 	"strings"
 
 	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
+	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 )
 
 // 添加dhcp hook，使得dhclient的resolv.conf 结果重定向到 /edge/resolv.d/dhclient.$interface
@@ -60,6 +64,35 @@ func ensureDNSMasqIface() {
 		if err != nil {
 			logger.Fatal(err)
 		}
-		_ = exec.Command("ifup", "lo:0").Run()
 	}
+	_ = exec.Command("ifup", "lo:0").Run()
+	logger.Info("Ensured dnsmasq virtual network interface up")
+}
+
+// AppendHostnameHosts 将 127.0.0.1 workerid 加入 /etc/hosts
+func AppendHostnameHosts() {
+	dev, err := device.GetDevice()
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	hostnameRecord := "127.0.0.1 " + dev.WorkerID
+	content, err := ioutil.ReadFile(HostFile)
+	if err != nil && !os.IsNotExist(err) {
+		log.Fatal(err)
+	}
+	scanner := bufio.NewScanner(bytes.NewReader(content))
+
+	for scanner.Scan() {
+		if strings.Contains(scanner.Text(), hostnameRecord) {
+			return
+		}
+	}
+
+	content = append(content, []byte("\n"+hostnameRecord)...)
+	err = ioutil.WriteFile(HostFile, content, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	logger.Info("Appended worker id to /etc/hosts")
 }

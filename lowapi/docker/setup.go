@@ -3,7 +3,7 @@ package docker
 import (
 	"encoding/json"
 	"io/ioutil"
-	"jxcore/internal/network/dns"
+	"jxcore/internal/network"
 	"os/exec"
 
 	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
@@ -41,20 +41,20 @@ func EnsureDockerDNSConfig() error {
 func addDnsConf(conf map[string]interface{}) (needRestart bool) {
 	dnsConf, ok := conf["dns"]
 	if !ok {
-		conf["dns"] = []string{dns.DnsmasqListenIP}
+		conf["dns"] = []string{network.DockerHostIP}
 		return true
 	}
 	l, ok := dnsConf.([]interface{})
 	if !ok {
-		conf["dns"] = []string{dns.DnsmasqListenIP}
+		conf["dns"] = []string{network.DockerHostIP}
 		return true
 	}
 
 	for _, d := range l {
-		if s, ok := d.(string); ok && s == dns.DnsmasqListenIP {
+		if s, ok := d.(string); ok && s == network.DockerHostIP {
 			return false
 		}
 	}
-	conf["dns"] = append(l, dns.DnsmasqListenIP)
+	conf["dns"] = append(l, network.DockerHostIP)
 	return true
 }
