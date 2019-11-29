@@ -1,7 +1,8 @@
 package hearbeat
 
+import "time"
+
 const (
-	HeartBeatInterva   = 3
-	WireGuardInterface = "wg0"
-	OpenVPNInterface   = "tun0"
+	heartBeatInterval = time.Second * 3
+	dialTimeout       = time.Second * 3
 )

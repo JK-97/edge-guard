@@ -4,6 +4,19 @@
 start
 !includesub init.plantuml!BASIC
 
+split
+if (Pro 版本) then (yes)
+  split
+    !includesub iface.plantuml!BASIC
+  split again
+    !includesub master.plantuml!BASIC
+  end split
+else
+  end
+endif
+
+split again
+
 partition 子模块 {
   :配置Supervisor子模块;
   split
@@ -20,6 +33,9 @@ partition 子模块 {
   :debug接口;
   end split
 }
+end
+
+end split
 
 @enduml
  

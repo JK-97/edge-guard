@@ -16,28 +16,28 @@ partition 检查设备信息 {
 
 if (Pro 版本) then (yes)
   partition 配置网络 {
-    :network.SetupNetwork;
-    :network.InitIFace;
-    :dns.ResetHostFile;
+    :DisableNetworkManager;
+    :DisableSystemdResolved;
+    :连接初始网口;
+
+    :添加dhcp enter hook，\
+    \ndhclient调用会将DNS写入\
+    \n/edge/resolv.d/dhclient.$interface;
+
+    :设置DNSMasq 监听IP 172.18.1.1;
+    :设置/etc/resolv.conf 使用dnsmasq;
+
+    :设置/etc/dnsmasq.hosts;
+    :设置docker使用dnsmasq DNS;
   }
 endif
 
-split
-  if (Pro 版本) then (yes)
-    !includesub network.plantuml!BASIC
-  else
-    end
-  endif
-
-split again
   partition 初始化 {
     if (flag --noUpdate 开启) then (no)
       :检查更新;
     endif
     :保证tmpfs挂载;
-    :保证dnsmasq监听docker网络端口172.17.0.1;
   }
-end split
 
 !endsub
 @enduml

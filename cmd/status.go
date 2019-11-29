@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 	"jxcore/core/device"
-	"jxcore/internal/network"
 	"jxcore/internal/network/vpn"
 	"net/http"
 	"os"
+
+	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 
 	"github.com/spf13/cobra"
 )
@@ -57,27 +57,16 @@ var statusCmd = &cobra.Command{
 
 			log.Info("Test VPN Status")
 			var ip string
-			switch info.Vpn {
-			case device.VPNModeOPENVPN:
-				vpn.Closeopenvpn()
-				vpn.Startopenvpn()
-			case device.VPNModeWG:
-				vpn.CloseWg()
-				vpn.StartWg()
-			}
-			ip = network.GetClusterIP()
+			vpn.StartVpn(info.Vpn)
+			vpn.StopVpn(info.Vpn)
+			ip = vpn.GetClusterIP()
 			if ip != "" {
 				log.Info("VPN Test Success, ClusterIP: ", ip)
 			} else {
 				exitCode |= exitCodeVPNFailed
 				log.Error("VPN Test Failed!")
 			}
-			switch info.Vpn {
-			case device.VPNModeOPENVPN:
-				vpn.Closeopenvpn()
-			case device.VPNModeWG:
-				vpn.CloseWg()
-			}
+			vpn.StopVpn(info.Vpn)
 		}
 
 		os.Exit(exitCode)

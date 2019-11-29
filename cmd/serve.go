@@ -16,13 +16,11 @@ package cmd
 
 import (
 	"context"
-	"io/ioutil"
 	"jxcore/config"
 	"jxcore/config/yaml"
 	"jxcore/core"
 	"jxcore/core/device"
 	"jxcore/lowapi/ceph"
-	"jxcore/lowapi/utils"
 	"jxcore/subprocess"
 	"jxcore/subprocess/gateway"
 	"jxcore/version"
@@ -35,7 +33,6 @@ import (
 
 	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 
-	// 调试
 	"net/http"
 	_ "net/http/pprof"
 
@@ -68,23 +65,20 @@ to quickly create a Cobra application.`,
 			log.Info("==================Jxcore Serve Starting=====================")
 			log.Infof("Config: %+v", yaml.Config)
 
-			log.Info("================Checking Edgenode Status===================")
 			currentdevice, err := device.GetDevice()
 			if err != nil {
 				log.Fatal(err)
 			}
-			log.WithFields(log.Fields{"INFO": "Device"}).Info("workerid : ", currentdevice.WorkerID)
+			log.Info("workerid : ", currentdevice.WorkerID)
 
 			ctx, cancel := context.WithCancel(context.Background())
 			errGroup, ctx := errgroup.WithContext(ctx)
 
-			core := core.GetJxCore()
 			if device.GetDeviceType() == version.Pro {
 				log.Info("=======================Configuring Network============================")
 				core.ConfigNetwork()
 
 				// Network interface auto switch
-				// Auto update /etc/resolv.conf to dnsmasq config
 				// IoTEdge VPN auto reconnect
 				errGroup.Go(func() error { return core.MaintainNetwork(ctx) })
 			}
@@ -95,16 +89,14 @@ to quickly create a Cobra application.`,
 			}
 
 			log.Info("================Configuring Environment===================")
-
 			log.Info("ensure tmpfs is mounted")
 			err = ceph.EnsureTmpFs()
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			core.ConfigSupervisor()
-
 			log.Info("================Starting Subprocesses===================")
+			core.ConfigSupervisor()
 
 			// start up all component process
 			errGroup.Go(func() error { return subprocess.RunServer(ctx) })
@@ -149,23 +141,4 @@ func init() {
 	cfg := config.Config()
 	_ = cfg.BindPFlag("yamlsettings", serveCmd.PersistentFlags().Lookup("config"))
 	_ = cfg.BindPFlag("interface", serveCmd.PersistentFlags().Lookup("interface"))
-}
-
-// applySyncTools 配置同步工具
-func applySyncTools() {
-	if utils.Exists("/edge/synctools.zip") {
-		data, err := ioutil.ReadFile("/edge/synctools.zip")
-		if err != nil {
-			log.Error(err)
-		} else {
-			err = utils.Unzip(data, "/edge/mnt")
-			if err == nil {
-				log.Info("has find the synctools.zip")
-				os.Remove("/edge/synctools.zip.old")
-				if err = os.Rename("/edge/synctools.zip", "/edge/synctools.zip.old"); err != nil {
-					log.Error("Fail to move /edge/synctools.zip to /edge/synctools.zip.old", err)
-				}
-			}
-		}
-	}
 }

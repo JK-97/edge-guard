@@ -116,7 +116,9 @@ to quickly create a Cobra application.`,
 
 		host := GetHost(authHost)
 
-		dns.LookUpDns(host)
+		if err := dns.AddMasterDns(host); err != nil {
+			utils.CheckErr(err)
+		}
 
 		initcmd := exec.Command("touch", "/edge/init")
 		initcmd.Run()
