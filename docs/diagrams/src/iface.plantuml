@@ -1,0 +1,25 @@
+
+@startuml iface
+!startsub BASIC
+
+partition 自动切换网口 {
+  :网口连上会自动添加\nmetric=100+的默认路由;
+
+  while (true) is (每x秒)
+  :按照优先级\n获取能连通外网的网口;
+
+  note right: \
+测试方法:\n\
+添加网口到\n\
+114.114.114.114\n\
+的固定路由\n\
+尝试ping
+
+  :添加网口的默认路由，metric=5;
+  :将dhcp DNS 复制到\n/etc/dnsmasq.resolv.conf;
+  endwhile (jxcore 退出)
+  end
+}
+
+!endsub
+@enduml

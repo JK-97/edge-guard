@@ -2,16 +2,77 @@ package vpn
 
 import (
 	"bufio"
-	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
+	"fmt"
+	"jxcore/core/device"
+	"jxcore/internal/network"
+	"jxcore/lowapi/utils"
 	"os"
 	"os/exec"
 	"strings"
 	"sync"
 	"time"
+
+	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 )
 
-// StartWg 打开 WireGuard VPN
-func StartWg() error {
+// 更新vpn配置
+func UpdateVPN(vpnConfig []byte) error {
+	log.Info("Updating VPN")
+	dev, err := device.GetDevice()
+	if err != nil {
+		return err
+	}
+	mode := dev.Vpn
+
+	log.Info("VPN Mode: ", mode)
+
+	var configDir string
+	switch mode {
+	case device.VPNModeWG:
+		configDir = wireguardConfigDir
+	case device.VPNModeOPENVPN:
+		configDir = openvpnConfigDir
+	default:
+		return fmt.Errorf("VPN mode not supported: %v", mode)
+	}
+
+	if err := utils.Unzip(vpnConfig, configDir); err != nil {
+		return err
+	}
+	if err := StopVpn(mode); err != nil {
+		return err
+	}
+	if err := StartVpn(mode); err != nil {
+		return err
+	}
+	OnVPNConnetced()
+	return nil
+}
+
+func StartVpn(mode device.Vpn) error {
+	switch mode {
+	case device.VPNModeWG:
+		return startWg()
+	case device.VPNModeOPENVPN:
+		return startopenvpn()
+	default:
+		return fmt.Errorf("VPN mode not supported: %v", mode)
+	}
+}
+
+func StopVpn(mode device.Vpn) error {
+	switch mode {
+	case device.VPNModeWG:
+		return stopWg()
+	case device.VPNModeOPENVPN:
+		return stopOpenvpn()
+	default:
+		return fmt.Errorf("VPN mode not supported: %v", mode)
+	}
+}
+
+// startWg 打开 WireGuard VPN
+func startWg() error {
 	cmd := exec.Command("wg-quick", "up", WireGuardInterface)
 	out, err := cmd.CombinedOutput()
 	if err == nil {
@@ -23,8 +84,8 @@ func StartWg() error {
 	return err
 }
 
-// CloseWg 关闭 WireGuard VPN
-func CloseWg() error {
+// stopWg 关闭 WireGuard VPN
+func stopWg() error {
 	cmd := exec.Command("wg-quick", "down", WireGuardInterface)
 	out, err := cmd.Output()
 	if err == nil {
@@ -35,8 +96,8 @@ func CloseWg() error {
 	return err
 }
 
-// Startopenvpn 打开 OpenVPN
-func Startopenvpn() error {
+// startopenvpn 打开 OpenVPN
+func startopenvpn() error {
 	cmd := exec.Command("openvpn", openvpnConfigPath)
 	pipe, err := cmd.StdoutPipe()
 	err = cmd.Start()
@@ -83,15 +144,37 @@ func Startopenvpn() error {
 	return err
 }
 
-// Closeopenvpn 关闭 OpenVPN
-func Closeopenvpn() error {
+// stopOpenvpn 关闭 OpenVPN
+func stopOpenvpn() error {
 	c := "killall openvpn"
-	cmd := exec.Command("/bin/sh", "-c", c)
-	err := cmd.Run()
+	err := exec.Command("/bin/sh", "-c", c).Run()
 	if err == nil {
 		log.Info("openvpn down success")
 	} else {
 		log.Info("openvpn down failed ", err)
 	}
-	return err
+	return nil
+}
+
+// GetClusterIP 获取集群内网 VPN IP
+func GetClusterIP() string {
+	d, err := device.GetDevice()
+	utils.CheckErr(err)
+	switch d.Vpn {
+	case device.VPNModeOPENVPN:
+		tun0interface, err := network.GetMyIP(OpenVPNInterface)
+		if err != nil {
+			log.WithFields(log.Fields{"Operating": "GetClusterIP"}).Error(err)
+			return ""
+		}
+		return tun0interface
+	case device.VPNModeWG:
+		wg0interface, err := network.GetMyIP(WireGuardInterface)
+		if err != nil {
+			log.WithFields(log.Fields{"Operating": "GetClusterIP"}).Error(err)
+			return ""
+		}
+		return wg0interface
+	}
+	return ""
 }

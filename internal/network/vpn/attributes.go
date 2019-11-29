@@ -14,6 +14,11 @@ const (
 
 	openvpnSuccessMessage = "Initialization Sequence Completed"
 	openvpnConfigPath     = "/etc/openvpn/client.ovpn"
+
+	wireguardConfigDir = "/etc/wireguard/"
+	openvpnConfigDir   = "/etc/openvpn/"
+
+	consulConfigPath = "/data/edgex/consul/config/consul_conf.json"
 )
 
 var (
