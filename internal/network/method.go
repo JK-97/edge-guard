@@ -1,9 +1,6 @@
 package network
 
 import (
-	"jxcore/core/device"
-	"jxcore/internal/network/vpn"
-	"jxcore/lowapi/utils"
 	"net"
 	"strings"
 	"time"
@@ -93,27 +90,4 @@ func GetEthIP() string {
 	}
 
 	return addrStr
-}
-
-// GetClusterIP 获取集群内网 VPN IP
-func GetClusterIP() string {
-	d, err := device.GetDevice()
-	utils.CheckErr(err)
-	switch d.Vpn {
-	case device.VPNModeOPENVPN:
-		tun0interface, err := GetMyIP(vpn.OpenVPNInterface)
-		if err != nil {
-			log.WithFields(log.Fields{"Operating": "GetClusterIP"}).Error(err)
-			return ""
-		}
-		return tun0interface
-	case device.VPNModeWG:
-		wg0interface, err := GetMyIP(vpn.WireGuardInterface)
-		if err != nil {
-			log.WithFields(log.Fields{"Operating": "GetClusterIP"}).Error(err)
-			return ""
-		}
-		return wg0interface
-	}
-	return ""
 }

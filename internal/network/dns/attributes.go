@@ -5,10 +5,9 @@ const (
 	IotedgeHostName = "edgegw.iotedge"
 	MasterHostName  = "master.iotedge"
 
-	consulConfigPath = "/data/edgex/consul/config/consul_conf.json"
-
-	HostsFile  = "/etc/dnsmasq.hosts"
-	resolvPath = "/etc/resolv.conf"
+	HostFile        = "/etc/hosts"
+	DnsmasqHostFile = "/etc/dnsmasq.hosts"
+	resolvPath      = "/etc/resolv.conf"
 
 	dnsmasqConfPath       = "/etc/dnsmasq.conf"
 	dnsmasqResolvPath     = "/etc/dnsmasq.resolv.conf"
@@ -18,8 +17,6 @@ const (
 	dhclientResolvHookPath = dhcpEnterHooksDir + "/nodnsupdate"
 
 	ifacePath = "/etc/network/interfaces"
-
-	DnsmasqListenIP = "172.18.1.1"
 )
 
 // 全局变量

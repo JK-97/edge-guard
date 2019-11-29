@@ -49,7 +49,7 @@ debian_base:
 	cp -r gateway.cfg $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin
 	mkdir -p $(PACKAGE_DIR)/etc/systemd/system/
 	cp -r scripts/jxcore.service $(PACKAGE_DIR)/etc/systemd/system/
-	cp -r doc $(PACKAGE_DIR)/$(EXTRACT_DIR)/template
+	cp -r template $(PACKAGE_DIR)/$(EXTRACT_DIR)/template
 	cp -r DEBIAN $(PACKAGE_DIR)/DEBIAN/
 
 debian: check_version build debian_base changelog
