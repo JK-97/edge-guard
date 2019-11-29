@@ -8,6 +8,7 @@ import (
 	"jxcore/internal/network/dns/dnsfile"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
@@ -16,6 +17,14 @@ import (
 
 // 添加dhcp hook，使得dhclient的resolv.conf 结果重定向到 /edge/resolv.d/dhclient.$interface
 func ApplyDHCPResolveUpdateHooks() {
+	dir := filepath.Dir(dhclientResolvHookPath)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		err := os.MkdirAll(dir, 0644)
+		if err != nil {
+			logger.Fatal(err)
+		}
+	}
+
 	err := ioutil.WriteFile(dhclientResolvHookPath, []byte(dnsfile.DhclientResolvRedirectHook), 0644)
 	if err != nil {
 		logger.Fatal(err)
@@ -24,12 +33,16 @@ func ApplyDHCPResolveUpdateHooks() {
 }
 
 func RemoveDHCPEnterHooks() {
-	_ = os.Rename(dhcpEnterHooksDir, dhcpEnterHooksDir+".bak")
-	logger.Info("Removed dhcp enter hooks")
+	bakDir := dhcpEnterHooksDir + ".bak"
+	if _, err := os.Stat(bakDir); os.IsNotExist(err) {
+		_ = os.Rename(dhcpEnterHooksDir, bakDir)
+		logger.Info("Removed dhcp enter hooks")
+	}
 }
 
 // 重设/etc/resolv.conf 指向 dnsmasq
 func ResetResolv() {
+	_ = os.Remove(resolvPath)
 	err := ioutil.WriteFile(resolvPath, []byte(dnsfile.ResolvConf), 0777)
 	if err != nil {
 		logger.Fatal(err)

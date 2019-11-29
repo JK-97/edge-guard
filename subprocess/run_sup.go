@@ -18,16 +18,6 @@ func RunServer(ctx context.Context) error {
 	return runProcess(ctx, programmanage.GetJxConfig())
 }
 
-// RunMcuProcess 启动 mcu 相关子进程
-func RunMcuProcess(ctx context.Context) error {
-	return runProcess(ctx, programmanage.GetMcuConfig())
-}
-
-// RunJxserving 启动 Jxserving
-func RunJxserving(ctx context.Context) error {
-	return runProcess(ctx, programmanage.GetJxserving())
-}
-
 func runProcess(ctx context.Context, config string) error {
 	// infinite loop for handling Restart ('reload' command)
 	for {

@@ -18,7 +18,6 @@ var BaseDepend = ""
 
 var filelistener = `[program:filelistener]
 #directory=/edge/tools/nodetools/filelistener/bin/
-restart_when_binary_changed=true
 command=/edge/tools/nodetools/filelistener/bin/filelistener -c /edge/tools/nodetools/filelistener/bin/filelistener.cfg
 process_name=%(program_name)s
 numprocs=1
@@ -45,7 +44,6 @@ stderr_events_enabled=false
 
 var telegraf = `[program:telegraf]
 #directory=/edge/monitor/telegraf/bin
-restart_when_binary_changed=true
 command=/edge/monitor/telegraf/bin/telegraf --config /edge/monitor/telegraf/bin/telegraf.cfg
 process_name=%(program_name)s
 numprocs=1
@@ -68,12 +66,10 @@ stderr_logfile_maxbytes=50MB
 stderr_logfile_backups=10
 stderr_capture_maxbytes=0
 stderr_events_enabled=false
-restart_when_binary_changed=true
 `
 
 var Db = `[program:Db]
 #directory=/edge/mnt/db/bin
-restart_when_binary_changed=true
 command=/edge/mnt/db/bin/db serve --config /edge/mnt/db/bin/db.toml
 process_name=%(program_name)s
 numprocs=1
@@ -96,12 +92,10 @@ stderr_logfile_maxbytes=50MB
 stderr_logfile_backups=10
 stderr_capture_maxbytes=0
 stderr_events_enabled=false
-restart_when_binary_changed=true
 `
 
 // Watchdog 与 mcu 通信，防止系统被误杀
 var Watchdog = `[program:WatchDog]
-restart_when_binary_changed=true
 command=/edge/tools/mcutools/watchdog/bin/watchdog
 process_name=%(program_name)s
 numprocs=1
@@ -129,7 +123,6 @@ stderr_events_enabled=false
 
 // Mcuserver 与 mcu 通信，获取当前的开机模式
 var Mcuserver = `[program:McuServer]
-restart_when_binary_changed=true
 command=/edge/tools/mcutools/mcuserver/bin/mcuserver
 process_name=%(program_name)s
 numprocs=1
@@ -156,7 +149,6 @@ stderr_events_enabled=false
 
 // Mq 消息队列同步
 var Mq = `[program:Mq]
-restart_when_binary_changed=true
 command=/edge/mnt/mq/bin/mq -c /edge/mnt/mq/bin/mq.cfg
 process_name=%(program_name)s
 numprocs=1
@@ -186,7 +178,6 @@ stderr_events_enabled=false
 
 // Fs 文件系统同步
 var Fs = `[program:Fs]
-restart_when_binary_changed=true
 command=/edge/mnt/fs/bin/fs
 process_name=%(program_name)s
 numprocs=1
@@ -242,7 +233,6 @@ stderr_events_enabled=false
 `
 
 var Cleaner = `[program:Cleaner]
-restart_when_binary_changed=true
 command=/edge/tools/nodetools/cleaner/bin/cleaner -c /edge/tools/nodetools/cleaner/bin/cleaner.cfg
 process_name=%(program_name)s
 numprocs=1
@@ -291,12 +281,12 @@ var ProgramCfgMap = map[string]string{
 	"Telegraf":     telegraf,
 	"Db":           Db,
 	"Fs":           Fs,
-	// "Mcuserver":    Mcuserver,
-	// "Watchdog":     Watchdog,
-	"Mq": Mq,
-	// "Jxserving": Jxserving,
-	"Cleaner": Cleaner,
-	// "Cadvisor":  Cadvisor,
+	"Mcuserver":    Mcuserver,
+	"Watchdog":     Watchdog,
+	"Mq":           Mq,
+	"Jxserving":    Jxserving,
+	"Cleaner":      Cleaner,
+	"Cadvisor":     Cadvisor,
 }
 
 var ProgramSetting = ``
