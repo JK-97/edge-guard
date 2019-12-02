@@ -20,9 +20,9 @@ import (
 	"jxcore/config/yaml"
 	"jxcore/core"
 	"jxcore/core/device"
+	"jxcore/gateway"
 	"jxcore/lowapi/ceph"
 	"jxcore/subprocess"
-	"jxcore/subprocess/gateway"
 	"jxcore/version"
 	"jxcore/web"
 	"jxcore/web/route"
@@ -41,12 +41,12 @@ import (
 )
 
 const (
-	graceful = time.Second * 1
+	graceful = time.Second * 15
 )
 
 var (
 	debug    bool   = false
-	port     string = ":80"
+	addr     string = ":80"
 	noUpdate bool   = false
 )
 
@@ -102,8 +102,8 @@ to quickly create a Cobra application.`,
 			errGroup.Go(func() error { return subprocess.RunServer(ctx) })
 
 			// web server
-			errGroup.Go(gateway.ServeGateway)
-			errGroup.Go(func() error { return web.Serve(ctx, port, route.Routes(), graceful) })
+			errGroup.Go(func() error { return gateway.ServeGateway(ctx, graceful) })
+			errGroup.Go(func() error { return web.Serve(ctx, addr, route.Routes(), graceful) })
 			errGroup.Go(func() error { return web.Serve(ctx, ":10880", http.DefaultServeMux, graceful) })
 
 			// handle SIGTERM and SIGINT
@@ -130,7 +130,7 @@ to quickly create a Cobra application.`,
 
 func init() {
 	rootCmd.AddCommand(serveCmd)
-	serveCmd.PersistentFlags().StringVar(&port, "port", port, "Port to run Application server on")
+	serveCmd.PersistentFlags().StringVar(&addr, "port", addr, "Addr to run Application server on")
 	serveCmd.PersistentFlags().BoolVar(&debug, "debug", debug, "Whether to enable pprof")
 	serveCmd.PersistentFlags().BoolVar(&noUpdate, "no-update", noUpdate, "Whether to check for update")
 

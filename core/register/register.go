@@ -30,7 +30,8 @@ type registerInfo struct {
 }
 
 // 维持到 IoTEdge Master的连接
-func MaintainMasterConnection(ctx context.Context) error {
+func MaintainMasterConnection(ctx context.Context, onFirstConnect func()) error {
+	once := false
 	for {
 		select {
 		case <-ctx.Done():
@@ -39,6 +40,10 @@ func MaintainMasterConnection(ctx context.Context) error {
 		}
 
 		masterip := retryfindMaster(ctx)
+		if !once {
+			once = true
+			onFirstConnect()
+		}
 		err := hearbeat.AliveReport(ctx, masterip, 5)
 		if err != nil {
 			logger.Error(err)
@@ -48,7 +53,7 @@ func MaintainMasterConnection(ctx context.Context) error {
 
 // retryfindMaster 从 DHCP 服务器 获取 Master 节点的 IP，直到获取成功
 func retryfindMaster(ctx context.Context) string {
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(3 * time.Second)
 	defer ticker.Stop()
 
 	for {
