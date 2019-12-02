@@ -25,14 +25,19 @@ func InitIFace() error {
 	return switchIFace(findBestIFace())
 }
 
-func MaintainBestIFace() error {
+func MaintainBestIFace(ctx context.Context) error {
+	ticker := time.NewTicker(checkBestIFaceInterval)
 	for {
-		bestIFace := findBestIFace()
-		err := switchIFace(bestIFace)
-		if err != nil {
-			log.Error("Failed to switch network interface: ", err)
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+			bestIFace := findBestIFace()
+			err := switchIFace(bestIFace)
+			if err != nil {
+				log.Error("Failed to switch network interface: ", err)
+			}
 		}
-		time.Sleep(checkBestIFaceInterval)
 	}
 }
 

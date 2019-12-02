@@ -12,8 +12,8 @@ import (
 	"jxcore/lowapi/utils"
 	"jxcore/management/updatemanage"
 	"os"
-	"time"
 
+	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 
 	"golang.org/x/sync/errgroup"
@@ -56,24 +56,13 @@ func ConfigNetwork() {
 
 func MaintainNetwork(ctx context.Context) error {
 	errGroup := errgroup.Group{}
-	errGroup.Go(iface.MaintainBestIFace)
-	errGroup.Go(func() error { return register.MaintainMasterConnection(ctx) })
+	errGroup.Go(func() error { return iface.MaintainBestIFace(ctx) })
+	errGroup.Go(func() error { return register.MaintainMasterConnection(ctx, UpdateCore) })
 	return errGroup.Wait()
 }
 
-//contrl the update
 func UpdateCore() {
-	for !network.CheckMasterConnect() {
-		time.Sleep(5 * time.Second)
-		log.Info("Waiting for master connect")
-
-	}
-	log.Info("Master Connect")
-	if dns.CheckDnsmasqConf() {
-		log.Info("Normal Dnsmasq configuration ")
-	} else {
-		log.Error("Error Dnsmasq configuration ")
-	}
+	logger.Info("================Checking JxToolset Update===================")
 	updatemanage.AddAptKey()
 	updateprocess := updatemanage.GetUpdateProcess()
 	pkgneedupdate := updateprocess.CheckUpdate()
