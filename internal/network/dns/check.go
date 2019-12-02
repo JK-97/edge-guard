@@ -1,31 +1,30 @@
 package dns
 
 import (
+	"fmt"
 	"io/ioutil"
-	"jxcore/core/device"
-	"jxcore/lowapi/utils"
 	"strings"
 )
 
 // CheckDnsmasqConf 检查 dnsmasq 的 hosts 文件
-func CheckDnsmasqConf() bool {
-	flag := 0
-	currentdeive, err := device.GetDevice()
-	utils.CheckErr(err)
+func CheckDnsmasqConf() error {
 	rawData, err := ioutil.ReadFile(DnsmasqHostFile)
-	utils.CheckErr(err)
-	lines := strings.Split(string(rawData), "\n")
-	for _, line := range lines {
-		if strings.Contains(line, MasterHostName) {
-			flag++
-		} else if strings.Contains(line, IotedgeHostName) {
-			flag++
-		} else if strings.Contains(line, LocalHostName) {
-			flag++
-		} else if strings.Contains(line, "worker-"+currentdeive.WorkerID) {
-			flag++
+	if err != nil {
+		return err
+	}
+
+	text := string(rawData)
+	result := ""
+	check := func(target string) {
+		if !strings.Contains(text, target) {
+			result += fmt.Sprintf("%s check failed, %s not found.\n", DnsmasqHostFile, target)
 		}
 	}
-	return flag >= 3
-
+	check(MasterHostName)
+	check(IotedgeHostName)
+	check(LocalHostName)
+	if result != "" {
+		return fmt.Errorf(result)
+	}
+	return nil
 }
