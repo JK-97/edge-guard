@@ -109,10 +109,11 @@ to quickly create a Cobra application.`,
 
 		fmt.Print(SetColor("Step Five\n", 0, 0, TextBlue))
 		fmt.Print(SetColor("***************Check Dns config**************\n", 0, 0, TextBlue))
-		if dns.CheckDnsmasqConf() {
+		if err := dns.CheckDnsmasqConf(); err == nil {
 			fmt.Print(SetColor("DNS CONFIG CHECK OK \n", 0, 0, TextGreen))
 		} else {
 			fmt.Print(SetColor("DNS CONFIG CHECK BAD \n", 0, 0, TextRed))
+			fmt.Print(err)
 		}
 		if out, _ := exec.Command("pgrep", "dnsmasq").Output(); out != nil {
 			fmt.Print(SetColor("RUNNING     "+"dnsmasq"+"\n", 0, 0, TextGreen))

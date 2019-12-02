@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"context"
 	"errors"
 	"net"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"jxcore/gateway/option"
 	"jxcore/gateway/serve"
 	"jxcore/gateway/store"
+	"jxcore/web"
 
 	"github.com/gorilla/mux"
 )
@@ -247,7 +249,7 @@ func listenUnix(router http.Handler) {
 }
 
 // ServeGateway 启动 Gateway
-func ServeGateway() error {
+func ServeGateway(ctx context.Context, graceful time.Duration) error {
 	Setup()
 	router := makeRouter()
 
@@ -257,5 +259,5 @@ func ServeGateway() error {
 	}
 
 	logger.Info("Listen on: http://", ServerOptions.Addr)
-	return http.ListenAndServe(ServerOptions.Addr, router)
+	return web.Serve(ctx, ServerOptions.Addr, router, graceful)
 }
