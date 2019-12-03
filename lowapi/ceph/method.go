@@ -2,12 +2,12 @@ package ceph
 
 import (
 	"io/ioutil"
-	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
-	"jxcore/lowapi/utils"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 )
 
 // CephUmount 取消 ceph 的挂载
@@ -58,14 +58,12 @@ func Cephmount() {
 }
 
 func TmpFsMount() error {
-	if utils.Exists(tmpfsPath) {
-		os.Remove(tmpfsPath)
-		err := os.Mkdir(tmpfsPath, 0755)
-		if err != nil {
-			return err
-		}
+	_ = os.RemoveAll(tmpfsPath)
+	err := os.Mkdir(tmpfsPath, 0755)
+	if err != nil {
+		return err
 	}
-	return exec.Command("/bin/bash", "-c", "mount -t tmpfs tmpfs /data/tmpfs").Run()
+	return exec.Command("/bin/bash", "-c", "mount -t tmpfs tmpfs "+tmpfsPath).Run()
 }
 
 func EnsureTmpFs() error {
