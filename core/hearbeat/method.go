@@ -73,6 +73,7 @@ func tryToSend(masterip, msg string) (err error) {
 		if err != nil {
 			return err
 		}
+		connMasterip = masterip
 	}
 
 	if _, err = conn.Write([]byte(msg)); err != nil {
