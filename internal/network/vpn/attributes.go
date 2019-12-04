@@ -22,4 +22,6 @@ const (
 var (
 	// Open VPN 启动超时
 	ErrOpenVPNTimeout = errors.New("Start Open VPN Timeout")
+
+	myVpnIP string
 )

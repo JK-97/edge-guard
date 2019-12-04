@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"jxcore/core/device"
-	"jxcore/internal/network"
 	"jxcore/internal/network/dns"
 	"jxcore/internal/network/vpn"
 	"jxcore/internal/template"
@@ -55,13 +54,7 @@ func updateConsulConfig(currentdevice *device.Device) {
 func updateTelegrafConfig(currentdevice *device.Device, masterip string) {
 	template.Telegrafcfg(masterip, currentdevice.WorkerID)
 	template.Cadvisorcfg(masterip, currentdevice.WorkerID)
-	var VpnIP string
-	//确保4g 或 以太有一个起来的情况下
-	if _, erreth0 := network.GetMyIP("eth0"); erreth0 == nil {
-		VpnIP = vpn.GetClusterIP()
-	} else if _, errusb0 := network.GetMyIP("usb0"); errusb0 == nil {
-		VpnIP = vpn.GetClusterIP()
-	}
+	VpnIP := vpn.GetClusterIP()
 	if VpnIP != "" {
 		template.Statsitecfg(masterip, VpnIP)
 	}
