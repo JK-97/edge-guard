@@ -64,14 +64,11 @@ func SaveFile(tempfilename string, binfile io.Reader) error {
 	return err
 }
 
-// Exists Exists
-func Exists(path string) bool {
+// FileExists 判断文件是否存在
+func FileExists(path string) bool {
 	_, err := os.Stat(path) //os.Stat获取文件信息
 	if err != nil {
-		if os.IsExist(err) {
-			return true
-		}
-		return false
+		return os.IsExist(err)
 	}
 	return true
 }
@@ -93,7 +90,7 @@ func IsFile(path string) bool {
 func DelFile(path_list []string) {
 	//Clean up all files under the directory, but save the folder structure ,
 	for _, per_path := range path_list {
-		if Exists(per_path) {
+		if FileExists(per_path) {
 			if IsDir(per_path) {
 				filepath.Walk(per_path, func(path string, info os.FileInfo, err error) error {
 					if err != nil {
@@ -119,7 +116,7 @@ func DelFile(path_list []string) {
 func ResetFile(path_list []string) {
 	//Clean up all files under the directory, but save the files structure ,
 	for _, per_path := range path_list {
-		if Exists(per_path) {
+		if FileExists(per_path) {
 			if IsDir(per_path) {
 				filepath.Walk(per_path, func(path string, info os.FileInfo, err error) error {
 

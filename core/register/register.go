@@ -44,6 +44,7 @@ func MaintainMasterConnection(ctx context.Context, onFirstConnect func()) error 
 			once = true
 			onFirstConnect()
 		}
+		onMasterIPChanged(masterip)
 		err := hearbeat.AliveReport(ctx, masterip, 5)
 		if err != nil {
 			logger.Error(err)

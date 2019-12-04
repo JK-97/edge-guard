@@ -45,7 +45,6 @@ func UpdateVPN(vpnConfig []byte) error {
 	if err := StartVpn(mode); err != nil {
 		return err
 	}
-	OnVPNConnetced()
 	return nil
 }
 

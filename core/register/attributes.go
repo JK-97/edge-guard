@@ -16,6 +16,8 @@ const (
 	suffix = 128
 
 	registerTimeout = time.Second * 10
+
+	consulConfigPath = "/data/edgex/consul/config/consul_conf.json"
 )
 
 var enc = base64.NewEncoding("ABCDEFGHIJKLMNOabcdefghijklmnopqrstuvwxyzPQRSTUVWXYZ0123456789-_").WithPadding(base64.NoPadding)

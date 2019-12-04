@@ -75,7 +75,7 @@ func UpdateCore() {
 
 // applySyncTools 更新配置同步工具
 func applySyncTools() {
-	if utils.Exists("/edge/synctools.zip") {
+	if utils.FileExists("/edge/synctools.zip") {
 		data, err := ioutil.ReadFile("/edge/synctools.zip")
 		if err != nil {
 			log.Error(err)
