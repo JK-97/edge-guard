@@ -2,8 +2,9 @@ package pythonpkg
 
 import (
 	"fmt"
-	log "jxcore/lowapi/logger"
 	"io/ioutil"
+	"jxcore/lowapi/data"
+	log "jxcore/lowapi/logger"
 	"jxcore/lowapi/utils"
 	"net/http"
 	"os/exec"
@@ -58,8 +59,7 @@ func (c *PkgClient) Internal() ([]PythonPkg, error) {
 	}
 
 	//interset
-
-	res := utils.Hash(internalpkgname, allpkgname)
+	res := data.Hash(internalpkgname, allpkgname)
 	//interpkg := model.InterfaceToString(res)
 	fmt.Println(res)
 	for _, internalpkg := range res {
