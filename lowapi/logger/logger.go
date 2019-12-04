@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"jxcore/lowapi/data"
 	"jxcore/version"
 
 	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
@@ -57,6 +58,7 @@ func Panic(args ...interface{}) {
 }
 
 func WithFields(keyValues Fields) logger.Logger {
-	keyValues["JXCORE_VERSION"] = version.Version
-	return logger.WithFields(logger.Fields(keyValues))
+	cp := data.CopyMap(keyValues)
+	cp["JXCORE_VERSION"] = version.Version
+	return logger.WithFields(logger.Fields(cp))
 }
