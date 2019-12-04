@@ -8,7 +8,7 @@ import (
 	"net"
 	"time"
 
-	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
+	"jxcore/lowapi/logger"
 )
 
 var (
