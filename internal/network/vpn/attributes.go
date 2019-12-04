@@ -17,8 +17,6 @@ const (
 
 	wireguardConfigDir = "/etc/wireguard/"
 	openvpnConfigDir   = "/etc/openvpn/"
-
-	consulConfigPath = "/data/edgex/consul/config/consul_conf.json"
 )
 
 var (

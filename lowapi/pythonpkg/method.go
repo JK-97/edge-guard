@@ -95,7 +95,7 @@ func (c *PkgClient) DeletePyPkg() error {
 
 func (c *PkgClient) RestorePyPkg() {
 
-	if utils.Exists(PythonPkgRestorePath) {
+	if utils.FileExists(PythonPkgRestorePath) {
 		restore_pkg, err := ioutil.ReadDir(PythonPkgRestorePath)
 		if err != nil {
 			log.Error(err)

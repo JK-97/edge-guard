@@ -1,4 +1,4 @@
-package vpn
+package register
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"jxcore/core/device"
 	"jxcore/internal/network"
 	"jxcore/internal/network/dns"
+	"jxcore/internal/network/vpn"
 	"jxcore/internal/template"
 	"jxcore/lowapi/utils"
 )
@@ -21,20 +22,16 @@ type consulConfig struct {
 	UI               bool     `json:"ui"`
 }
 
-// OnMasterIPChanged master IP 变化后执行
-func OnMasterIPChanged(masterip string) {
+// onMasterIPChanged master IP 变化后执行
+func onMasterIPChanged(masterip string) {
 	currentdevice, err := device.GetDevice()
 	utils.CheckErr(err)
 
-	if utils.Exists(consulConfigPath) {
+	if utils.FileExists(consulConfigPath) {
 		updateConsulConfig(currentdevice)
 	}
 
 	updateTelegrafConfig(currentdevice, masterip)
-}
-
-// OnVPNConnetced VPN 连接成功后执行
-func OnVPNConnetced() {
 }
 
 // updateConsulConfig 更新 Consul 配置
@@ -42,7 +39,7 @@ func updateConsulConfig(currentdevice *device.Device) {
 	config := consulConfig{
 		Server:           true,
 		ClientAddr:       "0.0.0.0",
-		AdvertiseAddrWan: GetClusterIP(),
+		AdvertiseAddrWan: vpn.GetClusterIP(),
 		BootstrapExpect:  1,
 		Datacenter:       "worker-" + currentdevice.WorkerID,
 		NodeName:         "worker-" + currentdevice.WorkerID,
@@ -61,9 +58,9 @@ func updateTelegrafConfig(currentdevice *device.Device, masterip string) {
 	var VpnIP string
 	//确保4g 或 以太有一个起来的情况下
 	if _, erreth0 := network.GetMyIP("eth0"); erreth0 == nil {
-		VpnIP = GetClusterIP()
+		VpnIP = vpn.GetClusterIP()
 	} else if _, errusb0 := network.GetMyIP("usb0"); errusb0 == nil {
-		VpnIP = GetClusterIP()
+		VpnIP = vpn.GetClusterIP()
 	}
 	if VpnIP != "" {
 		template.Statsitecfg(masterip, VpnIP)
