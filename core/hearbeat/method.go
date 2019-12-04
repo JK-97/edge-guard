@@ -32,9 +32,9 @@ func AliveReport(ctx context.Context, masterip string, allowContinuousFailed int
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
-			if tryToSend(masterip, msg) != nil {
+			if err := tryToSend(masterip, msg); err != nil {
 				continuousFailed++
-				logger.Infof("Heartbeat to %s failed %d times.", masterip, continuousFailed)
+				logger.Infof("Heartbeat to %s failed %d times: %v", masterip, continuousFailed, err)
 				if continuousFailed >= allowContinuousFailed {
 					return nil
 				}

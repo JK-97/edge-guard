@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 	log "jxcore/lowapi/logger"
 )
 
@@ -44,6 +45,9 @@ func UpdateVPN(vpnConfig []byte) error {
 	}
 	if err := StartVpn(mode); err != nil {
 		return err
+	}
+	if err := updateClusterIP(mode); err != nil {
+		logger.Error("Failed to update cluster ip: ", err)
 	}
 	return nil
 }
@@ -157,23 +161,27 @@ func stopOpenvpn() error {
 
 // GetClusterIP 获取集群内网 VPN IP
 func GetClusterIP() string {
-	d, err := device.GetDevice()
-	utils.CheckErr(err)
-	switch d.Vpn {
+	return myVpnIP
+}
+
+func updateClusterIP(mode device.Vpn) error {
+	var ip string
+	var err error
+
+	switch mode {
 	case device.VPNModeOPENVPN:
-		tun0interface, err := network.GetMyIP(OpenVPNInterface)
+		ip, err = network.GetMyIP(OpenVPNInterface)
 		if err != nil {
-			log.WithFields(log.Fields{"Operating": "GetClusterIP"}).Error(err)
-			return ""
+			return err
 		}
-		return tun0interface
 	case device.VPNModeWG:
-		wg0interface, err := network.GetMyIP(WireGuardInterface)
+		ip, err = network.GetMyIP(WireGuardInterface)
 		if err != nil {
-			log.WithFields(log.Fields{"Operating": "GetClusterIP"}).Error(err)
-			return ""
+			return err
 		}
-		return wg0interface
+	default:
+		return fmt.Errorf("VPN mode not supported: %v", mode)
 	}
-	return ""
+	myVpnIP = ip
+	return nil
 }
