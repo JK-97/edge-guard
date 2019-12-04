@@ -6,7 +6,7 @@ import (
 	"jxcore/internal/network"
 	"os/exec"
 
-	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
+	"jxcore/lowapi/logger"
 )
 
 func EnsureDockerDNSConfig() error {

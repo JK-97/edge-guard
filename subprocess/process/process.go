@@ -3,7 +3,7 @@ package process
 import (
 	"fmt"
 	"github.com/ochinchina/filechangemonitor"
-	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
+	log "jxcore/lowapi/logger"
 	"io"
 	"jxcore/subprocess/config"
 	"jxcore/subprocess/events"

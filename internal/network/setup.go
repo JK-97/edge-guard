@@ -3,7 +3,7 @@ package network
 import (
 	"os/exec"
 
-	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
+	log "jxcore/lowapi/logger"
 )
 
 func DisableNetworkManager() {

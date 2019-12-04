@@ -13,8 +13,8 @@ import (
 	"jxcore/management/updatemanage"
 	"os"
 
-	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
-	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
+	"jxcore/lowapi/logger"
+	log "jxcore/lowapi/logger"
 
 	"golang.org/x/sync/errgroup"
 )

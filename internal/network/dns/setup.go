@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
-	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
+	"jxcore/lowapi/logger"
+	log "jxcore/lowapi/logger"
 )
 
 // 添加dhcp hook，使得dhclient的resolv.conf 结果重定向到 /edge/resolv.d/dhclient.$interface
