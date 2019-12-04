@@ -6,6 +6,8 @@ import (
 	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 )
 
+type Fields logger.Fields
+
 func Debugf(format string, args ...interface{}) {
 	logger.WithFields(logger.Fields{"JXCORE_VERSION": version.Version}).Debugf(format, args...)
 }
@@ -54,6 +56,7 @@ func Panic(args ...interface{}) {
 	logger.WithFields(logger.Fields{"JXCORE_VERSION": version.Version}).Panic(args...)
 }
 
-func WithFields(keyValues logger.Fields) logger.Logger {
-	return logger.WithFields(keyValues)
+func WithFields(keyValues Fields) logger.Logger {
+	keyValues["JXCORE_VERSION"] = version.Version
+	return logger.WithFields(logger.Fields(keyValues))
 }

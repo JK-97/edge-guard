@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/spf13/cobra"
-	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
+	log "jxcore/lowapi/logger"
 	"io/ioutil"
 	"jxcore/core/device"
 	"jxcore/core/register"

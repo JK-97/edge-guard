@@ -1,7 +1,7 @@
 package gateway
 
 import (
-	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
+	"jxcore/lowapi/logger"
 	"jxcore/gateway/option"
 	"jxcore/gateway/store"
 	"os"

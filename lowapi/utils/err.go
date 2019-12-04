@@ -1,6 +1,6 @@
 package utils
 
-import log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
+import log "jxcore/lowapi/logger"
 
 func CheckErr(err error) {
 	if err != nil {

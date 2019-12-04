@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"jxcore/core/device"
 
-	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
+	log "jxcore/lowapi/logger"
 	"jxcore/internal/network/dns"
 	"jxcore/lowapi/utils"
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"jxcore/management/programmanage"
 
-	log "gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
+	log "jxcore/lowapi/logger"
 )
 
 type Options struct {
