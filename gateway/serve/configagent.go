@@ -43,7 +43,7 @@ type ConfigAgentHandler struct {
 	option.ConfigAgentConfig
 	DialContext  func(context.Context, string, string) (net.Conn, error)
 	Upgrader     websocket.Upgrader
-	Client       ConfigClient //*http.Client
+	Client       ConfigClient // *http.Client
 	ReverseProxy http.Handler
 }
 
@@ -96,13 +96,20 @@ type getKeyRequest struct {
 }
 
 type watchKeyResponse struct {
-	Key  string      `json:"key"`
-	JSON interface{} `json:"json"`
+	Key string `json:"key"`
+
+	configAgentData
+	// JSON interface{} `json:"json"`
+}
+
+type configAgentData struct {
+	Index int    `json:"index"`
+	Value string `json:"Value"`
 }
 
 type configAgentResponse struct {
-	Data        map[string]interface{} `json:"data"`
-	Description string                 `json:"desc,omitempty"`
+	Data        configAgentData `json:"data"`
+	Description string          `json:"desc,omitempty"`
 }
 
 type errorResponse struct {
@@ -131,8 +138,9 @@ func (w *httpConfigClient) GetConfig(key string, timeout time.Duration, watch bo
 
 	u := url.URL{
 		Scheme:   "http",
+		Host:     "edgegw.localhost",
 		Path:     path,
-		RawQuery: fmt.Sprintf("timeout={}%f", float32(timeout)/float32(time.Second)),
+		RawQuery: fmt.Sprintf("timeout=%d", int(float32(timeout)/float32(time.Second))),
 	}
 	client := w.Client
 
@@ -141,6 +149,12 @@ func (w *httpConfigClient) GetConfig(key string, timeout time.Duration, watch bo
 		URL:    &u,
 	})
 	if err != nil || resp.StatusCode >= http.StatusBadRequest {
+		if resp.Body != nil {
+			if buf, err := ioutil.ReadAll(resp.Body); err == nil {
+				log.Debug(string(buf))
+				resp.Body.Close()
+			}
+		}
 		return
 	}
 
@@ -155,8 +169,9 @@ func (w *httpConfigClient) GetConfig(key string, timeout time.Duration, watch bo
 
 		if err = json.Unmarshal(buf, &config); err == nil {
 			reply = &watchKeyResponse{
-				Key:  key,
-				JSON: config.Data,
+				Key:             key,
+				configAgentData: config.Data,
+				// JSON: config.Data,
 			}
 		}
 	}
