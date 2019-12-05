@@ -22,6 +22,7 @@ require (
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
+	github.com/koron/go-ssdp v0.0.0-20191105050749-2e1c40ed0b5d
 	github.com/lrh3321/gorilla-xmlrpc v0.0.0-20190828130413-0b8ab70f228f
 	github.com/mattn/go-runewidth v0.0.6 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
