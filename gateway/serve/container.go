@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	// "log"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -217,6 +216,38 @@ func captureCommandResult(cmd *exec.Cmd, w http.ResponseWriter) (output []byte, 
 	return
 }
 
+// cleanUp 清理 Docker Compose 目录
+func (h *DockerComposeAgent) cleanUp(r *http.Request, dir, file string) {
+	<-r.Context().Done()
+	log.Infof("EndRequest :\t%s %s %s", r.RemoteAddr, r.Method, r.URL)
+	var requestFailed bool
+	if r.Response != nil {
+		resp := r.Response
+		log.Infof("Response Code:\t%d %s %s", resp.StatusCode, resp.Status)
+		if resp.StatusCode >= 400 {
+			requestFailed = true
+		}
+	} else {
+		log.Info("No Response")
+		requestFailed = true
+	}
+
+	if r.Context().Err() != nil {
+		requestFailed = true
+		log.Infof("Error: %s", r.Context().Err())
+	}
+
+	if requestFailed {
+		if _, err := os.Stat(dir); err != nil {
+			cmd := exec.Command(h.ComposeBinary, "-f", file, "down")
+			cmd.Dir = dir
+
+			cmd.Run()
+			os.RemoveAll(dir)
+		}
+	}
+}
+
 // dockerComposeUp 创建 services
 func (h *DockerComposeAgent) dockerComposeUp(w http.ResponseWriter, r *http.Request) {
 
@@ -232,15 +263,30 @@ func (h *DockerComposeAgent) dockerComposeUp(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	dir, err := ioutil.TempDir("/data/compose", composeDirPrefix)
-	if err != nil {
-		log.Println(err)
-		Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	os.Chmod(dir, 0666)
-
+	var dir string
 	file := "docker-compose.yml"
+	composeID := r.Header.Get("JX-Compose-Id")
+	if composeID == "" {
+		// 旧版 Deploy Engine 请求
+		dir, err = ioutil.TempDir("/data/compose", composeDirPrefix)
+		if err != nil {
+			log.Println(err)
+			Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		os.Chmod(dir, 0755)
+	} else {
+		dir = filepath.Join("/data/compose", composeID)
+		if _, err := os.Stat(dir); os.IsNotExist(err) {
+			os.Mkdir(dir, 0755)
+		} else {
+			// 卸载旧应用
+			cmd := exec.Command(h.ComposeBinary, "-f", file, "down")
+			cmd.Dir = dir
+			cmd.Run()
+		}
+	}
+
 	err = ioutil.WriteFile(filepath.Join(dir, file), yml, 0666)
 	if err != nil {
 		log.Println(err)
@@ -248,11 +294,14 @@ func (h *DockerComposeAgent) dockerComposeUp(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// 请求中断时，删除 目录和 Docker 容器
+	go h.cleanUp(r, dir, file)
+
 	cmd := exec.Command(h.ComposeBinary, "-f", file, "up", "-d", "--remove-orphans")
 	cmd.Dir = dir
 
 	if _, err = captureCommandResult(cmd, w); err != nil {
-		os.RemoveAll(dir)
+		// os.RemoveAll(dir)
 		return
 	}
 
