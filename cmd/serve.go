@@ -21,6 +21,7 @@ import (
 	"jxcore/core"
 	"jxcore/core/device"
 	"jxcore/gateway"
+	"jxcore/internal/network/ssdp"
 	"jxcore/lowapi/ceph"
 	"jxcore/subprocess"
 	"jxcore/version"
@@ -74,6 +75,8 @@ to quickly create a Cobra application.`,
 			ctx, cancel := context.WithCancel(context.Background())
 			errGroup, ctx := errgroup.WithContext(ctx)
 
+			ssdpClient := ssdp.NewClient(currentdevice.WorkerID, 5)
+			errGroup.Go(func() error { return ssdpClient.Aliving(ctx) })
 			if device.GetDeviceType() == version.Pro {
 				log.Info("=======================Configuring Network============================")
 				core.ConfigNetwork()
