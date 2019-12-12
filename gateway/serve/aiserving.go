@@ -62,6 +62,12 @@ type aiSwitchRequest struct {
 	Preheat bool `json:"preheat"`
 }
 
+type aiDetectRequest struct {
+	CamerID string `json:"camer_id"`
+	Model   string `json:"model"`
+	Save    bool   `json:"save"`
+}
+
 type aiModelReply struct {
 	Result string `json:"result"`
 	// Model current serving model
@@ -171,4 +177,24 @@ func (h *AiServingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// log.Printf("Out:\t%v %s %s\n", _url, r.Method, r.URL)
 	proxy.ServeHTTP(w, r)
+}
+
+func (h *AiServingHandler) aiDetection(w http.ResponseWriter, r *http.Request) {
+	// data, err := ioutil.ReadAll(r.Body)
+	// if err != nil {
+	// 	return
+	// }
+	// request := aiDetectRequest{}
+	// err = json.Unmarshal(data, &request)
+	// if err != nil {
+	// 	return
+	// }
+	// conn, err := grpc.Dial("tcp", grpc.WithInsecure())
+	// if err != nil {
+	// 	return
+	// }
+	// defer conn.Close()
+	// ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	// defer cancel()
+
 }

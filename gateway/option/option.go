@@ -233,3 +233,13 @@ func DefaultDatabaseConfig() DatabaseConfig {
 		Host:    "http://127.0.0.1:9998",
 	}
 }
+
+type JxservingConfig struct {
+	Host string
+}
+
+func DefaultJxservingConfig() JxservingConfig {
+	return JxservingConfig{
+		Host: "localhost:9091",
+	}
+}
