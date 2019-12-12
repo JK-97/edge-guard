@@ -83,12 +83,7 @@ to quickly create a Cobra application.`,
 
 				// Network interface auto switch
 				// IoTEdge VPN auto reconnect
-				errGroup.Go(func() error { return core.MaintainNetwork(ctx) })
-			}
-
-			if !noUpdate {
-				log.Info("================Checking JxToolset Update===================")
-				core.UpdateCore()
+				errGroup.Go(func() error { return core.MaintainNetwork(ctx, noUpdate) })
 			}
 
 			log.Info("================Configuring Environment===================")

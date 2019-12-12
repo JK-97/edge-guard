@@ -13,6 +13,7 @@ tools:
     #    cleaner: true
     #    usblistener: true
     filelistener: true
+jxserving: true
 synctools:
   db: true
   tsdb: true

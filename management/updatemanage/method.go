@@ -6,15 +6,13 @@ import (
 	"io/ioutil"
 	"jxcore/core/device"
 
-	log "jxcore/lowapi/logger"
 	"jxcore/internal/network/dns"
+	log "jxcore/lowapi/logger"
 	"jxcore/lowapi/utils"
 
 	"net/http"
 	"os/exec"
 	"strings"
-	"syscall"
-	"time"
 )
 
 func AddAptKey() {
@@ -146,10 +144,6 @@ func (up *UpgradeProcess) UpdateComponent(componenttoupdate map[string]string) {
 	}
 	up.FlushVersionInfo()
 	up.ChangeToFinish()
-	log.Info("restart in 5 second")
-	time.Sleep(5 * time.Second)
-
-	syscall.Exit(0)
 }
 
 func (up *UpgradeProcess) ChangeToFinish() {
