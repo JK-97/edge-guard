@@ -2,10 +2,12 @@ package controller
 
 import (
 	"encoding/json"
-	log "jxcore/lowapi/logger"
 	"html/template"
 	"io/ioutil"
+	log "jxcore/lowapi/logger"
 	"net/http"
+
+	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 )
 
 // Error handles server error
@@ -14,44 +16,38 @@ func Error(w http.ResponseWriter, err error, code int) {
 		code = h.Code
 	}
 
-	http.Error(w, http.StatusText(code), code)
+	RespondReasonJSON(nil, w, err.Error(), code)
 	log.Error(err)
 }
 
-func respondSuccessJSON(obj interface{}, w http.ResponseWriter, r *http.Request) {
-	Resp := BaseResp{Data: obj, Desc: "success"}
-	b, err := json.Marshal(Resp)
-	if err != nil {
-		Error(w, err, http.StatusInternalServerError)
+func RespondJSON(obj interface{}, w http.ResponseWriter, statusCode int) {
+	if obj == nil {
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(b)
-}
 
-func respondJSON(obj interface{}, w http.ResponseWriter, r *http.Request) {
 	b, err := json.Marshal(obj)
 	if err != nil {
 		Error(w, err, http.StatusInternalServerError)
 		return
 	}
+	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(b)
-}
-
-func respondResonJSON(obj interface{}, w http.ResponseWriter, r *http.Request, reson string) {
-
-	Resp := BaseResp{Data: obj, Desc: reson}
-	b, err := json.Marshal(Resp)
+	_, err = w.Write(b)
 	if err != nil {
-		Error(w, err, http.StatusInternalServerError)
-		return
+		logger.Error(err)
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(b)
 }
 
-func serveStatic(path string, w http.ResponseWriter, r *http.Request) error {
+func RespondReasonJSON(obj interface{}, w http.ResponseWriter, reason string, statusCode int) {
+	Resp := BaseResp{Data: obj, Desc: reason}
+	RespondJSON(Resp, w, statusCode)
+}
+
+func RespondSuccessJSON(obj interface{}, w http.ResponseWriter) {
+	RespondReasonJSON(obj, w, "success", 200)
+}
+
+func ServeStatic(path string, w http.ResponseWriter, r *http.Request) error {
 	body, err := ioutil.ReadFile(path)
 	if err != nil {
 		Error(w, err, http.StatusInternalServerError)
@@ -62,7 +58,7 @@ func serveStatic(path string, w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveTemplate(path string, data interface{}, w http.ResponseWriter, r *http.Request) error {
+func ServeTemplate(path string, data interface{}, w http.ResponseWriter, r *http.Request) error {
 	body, err := ioutil.ReadFile(path)
 	if err != nil {
 		Error(w, err, http.StatusInternalServerError)
@@ -82,4 +78,11 @@ func serveTemplate(path string, data interface{}, w http.ResponseWriter, r *http
 	}
 
 	return nil
+}
+
+func CatchPanic(w http.ResponseWriter, r *http.Request, statusCode int) {
+	if err := recover(); err != nil {
+		log.Error("handler failed", err)
+		RespondJSON(err, w, statusCode)
+	}
 }

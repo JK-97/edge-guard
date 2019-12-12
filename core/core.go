@@ -9,9 +9,11 @@ import (
 	"jxcore/internal/network/dns"
 	"jxcore/internal/network/iface"
 	"jxcore/lowapi/docker"
+	"jxcore/lowapi/system"
 	"jxcore/lowapi/utils"
 	"jxcore/management/updatemanage"
 	"os"
+	"time"
 
 	"jxcore/lowapi/logger"
 	log "jxcore/lowapi/logger"
@@ -54,14 +56,18 @@ func ConfigNetwork() {
 	}
 }
 
-func MaintainNetwork(ctx context.Context) error {
+func MaintainNetwork(ctx context.Context, noUpdate bool) error {
 	errGroup := errgroup.Group{}
 	errGroup.Go(func() error { return iface.MaintainBestIFace(ctx) })
-	errGroup.Go(func() error { return register.MaintainMasterConnection(ctx, UpdateCore) })
+	if noUpdate {
+		errGroup.Go(func() error { return register.MaintainMasterConnection(ctx, func() {}) })
+	} else {
+		errGroup.Go(func() error { return register.MaintainMasterConnection(ctx, CheckCoreUpdate) })
+	}
 	return errGroup.Wait()
 }
 
-func UpdateCore() {
+func CheckCoreUpdate() {
 	logger.Info("================Checking JxToolset Update===================")
 	updatemanage.AddAptKey()
 	updateprocess := updatemanage.GetUpdateProcess()
@@ -69,8 +75,9 @@ func UpdateCore() {
 	if len(pkgneedupdate) != 0 {
 		updateprocess.UpdateSource()
 		updateprocess.UpdateComponent(pkgneedupdate)
+		updateprocess.ReportVersion()
+		system.RestartJxcoreAfter(5 * time.Second)
 	}
-	updateprocess.ReportVersion()
 }
 
 // applySyncTools 更新配置同步工具

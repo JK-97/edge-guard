@@ -1,4 +1,4 @@
-package template
+package config
 
 import (
 	log "jxcore/lowapi/logger"
@@ -17,6 +17,9 @@ const (
 
 	cadvisorTmplPath = tmplDir + "/cadvisor.yaml.tpl"
 	cadvisorConfPath = "/jxbootstrap/worker/docker-compose.d/cadvisor/docker-compose.yaml"
+
+	timesyncdTmplPath = tmplDir + "/timesyncd.conf.tpl"
+	timesyncdConfPath = "/etc/systemd/timesyncd.conf"
 )
 
 func Telegrafcfg(masterip string, workerid string) {
@@ -53,6 +56,18 @@ func Cadvisorcfg(masterip string, workerid string) {
 	if err != nil {
 		log.Error(err)
 	}
+}
+
+func TimdsyncdCfg(serverAddr string) {
+	type MASTER struct {
+		SERVER_ADDR string
+	}
+	sweaters := MASTER{SERVER_ADDR: serverAddr}
+	err := putConfig(timesyncdTmplPath, timesyncdConfPath, sweaters)
+	if err != nil {
+		log.Error(err)
+	}
+
 }
 
 func putConfig(tmplPath, targetPath string, sweaters interface{}) error {

@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	log "jxcore/lowapi/logger"
 )
@@ -60,10 +61,14 @@ func Cephmount() {
 func TmpFsMount() error {
 	_ = os.RemoveAll(tmpfsPath)
 	err := os.Mkdir(tmpfsPath, 0755)
-	if err != nil {
+	if err != nil && !os.IsExist(err) {
 		return err
 	}
-	return exec.Command("/bin/bash", "-c", "mount -t tmpfs tmpfs "+tmpfsPath).Run()
+	err = syscall.Mount("tmpfs", "/data/tmpfs", "tmpfs", uintptr(syscall.MS_NOSUID|syscall.MS_NOEXEC|syscall.MS_NODEV), "")
+	return err
+}
+func TempUmount() error {
+	return syscall.Unmount("/data/tmpfs", 0)
 }
 
 func EnsureTmpFs() error {

@@ -16,7 +16,7 @@ type buildkeyreq struct {
 type data struct {
 	Key         string `json:"key"`
 	DeadLine    string `json:"deadLine"`
-	RemainCount string `json:"remainCount"`
+	RemainCount int    `json:"remainCount"`
 }
 
 type buildkeyresp struct {

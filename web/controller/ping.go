@@ -5,6 +5,5 @@ import (
 )
 
 func Ping(w http.ResponseWriter, r *http.Request) {
-	respondJSON("pong", w, r)
-
+	RespondJSON("pong", w, 200)
 }

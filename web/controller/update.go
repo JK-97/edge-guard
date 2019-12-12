@@ -2,10 +2,10 @@ package controller
 
 import (
 	"encoding/json"
-	log "jxcore/lowapi/logger"
 	"io/ioutil"
 	"jxcore/core"
 	"jxcore/core/device"
+	log "jxcore/lowapi/logger"
 	"jxcore/lowapi/utils"
 	"jxcore/management/updatemanage"
 	"net/http"
@@ -14,8 +14,7 @@ import (
 func UpdateByDeb(w http.ResponseWriter, r *http.Request) {
 	updateprocess := updatemanage.GetUpdateProcess()
 	if updateprocess.GetStatus() != updatemanage.FINISHED {
-		w.WriteHeader(400)
-		respondResonJSON(nil, w, r, "machine is busy to updating,please update later")
+		RespondReasonJSON(nil, w, "machine is busy to updating,please update later", 400)
 	} else {
 		reqrawdata, err := ioutil.ReadAll(r.Body)
 		if err != nil {
@@ -29,12 +28,11 @@ func UpdateByDeb(w http.ResponseWriter, r *http.Request) {
 		indentdata, err := json.MarshalIndent(reqinfo.Data, "", "  ")
 		if err != nil {
 			log.Error(err)
-			w.WriteHeader(400)
-			respondResonJSON(nil, w, r, "json format err")
+			RespondReasonJSON(nil, w, "json format err", 400)
 		} else {
 			updateprocess.SetNewTarget(indentdata)
 			go func() {
-				core.UpdateCore()
+				core.CheckCoreUpdate()
 			}()
 			deviceinfo, err := device.GetDevice()
 			utils.CheckErr(err)
@@ -43,9 +41,7 @@ func UpdateByDeb(w http.ResponseWriter, r *http.Request) {
 				WorkerId: deviceinfo.WorkerID,
 				PkgInfo:  updatemanage.ParseVersionFile(),
 			}
-			respondJSON(respdata, w, r)
-			//wg.Add(2)
-
+			RespondJSON(respdata, w, 200)
 		}
 
 	}

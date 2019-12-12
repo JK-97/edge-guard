@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"jxcore/ctl/rpc"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/ochinchina/supervisord/types"
@@ -104,10 +105,8 @@ func (x *RpcExector) Execute(s string) {
 		if length == 3 {
 			thirdword := args[2]
 			switch thirdword {
-			case "stderr":
-				x.tailProcessStderrLog(rpcc, args[1:])
-			case "stdout":
-				x.tailProcessStdoutLog(rpcc, args[1:])
+			case "stderr", "stdout":
+				tailProcessLog(args[1:])
 			}
 		}
 	case "pid":
@@ -115,6 +114,15 @@ func (x *RpcExector) Execute(s string) {
 			x.getPid(rpcc, args[1])
 			return
 		}
+	case "log":
+		cmd := exec.Command("tail", "-f", "/edge/logs/jxcore.log")
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			fmt.Printf("Got error: %s\n", err.Error())
+		}
+	case "help":
 
 	default:
 		fmt.Println("unknown command")
@@ -265,39 +273,24 @@ func (x *RpcExector) showGroupName() bool {
 	return val == "yes" || val == "true" || val == "y" || val == "t" || val == "1"
 }
 
-// tail the process stderr log
-func (x *RpcExector) tailProcessStderrLog(rpcc *rpc.XmlRPCClient, args []string) {
-	process := args[0]
-
-	processLogReadInfo := rpc.ProcessLogReadInfo{
-		Name:   process,
-		Offset: 0,
-		Length: 100,
-	}
-	if reply, err := rpcc.TailProcessStderrLog(processLogReadInfo); err == nil {
-		x.showLogFlow(&reply)
-	} else {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-}
-
 // tail the process stdout log
-func (x *RpcExector) tailProcessStdoutLog(rpcc *rpc.XmlRPCClient, args []string) {
+func tailProcessLog(args []string) {
 	process := args[0]
-
-	processLogReadInfo := rpc.ProcessLogReadInfo{
-		Name:   process,
-		Offset: 0,
-		Length: 100,
+	if strings.Contains(args[0], ":") {
+		process = strings.Split(args[0], ":")[0]
 	}
-	if reply, err := rpcc.TailProcessStdoutLog(processLogReadInfo); err == nil {
-		x.showLogFlow(&reply)
-	} else {
-		fmt.Println(err)
-		os.Exit(1)
+	logLevel := "stderr"
+	if len(args) == 2 {
+		logLevel = args[1]
 	}
+	cmd := exec.Command("tail", "-f", "/edge/logs/"+process+"_"+logLevel+".log.0")
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Got error: %s\n", err.Error())
+	}
+	return
 }
 
 func (x *RpcExector) showLogFlow(processTailLog *rpc.ProcessTailLog) {
