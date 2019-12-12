@@ -24,6 +24,8 @@ func Routes() *mux.Router {
 	//更改信息
 	r.HandleFunc("/api/v1/node/info", controller.GetDeviceInfo).Methods(http.MethodGet)
 	r.HandleFunc("/api/v1/node/name", controller.SetDeviceName).Methods(http.MethodPost)
+	// 驱动
+	r.HandleFunc("/api/v1/drivers", controller.GetEdgexDrivers).Methods(http.MethodGet)
 
 	//固件升级
 	r.HandleFunc("/edgenode/exec/update", controller.UpdateByDeb).Methods(http.MethodPost)

@@ -19,12 +19,11 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/rpc v1.2.0
 	github.com/gorilla/websocket v1.4.1
-	github.com/jessevdk/go-flags v1.4.0
+	github.com/hashicorp/consul/api v1.3.0
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/koron/go-ssdp v0.0.0-20191105050749-2e1c40ed0b5d
-	github.com/lrh3321/gorilla-xmlrpc v0.0.0-20190828130413-0b8ab70f228f
-	github.com/mattn/go-runewidth v0.0.6 // indirect
+	github.com/mattn/go-tty v0.0.3 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/ochinchina/filechangemonitor v0.3.1
 	github.com/ochinchina/go-ini v1.0.1
@@ -38,7 +37,7 @@ require (
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/pkg/term v0.0.0-20190109203006-aa71e9d9e942 // indirect
-	github.com/rjeczalik/notify v0.9.2
+	github.com/rogpeppe/go-charset v0.0.0-20190617161244-0dc95cdf6f31 // indirect
 	github.com/sevlyar/go-daemon v0.1.5
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/afero v1.2.2 // indirect
@@ -47,13 +46,9 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.5.0
 	github.com/syndtr/goleveldb v1.0.0
-	github.com/tidwall/pretty v1.0.0 // indirect
 	github.com/vishvananda/netlink v1.0.0
 	github.com/vishvananda/netns v0.0.0-20190625233234-7109fa855b0f // indirect
-	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
-	github.com/xdg/stringprep v1.0.0 // indirect
 	gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils v0.0.0-00010101000000-000000000000
-	go.mongodb.org/mongo-driver v1.1.2
 	go.uber.org/zap v1.11.0 // indirect
 	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550 // indirect
 	golang.org/x/net v0.0.0-20191027093000-83d349e8ac1a
