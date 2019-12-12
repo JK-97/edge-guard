@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"jxcore/core/device"
+	"jxcore/internal/config"
 	"jxcore/internal/network/dns"
 	"jxcore/internal/network/vpn"
-	"jxcore/internal/template"
 	"jxcore/lowapi/utils"
 )
 
@@ -52,10 +52,10 @@ func updateConsulConfig(currentdevice *device.Device) {
 
 // updateTelegrafConfig 更新 Telegraf 和 InfluxDB ,cadvisor配置
 func updateTelegrafConfig(currentdevice *device.Device, masterip string) {
-	template.Telegrafcfg(masterip, currentdevice.WorkerID)
-	template.Cadvisorcfg(masterip, currentdevice.WorkerID)
+	config.Telegrafcfg(masterip, currentdevice.WorkerID)
+	config.Cadvisorcfg(masterip, currentdevice.WorkerID)
 	VpnIP := vpn.GetClusterIP()
 	if VpnIP != "" {
-		template.Statsitecfg(masterip, VpnIP)
+		config.Statsitecfg(masterip, VpnIP)
 	}
 }

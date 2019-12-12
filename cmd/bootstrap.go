@@ -16,21 +16,19 @@
 package cmd
 
 import (
-	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/spf13/cobra"
-	log "jxcore/lowapi/logger"
 	"io/ioutil"
 	"jxcore/core/device"
 	"jxcore/core/register"
-	"jxcore/internal/network/dns"
 	"jxcore/lowapi/docker"
-	"jxcore/lowapi/utils"
-	"jxcore/version"
+	log "jxcore/lowapi/logger"
 	"net/url"
 	"os"
 	"os/exec"
+
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -40,13 +38,23 @@ var (
 
 	authHost string
 
-	skipRestore bool
+	install bool
 )
 
 const (
 	restoreImagePath     = "/restore/dockerimage"
 	restoreBootstrapPath = "/jxbootstrap"
 )
+
+/******
+bootstrap -s :
+	跳过安装步骤只进行注册
+
+bootstrap ：
+	只进行安装，和生成设备的workerid，不进行注册，设备连接不上云，需要使用注册机
+
+
+******/
 
 // bootstrapCmd represents the bootstrap command
 var bootstrapCmd = &cobra.Command{
@@ -60,84 +68,65 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		vpnMode := device.Vpn(vpnmode)
-		if device.GetDeviceType() == version.Base && vpnMode != device.VPNModeLocal {
-			log.Fatal("This version does not support vpn networking mode,")
-		}
-
-		workerid := device.BuildWokerID()
-
-		if ticket == "" {
-			fmt.Println("Need Ticket")
-			fmt.Println("Worker ID:", workerid)
-			fmt.Println("Please enter ticket:")
-			scanner := bufio.NewScanner(os.Stdin)
-			scanner.Scan()
-			ticket = scanner.Text()
-			if err := scanner.Err(); err != nil {
-				fmt.Fprintln(os.Stderr, "reading standard input:", err)
-				return
+		defer func() {
+			if err := recover(); err != nil {
+				log.Error(err)
 			}
-		}
+		}()
+
 		if len(ticket) < 2 {
-			fmt.Fprintln(os.Stderr, "Wrong Ticket. Too short:", ticket)
-			return
+			panic(errors.New("Tickit Error"))
 		}
-		if !skipRestore {
-			if _, err := os.Stat(restoreImagePath); err == nil {
-				log.Info("Restore Docker Images")
-				var dockerobj = docker.NewClient()
-				err := dockerobj.DockerRestore()
-				if err != nil {
-					log.Error(err)
-				} else {
-					log.Info("Finish Restore Docker Images")
-				}
-			}
+		err := syncVersion()
+		if err != nil {
+			panic(err)
+		}
 
-			err := exec.Command("hostnamectl", "set-hostname", workerid).Run()
+		currentDevice, err := device.GetDevice()
+		if err != nil {
+			panic(err)
+		}
+
+		workerID, err := device.BuildWokerID()
+		if err != nil {
+			panic(errors.New("Build WokerID Failed"))
+		}
+		fmt.Println("WorkerID : ", workerID)
+
+		err = currentDevice.SetHostname(workerID)
+		if err != nil {
+			panic(errors.New("Set Hostname Failed"))
+		}
+
+		currentDevice.WorkerID = workerID
+		err = currentDevice.UpdateDeviceInfo()
+		if err != nil {
+			panic(err)
+		}
+
+		if !install {
+			err := currentDevice.BuildDeviceInfo(device.Vpn(vpnmode), ticket, authHost)
 			if err != nil {
 				panic(err)
 			}
 
-			if _, err := os.Stat(restoreBootstrapPath); err == nil {
-				basecmd := exec.Command("/jxbootstrap/worker/scripts/base.sh")
-				basecmd.Stdout = os.Stdout
-				basecmd.Stdout = os.Stderr
-				err = basecmd.Run()
-				if err != nil {
-					panic(err)
-				}
+			fmt.Println("KEY      : ", currentDevice.Key)
+			fmt.Println("DHCP     : ", currentDevice.DhcpServer)
+			fmt.Println("VPN      : ", currentDevice.Vpn)
+
+		} else {
+
+			// docker images恢复
+			fmt.Println("尝试恢复本地镜像")
+			loadDockerImage()
+			//执行安装脚本
+			fmt.Println("执行安装脚本")
+			err := runBootstrapScript()
+			if err != nil {
+				panic(err)
 			}
+
 		}
-		if authHost == "" {
-			authHost = register.FallBackAuthHost
-		}
-
-		host := GetHost(authHost)
-
-		if err := dns.AddMasterDns(host); err != nil {
-			utils.CheckErr(err)
-		}
-
-		initcmd := exec.Command("touch", "/edge/init")
-		initcmd.Run()
-
-		if _, err := os.Stat(TargetVersionFile); err != nil {
-			rawdata, err := ioutil.ReadFile(CurrentVersionFile)
-			utils.CheckErr(err)
-			var currentversion = map[string]string{
-				"jx-toolset": string(rawdata),
-			}
-			out, err := json.MarshalIndent(currentversion, "", "  ")
-			utils.CheckErr(err)
-			ioutil.WriteFile(TargetVersionFile, out, 0666)
-		}
-
-		log.Info("Register to ", authHost)
-		CurrentDevice, err := device.GetDevice()
-		utils.CheckErr(err)
-		CurrentDevice.BuildDeviceInfo(vpnMode, ticket, authHost)
 
 	},
 }
@@ -156,5 +145,55 @@ func init() {
 	bootstrapCmd.PersistentFlags().StringVarP(&vpnmode, "mode", "m", device.VPNModeRandom.String(), "openvpn or wireguard or local")
 	bootstrapCmd.PersistentFlags().StringVarP(&ticket, "ticket", "t", "", "ticket for bootstrap")
 	bootstrapCmd.PersistentFlags().StringVarP(&authHost, "host", "", register.FallBackAuthHost, "host for bootstrap")
-	bootstrapCmd.PersistentFlags().BoolVarP(&skipRestore, "skip", "s", false, "skip restore")
+	bootstrapCmd.PersistentFlags().BoolVarP(&install, "skip", "i", false, "skip restore")
+
+}
+
+// LoadDockerImage载入镜像
+func loadDockerImage() {
+	if _, err := os.Stat(restoreImagePath); err == nil {
+		log.Info("Restore Docker Images")
+		var dockerobj = docker.NewClient()
+		err := dockerobj.DockerRestore()
+		if err != nil {
+			log.Error(err)
+		} else {
+			log.Info("Finish Restore Docker Images")
+		}
+	}
+}
+
+// runBootstrapScript 运行安装脚本
+func runBootstrapScript() error {
+	if _, err := os.Stat(restoreBootstrapPath); err == nil {
+		basecmd := exec.Command("/jxbootstrap/worker/scripts/base.sh")
+		basecmd.Stdout = os.Stdout
+		basecmd.Stdout = os.Stderr
+		err = basecmd.Run()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// syncVersion 同步target 与当前安装的版本
+func syncVersion() error {
+	rawdata, err := ioutil.ReadFile(CurrentVersionFile)
+	if err != nil {
+		return err
+	}
+	var currentversion = map[string]string{
+		"jx-toolset": string(rawdata),
+	}
+	out, err := json.MarshalIndent(currentversion, "", "  ")
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(TargetVersionFile, out, 0666)
+	if err != nil {
+		return err
+	}
+	return nil
+
 }
