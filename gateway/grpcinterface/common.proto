@@ -1,0 +1,15 @@
+// common.proto
+syntax = "proto3";
+
+package trueno;
+
+message PingRequest {
+  string client = 1;
+}
+
+message ResultReply {
+  uint32 code = 1;
+  string msg = 2;
+}
+
+
