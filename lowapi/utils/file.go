@@ -3,8 +3,10 @@ package utils
 import (
 	"archive/zip"
 	"bytes"
-	log "jxcore/lowapi/logger"
+	"fmt"
 	"io"
+	"io/ioutil"
+	log "jxcore/lowapi/logger"
 	"os"
 	"path/filepath"
 )
@@ -64,7 +66,7 @@ func SaveFile(tempfilename string, binfile io.Reader) error {
 	return err
 }
 
-// FileExists 判断文件是否存在
+// 判断文件是否存在
 func FileExists(path string) bool {
 	_, err := os.Stat(path) //os.Stat获取文件信息
 	if err != nil {
@@ -147,4 +149,16 @@ func ResetFile(path_list []string) {
 			}
 		}
 	}
+}
+
+func CopyTo(srcPath string, dstPath string) error {
+	if !FileExists(srcPath) {
+		return fmt.Errorf("File %s not exists.", srcPath)
+	}
+
+	data, err := ioutil.ReadFile(srcPath)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(dstPath, data, 0755)
 }

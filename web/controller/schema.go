@@ -1,7 +1,5 @@
 package controller
 
-import "fmt"
-
 type BaseResp struct {
 	Data interface{} `json:"data"`
 	Desc string      `json:"desc"`
@@ -14,5 +12,5 @@ type HTTPError struct {
 }
 
 func (e HTTPError) Error() string {
-	return fmt.Sprintf(e.Err.Error())
+	return e.Err.Error()
 }

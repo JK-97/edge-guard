@@ -19,5 +19,5 @@ func (c *customcompleter) completer(d prompt.Document) []prompt.Suggest {
 		return rpcCommands
 	}
 	args := strings.Split(d.TextBeforeCursor(), " ")
-	return c.argumentsCompleter(args)
+	return c.argumentsCompleter(args, d)
 }

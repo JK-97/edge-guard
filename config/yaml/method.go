@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"jxcore/management/programmanage"
 	"reflect"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 )
@@ -37,14 +38,9 @@ func ParseAndCheck(o interface{}, fix string) {
 		}
 
 		if t1.Kind() != reflect.Struct {
-			//path := strings.ToLower(fix + f.Name)
 			if b, ok := val.(bool); ok {
 				if b {
-					//binfile := strings.ToLower("/edge/" + path + "/bin/" + f.Name)
-					//if strings.Count(binfile, "synctools") != 0 {
-					//    binfile = strings.ReplaceAll(binfile, "synctools", "mnt")
-					//}
-					programmanage.AddDependStart(f.Name)
+					programmanage.AddDependStart(strings.ToLower(f.Name))
 
 				} else {
 				}

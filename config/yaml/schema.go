@@ -2,6 +2,8 @@ package yaml
 
 type YamlSchema struct {
 	Cri              bool `yaml:"cri"`
+	Jxserving        bool `yaml:"jxserving"`
+	FsIndex          bool `yaml:"fsindex"`
 	Devicemanagement struct {
 		Camera    bool `yaml:"camera"`
 		Rs485     bool `yaml:"rs485"`

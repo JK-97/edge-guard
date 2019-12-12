@@ -43,6 +43,7 @@ upload_changelog: changelog
 
 debian_base:
 	mkdir -p $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin
+	mkdir -p $(PACKAGE_DIR)/usr/bin
 	cp -r $(BINDIR)/$(NAME)-$(arch) $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin/$(NAME)
 	chmod +x $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin/$(NAME)
 	cp -r settings.yaml $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin
@@ -55,6 +56,8 @@ debian_base:
 debian: check_version build debian_base changelog
 	cp  $(CHANGELOG) $(PACKAGE_DIR)/$(EXTRACT_DIR)/CHANGELOG.md
 	echo $(version) > $(PACKAGE_DIR)/$(EXTRACT_DIR)/VERSION
+	cp jxcorectl $(PACKAGE_DIR)/usr/bin/
+	chmod +x  $(PACKAGE_DIR)/usr/bin/jxcorectl
 	sed -e "s/REPLACE_VERSION/$(version)/g" \
 		-e "s/REPLACE_ARCH/$(arch)/" \
 		-e "s/REPLACE_PACKAGE_NAME/$(PACKAGE_NAME)/g" \
