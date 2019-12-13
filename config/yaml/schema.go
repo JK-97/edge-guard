@@ -4,6 +4,7 @@ type YamlSchema struct {
 	Cri              bool `yaml:"cri"`
 	Jxserving        bool `yaml:"jxserving"`
 	FsIndex          bool `yaml:"fsindex"`
+	Speaker          bool `yaml:"speaker"`
 	Devicemanagement struct {
 		Camera    bool `yaml:"camera"`
 		Rs485     bool `yaml:"rs485"`
