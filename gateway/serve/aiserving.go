@@ -24,7 +24,7 @@ import (
 )
 
 var CamerApiPath string = "http://localhost:48082/api/v1/device/%s/command/%s"
-var c = cache.New(5*time.Minute, 10*time.Minute)
+var c = cache.New(5*time.Minute, 5*time.Minute)
 
 // AiServingHandler 处理 AI Serving 的服务调用
 type AiServingHandler struct {
@@ -194,7 +194,7 @@ func (h *AiServingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	proxy.ServeHTTP(w, r)
 }
 
-//获取正在运行的模型
+// 获取正在运行的模型
 func grpcRunningBackend(conn *grpc.ClientConn, ctx context.Context) ([]*pb.RunningReply_Status, error) {
 	client := pb.NewBackendClient(conn)
 	resoponse, err := client.ListRunningBackends(ctx, &pb.PingRequest{Client: "client"})
@@ -204,6 +204,8 @@ func grpcRunningBackend(conn *grpc.ClientConn, ctx context.Context) ([]*pb.Runni
 	reply := resoponse.GetStatus()
 	return reply, nil
 }
+
+// 本地检测
 func grpcInferenceLocal(conn *grpc.ClientConn, InferRequest *pb.InferRequest, ctx context.Context) (*pb.ResultReply, error) {
 	client := pb.NewInferenceClient(conn)
 	reply, err := client.InferenceLocal(ctx, InferRequest)
@@ -214,17 +216,22 @@ func grpcInferenceLocal(conn *grpc.ClientConn, InferRequest *pb.InferRequest, ct
 	return reply, nil
 }
 
+// 更新缓存
 func updateCache(resply []*pb.RunningReply_Status) {
+	thisModelCache := []string{}
 	for _, backend := range resply {
-		thisModelCache := []string{}
 		if cache, ok := c.Get(backend.GetModel()); ok {
 			if result, ok := cache.([]string); ok {
 				thisModelCache = result
 			}
 
 		}
-		modelCache := append(thisModelCache, backend.GetBid())
-		c.Set(backend.GetModel(), modelCache, 5*time.Minute)
+		thisModelCache = append(thisModelCache, backend.GetBid())
+		if len(thisModelCache) == 0 {
+			c.Delete(backend.GetModel())
+			return
+		}
+		c.Set(backend.GetModel(), thisModelCache, 5*time.Minute)
 	}
 }
 
@@ -252,6 +259,7 @@ type getCapturePathReponce struct {
 	Readings []device `json:"readings"`
 }
 
+//通过camerid 获取 capture path
 func getCapturePathByCamId(camId string) (string, error) {
 	responce, err := http.Get(fmt.Sprintf(CamerApiPath, camId, camId))
 	if err != nil {
@@ -280,10 +288,34 @@ func getCapturePathByCamId(camId string) (string, error) {
 	return "", errors.New("找不到摄像头")
 }
 
+//通过model名字获取对应bids
+func getBackendByModel(conn *grpc.ClientConn, ctx context.Context, model string) ([]string, error) {
+	result, ok := c.Get(model)
+	if !ok {
+		// 没有缓存先更新下缓存
+		resply, err := grpcRunningBackend(conn, ctx)
+		if err != nil {
+			return nil, err
+		}
+		updateCache(resply)
+		result, ok = c.Get(model)
+		if ok {
+			//再次检查，若没有可用的缓存，直接返回
+			return nil, errors.New("未找到可用的 对应model 可用的backend")
+		}
+	}
+	bidsResult, ok := result.([]string)
+	if !ok {
+		return nil, errors.New("bid 数据格式错误")
+	}
+	return bidsResult, nil
+
+}
+
 /*
 
 使用map[string][]string
-key = 模型名称 val = 运行相同模型的后台bid
+key = 模型名称 val = 运行相同模型的后台bids
 
 request 进来 ， 先在cache 中获取当前运行对应模型的后台中 选一个 ，循环尝试，成功直接退出，失败删除缓存
 cache 中都没成功 获取新的缓存状态
@@ -291,6 +323,8 @@ cache 中都没成功 获取新的缓存状态
 */
 
 func (h *AiServingHandler) aiDetection(w http.ResponseWriter, r *http.Request) {
+	// TODO: grpc AI 本地识别
+	//httprequest
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return
@@ -300,9 +334,10 @@ func (h *AiServingHandler) aiDetection(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-
+	//ctx
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
+
 	//rpc
 	conn, err := grpc.Dial("tcp", grpc.WithInsecure())
 	if err != nil {
@@ -310,32 +345,23 @@ func (h *AiServingHandler) aiDetection(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	result, ok := c.Get(httpRequest.Model)
-	if !ok {
-		// 没有缓存先更新下缓存
-		resply, err := grpcRunningBackend(conn, ctx)
-		if err != nil {
-			return
-		}
-		updateCache(resply)
-		result, ok = c.Get(httpRequest.Model)
-		if ok {
-			//再次没有可用的缓存，直接返回
-			return
-		}
-	}
-	bidResult, ok := result.([]string)
-	if !ok {
-		return
-	}
-	//有缓存则尝试进行请求
+	//获取 cam capture  path
 	capturePath, err := getCapturePathByCamId(httpRequest.CamerID)
 	if err != nil {
-		_, _ = w.Write([]byte(err.Error()))
+		respoceJson(w, err, 400)
+		return
 	}
 
+	//通过model 名字获取backend 的bid
+	bidsResult, err := getBackendByModel(conn, ctx, httpRequest.Model)
+	if err != nil {
+		respoceJson(w, err, 400)
+		return
+	}
+
+	//有缓存则尝试进行请求
 	//从第一个开始尝试
-	for _, bid := range bidResult {
+	for _, bid := range bidsResult {
 		reply, err := grpcInferenceLocal(conn, &pb.InferRequest{
 			Bid:  bid,
 			Uuid: uuid.New().String(),
@@ -343,24 +369,28 @@ func (h *AiServingHandler) aiDetection(w http.ResponseWriter, r *http.Request) {
 			Type: "",
 		}, ctx)
 		if err != nil {
-			//如果失败，则删除这个bid缓存，尝试下一个bid 缓存
 			continue
 		}
 		if reply.GetCode() != 0 {
-			removeBidCache(httpRequest.Model, bid, bidResult)
+			//如果失败，则删除这个bid缓存，尝试下一个bid 缓存
+			removeBidCache(httpRequest.Model, bid, bidsResult)
 			continue
 		}
-		data, err := json.Marshal(reply)
-		if err != nil {
-			_, _ = w.Write([]byte(err.Error()))
-		}
-		_, _ = w.Write(data)
+		respoceJson(w, reply, 400)
 		return
-
 	}
 
-	_, _ = w.Write([]byte("not find useable backend in map"))
-
+	respoceJson(w, []byte("not find useable backend in map"), 200)
 	//都没成功 更新状态，直接返回
 
+}
+
+func respoceJson(w http.ResponseWriter, obj interface{}, stautsCode int) {
+	w.WriteHeader(stautsCode)
+	data, err := json.Marshal(obj)
+	if err != nil {
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+	_, _ = w.Write(data)
 }
