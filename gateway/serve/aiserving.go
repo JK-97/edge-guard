@@ -77,9 +77,14 @@ type aiSwitchRequest struct {
 type aiDetectRequest struct {
 	CamerID string `json:"camer_id"`
 	Model   string `json:"model"`
+	Version string `json:"version"`
 	Save    bool   `json:"save"`
 }
 
+type createAIBackend struct {
+	Model   string `json:"model"`
+	Version string `json:"version"`
+}
 type aiModelReply struct {
 	Result string `json:"result"`
 	// Model current serving model
@@ -186,6 +191,8 @@ func (h *AiServingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/v2/detect":
 		h.aiDetection(w, r)
 		return
+	case "/v2/create":
+		h.createAIBackend(w, r)
 	}
 	_url := h.ServingAddr
 	proxy := httputil.NewSingleHostReverseProxy(_url)
@@ -202,6 +209,7 @@ func grpcRunningBackend(conn *grpc.ClientConn, ctx context.Context) ([]*pb.Runni
 		return nil, err
 	}
 	reply := resoponse.GetStatus()
+	writeLog("正在运行的模型后台连列表", reply)
 	return reply, nil
 }
 
@@ -232,6 +240,7 @@ func updateCache(resply []*pb.RunningReply_Status) {
 			return
 		}
 		c.Set(backend.GetModel(), thisModelCache, 5*time.Minute)
+		writeLog("更新缓存:", thisModelCache)
 	}
 }
 
@@ -285,12 +294,13 @@ func getCapturePathByCamId(camId string) (string, error) {
 
 		}
 	}
-	return "", errors.New("找不到摄像头")
+	return "", errors.New("can not find camera device")
 }
 
 //通过model名字获取对应bids
 func getBackendByModel(conn *grpc.ClientConn, ctx context.Context, model string) ([]string, error) {
 	result, ok := c.Get(model)
+	writeLog("缓存结果：", ok, result)
 	if !ok {
 		// 没有缓存先更新下缓存
 		resply, err := grpcRunningBackend(conn, ctx)
@@ -299,14 +309,17 @@ func getBackendByModel(conn *grpc.ClientConn, ctx context.Context, model string)
 		}
 		updateCache(resply)
 		result, ok = c.Get(model)
-		if ok {
+		if !ok {
 			//再次检查，若没有可用的缓存，直接返回
-			return nil, errors.New("未找到可用的 对应model 可用的backend")
+			return nil, errors.New("can not find ai beckend")
 		}
 	}
 	bidsResult, ok := result.([]string)
 	if !ok {
-		return nil, errors.New("bid 数据格式错误")
+		if len(bidsResult) == 0 {
+			return nil, errors.New("can not find ai beckend ")
+		}
+		return nil, errors.New("bid data format err")
 	}
 	return bidsResult, nil
 
@@ -321,10 +334,11 @@ request 进来 ， 先在cache 中获取当前运行对应模型的后台中 选
 cache 中都没成功 获取新的缓存状态
 
 */
-
+//  grpc AI 本地识别
 func (h *AiServingHandler) aiDetection(w http.ResponseWriter, r *http.Request) {
-	// TODO: grpc AI 本地识别
+
 	//httprequest
+	writeLog("-------------------------")
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return
@@ -335,17 +349,19 @@ func (h *AiServingHandler) aiDetection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//ctx
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	//rpc
-	conn, err := grpc.Dial("tcp", grpc.WithInsecure())
+	conn, err := grpc.Dial("127.0.0.1:50051", grpc.WithInsecure())
 	if err != nil {
+		writeLog(err.Error())
 		return
 	}
 	defer conn.Close()
 
 	//获取 cam capture  path
+	// capturePath := "/capture/"
 	capturePath, err := getCapturePathByCamId(httpRequest.CamerID)
 	if err != nil {
 		respoceJson(w, err, 400)
@@ -355,9 +371,12 @@ func (h *AiServingHandler) aiDetection(w http.ResponseWriter, r *http.Request) {
 	//通过model 名字获取backend 的bid
 	bidsResult, err := getBackendByModel(conn, ctx, httpRequest.Model)
 	if err != nil {
-		respoceJson(w, err, 400)
+		writeLog(err.Error())
+		createAndLoadModel(conn, ctx, httpRequest.Model, httpRequest.Version)
+		respoceJson(w, "自动创建model后台,请重试", 200)
 		return
 	}
+	writeLog("检索到的后台bid:", bidsResult)
 
 	//有缓存则尝试进行请求
 	//从第一个开始尝试
@@ -376,13 +395,45 @@ func (h *AiServingHandler) aiDetection(w http.ResponseWriter, r *http.Request) {
 			removeBidCache(httpRequest.Model, bid, bidsResult)
 			continue
 		}
-		respoceJson(w, reply, 400)
-		return
+		break
 	}
 
 	respoceJson(w, []byte("not find useable backend in map"), 200)
 	//都没成功 更新状态，直接返回
 
+}
+
+// 创建对应模型的后台
+func (h *AiServingHandler) createAIBackend(w http.ResponseWriter, r *http.Request) {
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return
+	}
+	httpRequest := aiDetectRequest{}
+	err = json.Unmarshal(data, &httpRequest)
+	if err != nil {
+		respoceJson(w, err.Error(), 400)
+		return
+	}
+	//rpc
+	conn, err := grpc.Dial("127.0.0.1:50051", grpc.WithInsecure())
+	if err != nil {
+		respoceJson(w, err.Error(), 400)
+		return
+	}
+	defer conn.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	msg, err := createAndLoadModel(conn, ctx, httpRequest.Model, httpRequest.Version)
+	if err != nil {
+		respoceJson(w, err.Error(), 400)
+		return
+	}
+
+	writeLog("创建模型后台:", httpRequest.Model, httpRequest.Version)
+	writeLog("创建后台bid:", msg)
+	respoceJson(w, "success", 200)
 }
 
 func respoceJson(w http.ResponseWriter, obj interface{}, stautsCode int) {
@@ -393,4 +444,49 @@ func respoceJson(w http.ResponseWriter, obj interface{}, stautsCode int) {
 		return
 	}
 	_, _ = w.Write(data)
+}
+
+func writeLog(objs ...interface{}) {
+	f, _ := os.OpenFile("/edge/log", os.O_WRONLY|os.O_APPEND, 0644)
+	defer f.Close()
+	for _, obj := range objs {
+		data, _ := json.Marshal(obj)
+		f.Write([]byte(" "))
+		f.Write(data)
+	}
+	f.Write([]byte("\n"))
+
+}
+
+// 列举存在的模型
+func listStoreModel(conn *grpc.ClientConn, ctx context.Context) ([]*pb.ModelInfo, error) {
+	client := pb.NewModelClient(conn)
+	resoponse, err := client.ListStoredModel(ctx, &pb.PingRequest{Client: "client"})
+	if err != nil {
+		return nil, err
+	}
+	reply := resoponse.GetList()
+	writeLog("model info", reply)
+	return reply, nil
+}
+
+// 创建加载模型
+func createAndLoadModel(conn *grpc.ClientConn, ctx context.Context, model, version string) (string, error) {
+	client := pb.NewInferenceClient(conn)
+	resoponse, err := client.CreateAndLoadModel(ctx, &pb.LoadRequest{
+		Bid:       "",
+		Btype:     "tensorflow",
+		Model:     model,
+		Version:   version,
+		Mode:      "frozen",
+		Encrypted: 0,
+	})
+	if err != nil {
+		return "", err
+	}
+	if resoponse.GetCode() != 0 {
+		return "", errors.New("出现错误")
+	}
+
+	return resoponse.GetMsg(), nil
 }
