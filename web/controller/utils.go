@@ -31,8 +31,8 @@ func RespondJSON(obj interface{}, w http.ResponseWriter, statusCode int) {
 		Error(w, err, http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
 	_, err = w.Write(b)
 	if err != nil {
 		logger.Error(err)

@@ -40,6 +40,10 @@ func Routes() *mux.Router {
 	// 驱动
 	secretRouter.HandleFunc("/drivers", controller.GetEdgexDrivers).Methods(http.MethodGet)
 
+	// 网络
+	secretRouter.HandleFunc("/network/interfaces", controller.GetNetworkInterfaces).Methods(http.MethodGet)
+	secretRouter.HandleFunc("/network/interface/{iface}", controller.GetNetworkInterfaceByName).Methods(http.MethodGet)
+
 	// 密码
 	secretRouter.HandleFunc("/system/password", controller.SetPasswordHandler).Methods(http.MethodPost)
 
