@@ -59,11 +59,15 @@ func ConfigNetwork() {
 func MaintainNetwork(ctx context.Context, noUpdate bool) error {
 	errGroup := errgroup.Group{}
 	errGroup.Go(func() error { return iface.MaintainBestIFace(ctx) })
-	if noUpdate {
-		errGroup.Go(func() error { return register.MaintainMasterConnection(ctx, func() {}) })
-	} else {
-		errGroup.Go(func() error { return register.MaintainMasterConnection(ctx, CheckCoreUpdate) })
+
+	onFirstConnect := func() {
+		updatemanage.GetUpdateProcess().ReportVersion()
+		if !noUpdate {
+			CheckCoreUpdate()
+		}
 	}
+	errGroup.Go(func() error { return register.MaintainMasterConnection(ctx, onFirstConnect) })
+
 	return errGroup.Wait()
 }
 
