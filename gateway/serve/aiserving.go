@@ -15,8 +15,9 @@ import (
 	"net/url"
 	"os"
 
-	"jxcore/gateway/log"
+	"jxcore/gateway/dao"
 	pb "jxcore/gateway/trueno"
+	log "jxcore/lowapi/logger"
 
 	"github.com/google/uuid"
 	"github.com/patrickmn/go-cache"
@@ -74,13 +75,19 @@ type aiSwitchRequest struct {
 	Preheat bool `json:"preheat"`
 }
 
-type aiDetectRequest struct {
+type inferenceLocalRequest struct {
 	CamerID string `json:"camer_id"`
 	Model   string `json:"model"`
 	Version string `json:"version"`
 	Save    bool   `json:"save"`
 }
 
+type inferenceRemoteRequset struct {
+	Model   string `json:"model"`
+	Version string `json:"version"`
+	Base64  string `json:"base64"`
+	Save    string `json:"save"`
+}
 type createAIBackend struct {
 	Model   string `json:"model"`
 	Version string `json:"version"`
@@ -188,9 +195,11 @@ func (h *AiServingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		default:
 			ErrorWithCode(w, http.StatusMethodNotAllowed)
 		}
-	case "/v2/detect":
-		h.aiDetection(w, r)
+	case "/v2/localdetect":
+		h.aiLocalDetection(w, r)
 		return
+	case "/v2/remotedetect":
+		h.aiRemoteDetection(w, r)
 	case "/v2/create":
 		h.createAIBackend(w, r)
 	}
@@ -209,7 +218,7 @@ func grpcRunningBackend(conn *grpc.ClientConn, ctx context.Context) ([]*pb.Runni
 		return nil, err
 	}
 	reply := resoponse.GetStatus()
-	writeLog("正在运行的模型后台连列表", reply)
+	log.Info("正在运行的模型后台连列表", reply)
 	return reply, nil
 }
 
@@ -240,7 +249,7 @@ func updateCache(resply []*pb.RunningReply_Status) {
 			return
 		}
 		c.Set(backend.GetModel(), thisModelCache, 5*time.Minute)
-		writeLog("更新缓存:", thisModelCache)
+		log.Info("更新缓存:", thisModelCache)
 	}
 }
 
@@ -300,7 +309,7 @@ func getCapturePathByCamId(camId string) (string, error) {
 //通过model名字获取对应bids
 func getBackendByModel(conn *grpc.ClientConn, ctx context.Context, model string) ([]string, error) {
 	result, ok := c.Get(model)
-	writeLog("缓存结果：", ok, result)
+	log.Info("缓存结果：", ok, result)
 	if !ok {
 		// 没有缓存先更新下缓存
 		resply, err := grpcRunningBackend(conn, ctx)
@@ -335,15 +344,15 @@ cache 中都没成功 获取新的缓存状态
 
 */
 //  grpc AI 本地识别
-func (h *AiServingHandler) aiDetection(w http.ResponseWriter, r *http.Request) {
+func (h *AiServingHandler) aiLocalDetection(w http.ResponseWriter, r *http.Request) {
 
 	//httprequest
-	writeLog("-------------------------")
+	log.Info("-------------------------")
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return
 	}
-	httpRequest := aiDetectRequest{}
+	httpRequest := inferenceLocalRequest{}
 	err = json.Unmarshal(data, &httpRequest)
 	if err != nil {
 		return
@@ -355,35 +364,36 @@ func (h *AiServingHandler) aiDetection(w http.ResponseWriter, r *http.Request) {
 	//rpc
 	conn, err := grpc.Dial("127.0.0.1:50051", grpc.WithInsecure())
 	if err != nil {
-		writeLog(err.Error())
+		log.Info(err.Error())
 		return
 	}
 	defer conn.Close()
 
 	//获取 cam capture  path
-	// capturePath := "/capture/"
-	capturePath, err := getCapturePathByCamId(httpRequest.CamerID)
-	if err != nil {
-		respoceJson(w, err, 400)
-		return
-	}
+	capturePath := "/capture/"
+	// capturePath, err := getCapturePathByCamId(httpRequest.CamerID)
+	// if err != nil {
+	// 	responceJson(w, err, 400)
+	// 	return
+	// }
 
 	//通过model 名字获取backend 的bid
 	bidsResult, err := getBackendByModel(conn, ctx, httpRequest.Model)
 	if err != nil {
-		writeLog(err.Error())
+		log.Info(err.Error())
 		createAndLoadModel(conn, ctx, httpRequest.Model, httpRequest.Version)
-		respoceJson(w, "自动创建model后台,请重试", 200)
+		responceJson(w, "自动创建model后台,请重试", 200)
 		return
 	}
-	writeLog("检索到的后台bid:", bidsResult)
+	log.Info("检索到的后台bid:", bidsResult)
 
 	//有缓存则尝试进行请求
 	//从第一个开始尝试
+	detectUuid := uuid.New().String()
 	for _, bid := range bidsResult {
 		reply, err := grpcInferenceLocal(conn, &pb.InferRequest{
 			Bid:  bid,
-			Uuid: uuid.New().String(),
+			Uuid: detectUuid,
 			Path: capturePath,
 			Type: "",
 		}, ctx)
@@ -395,30 +405,46 @@ func (h *AiServingHandler) aiDetection(w http.ResponseWriter, r *http.Request) {
 			removeBidCache(httpRequest.Model, bid, bidsResult)
 			continue
 		}
-		break
+
+		redis, err := dao.NewRedisClient()
+		if err != nil {
+			responceJson(w, err.Error(), 400)
+			return
+		}
+		result, err := redis.Get(detectUuid).Result()
+		if err != nil {
+			responceJson(w, err.Error(), 400)
+			return
+		}
+		responceJson(w, result, 200)
+		return
 	}
 
-	respoceJson(w, []byte("not find useable backend in map"), 200)
+	responceJson(w, "not find useable backend in map", 200)
 	//都没成功 更新状态，直接返回
 
 }
 
-// 创建对应模型的后台
+func (h *AiServingHandler) aiRemoteDetection(w http.ResponseWriter, r *http.Request) {
+
+}
+
+// 创建对应模型的后台`
 func (h *AiServingHandler) createAIBackend(w http.ResponseWriter, r *http.Request) {
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return
 	}
-	httpRequest := aiDetectRequest{}
+	httpRequest := inferenceLocalRequest{}
 	err = json.Unmarshal(data, &httpRequest)
 	if err != nil {
-		respoceJson(w, err.Error(), 400)
+		responceJson(w, err.Error(), 400)
 		return
 	}
 	//rpc
 	conn, err := grpc.Dial("127.0.0.1:50051", grpc.WithInsecure())
 	if err != nil {
-		respoceJson(w, err.Error(), 400)
+		responceJson(w, err.Error(), 400)
 		return
 	}
 	defer conn.Close()
@@ -427,16 +453,16 @@ func (h *AiServingHandler) createAIBackend(w http.ResponseWriter, r *http.Reques
 	defer cancel()
 	msg, err := createAndLoadModel(conn, ctx, httpRequest.Model, httpRequest.Version)
 	if err != nil {
-		respoceJson(w, err.Error(), 400)
+		responceJson(w, err.Error(), 400)
 		return
 	}
 
-	writeLog("创建模型后台:", httpRequest.Model, httpRequest.Version)
-	writeLog("创建后台bid:", msg)
-	respoceJson(w, "success", 200)
+	log.Info("创建模型后台:", httpRequest.Model, httpRequest.Version)
+	log.Info("创建后台bid:", msg)
+	responceJson(w, "success", 200)
 }
 
-func respoceJson(w http.ResponseWriter, obj interface{}, stautsCode int) {
+func responceJson(w http.ResponseWriter, obj interface{}, stautsCode int) {
 	w.WriteHeader(stautsCode)
 	data, err := json.Marshal(obj)
 	if err != nil {
@@ -444,18 +470,6 @@ func respoceJson(w http.ResponseWriter, obj interface{}, stautsCode int) {
 		return
 	}
 	_, _ = w.Write(data)
-}
-
-func writeLog(objs ...interface{}) {
-	f, _ := os.OpenFile("/edge/log", os.O_WRONLY|os.O_APPEND, 0644)
-	defer f.Close()
-	for _, obj := range objs {
-		data, _ := json.Marshal(obj)
-		f.Write([]byte(" "))
-		f.Write(data)
-	}
-	f.Write([]byte("\n"))
-
 }
 
 // 列举存在的模型
@@ -466,7 +480,7 @@ func listStoreModel(conn *grpc.ClientConn, ctx context.Context) ([]*pb.ModelInfo
 		return nil, err
 	}
 	reply := resoponse.GetList()
-	writeLog("model info", reply)
+	log.Info("model info", reply)
 	return reply, nil
 }
 
@@ -487,6 +501,5 @@ func createAndLoadModel(conn *grpc.ClientConn, ctx context.Context, model, versi
 	if resoponse.GetCode() != 0 {
 		return "", errors.New("出现错误")
 	}
-
 	return resoponse.GetMsg(), nil
 }

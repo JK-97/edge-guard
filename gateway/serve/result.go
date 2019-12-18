@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"sync"
 
-	"jxcore/gateway/log"
+	log "jxcore/lowapi/logger"
 )
 
 var once sync.Once

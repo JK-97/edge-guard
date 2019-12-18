@@ -18,7 +18,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"jxcore/gateway/log"
+	log "jxcore/lowapi/logger"
 
 	yaml "gopkg.in/yaml.v2"
 )

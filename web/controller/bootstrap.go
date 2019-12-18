@@ -1,12 +1,13 @@
 package controller
 
-import "net/http"
+import (
+	"io/ioutil"
+	"net/http"
 
-import "io/ioutil"
+	log "jxcore/lowapi/logger"
 
-import "jxcore/gateway/log"
-
-import "encoding/json"
+	"encoding/json"
+)
 
 type bootstrapRequest struct {
 	RegistrationCode string `json:"registercode"`

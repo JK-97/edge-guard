@@ -5,7 +5,7 @@ import (
 	// "log"
 	"net/http"
 
-	"jxcore/gateway/log"
+	log "jxcore/lowapi/logger"
 )
 
 // APIError api 异常类型
