@@ -32,6 +32,9 @@ func Fatalf(format string, args ...interface{}) {
 func Panicf(format string, args ...interface{}) {
 	logger.WithFields(logger.Fields{"JXCORE_VERSION": version.Version}).Panicf(format, args...)
 }
+func Printf(format string, args ...interface{}) {
+	logger.WithFields(logger.Fields{"JXCORE_VERSION": version.Version}).Infof(format, args...)
+}
 
 func Debug(args ...interface{}) {
 	logger.WithFields(logger.Fields{"JXCORE_VERSION": version.Version}).Debug(args...)
@@ -55,6 +58,13 @@ func Fatal(args ...interface{}) {
 
 func Panic(args ...interface{}) {
 	logger.WithFields(logger.Fields{"JXCORE_VERSION": version.Version}).Panic(args...)
+}
+
+func Println(args ...interface{}) {
+	logger.WithFields(logger.Fields{"JXCORE_VERSION": version.Version}).Info(args...)
+}
+func Fatalln(args ...interface{}) {
+	logger.WithFields(logger.Fields{"JXCORE_VERSION": version.Version}).Fatal(args...)
 }
 
 func WithFields(keyValues Fields) logger.Logger {

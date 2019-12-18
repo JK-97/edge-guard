@@ -12,7 +12,7 @@ import (
 	"sync"
 
 	"github.com/BurntSushi/toml"
-	"jxcore/gateway/log"
+	log "jxcore/lowapi/logger"
 	"jxcore/gateway/store"
 )
 

@@ -1,7 +1,7 @@
 package system
 
 import (
-	"jxcore/gateway/log"
+	log "jxcore/lowapi/logger"
 	"syscall"
 	"time"
 )
