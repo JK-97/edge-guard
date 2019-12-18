@@ -23,6 +23,7 @@ import (
 	"jxcore/gateway"
 	"jxcore/internal/network/ssdp"
 	"jxcore/lowapi/ceph"
+	"jxcore/monitor"
 	"jxcore/subprocess"
 	"jxcore/version"
 	"jxcore/web"
@@ -75,8 +76,13 @@ to quickly create a Cobra application.`,
 			ctx, cancel := context.WithCancel(context.Background())
 			errGroup, ctx := errgroup.WithContext(ctx)
 
+			for dir, mapSrcDst := range monitor.GetMountCfg() {
+				errGroup.Go(func() error { return monitor.MountListener(ctx, dir, mapSrcDst) })
+			}
+
 			ssdpClient := ssdp.NewClient(currentdevice.WorkerID, 5)
 			errGroup.Go(func() error { return ssdpClient.Aliving(ctx) })
+
 			if device.GetDeviceType() == version.Pro {
 				log.Info("=======================Configuring Network============================")
 				core.ConfigNetwork()
