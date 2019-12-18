@@ -55,7 +55,7 @@ func switchIFace(iface string) (err error) {
 	if iface == currentIFace {
 		return nil
 	}
-	route, err := getGWRoute(iface)
+	route, err := GetGWRoute(iface)
 	if err != nil {
 		return err
 	}
@@ -79,11 +79,11 @@ func switchIFace(iface string) (err error) {
 }
 
 func testConnect(netInterface string) bool {
-	gwRoute, err := getGWRoute(netInterface)
+	gwRoute, err := GetGWRoute(netInterface)
 	if err != nil {
 		// route not exists, ifup then retry
 		IFaceUp(netInterface)
-		gwRoute, err = getGWRoute(netInterface)
+		gwRoute, err = GetGWRoute(netInterface)
 	}
 	if err != nil {
 		return false
@@ -105,8 +105,8 @@ func testConnect(netInterface string) bool {
 	return network.Ping(testIP)
 }
 
-// getGWRoute 获取网卡的默认路由
-func getGWRoute(netInterface string) (*netlink.Route, error) {
+// GetGWRoute 获取网卡的默认路由
+func GetGWRoute(netInterface string) (*netlink.Route, error) {
 	link, err := netlink.LinkByName(netInterface)
 	if err != nil {
 		return nil, err
