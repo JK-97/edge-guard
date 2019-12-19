@@ -1,8 +1,6 @@
 package dns
 
 import (
-	"bufio"
-	"bytes"
 	"io/ioutil"
 	"jxcore/core/device"
 	"jxcore/internal/network/dns/dnsfile"
@@ -82,30 +80,38 @@ func ensureDNSMasqIface() {
 	logger.Info("Ensured dnsmasq virtual network interface up")
 }
 
-// AppendHostnameHosts 将 127.0.0.1 workerid 加入 /etc/hosts
+// AppendHostnameHosts 将 127.0.0.1 workerid / mongo 加入 /etc/hosts
 func AppendHostnameHosts() {
 	dev, err := device.GetDevice()
 	if err != nil {
 		logger.Fatal(err)
 	}
 
-	hostnameRecord := "127.0.0.1 " + dev.WorkerID
 	content, err := ioutil.ReadFile(HostFile)
 	if err != nil && !os.IsNotExist(err) {
 		log.Fatal(err)
 	}
-	scanner := bufio.NewScanner(bytes.NewReader(content))
+	data := strings.TrimSpace(string(content))
 
-	for scanner.Scan() {
-		if strings.Contains(scanner.Text(), hostnameRecord) {
-			return
-		}
+	HostRecordMap := map[string]string{}
+	lines := strings.Split(data, "\n")
+	for _, line := range lines {
+		trimedLine := strings.TrimSpace(line)
+		words := strings.Split(trimedLine, " ")
+		HostRecordMap[words[len(words)-1]] = words[0]
 	}
 
-	content = append(content, []byte("\n"+hostnameRecord)...)
-	err = ioutil.WriteFile(HostFile, content, 0644)
+	HostRecordMap[dev.WorkerID] = "127.0.0.1"
+	HostRecordMap["mongo"] = "127.0.0.1"
+
+	f, err := os.OpenFile("/etc/hosts", os.O_APPEND|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		log.Fatal(err)
+	}
+	defer f.Close()
+
+	for k, v := range HostRecordMap {
+		_, _ = f.WriteString(v + " " + k)
 	}
 	logger.Info("Appended worker id to /etc/hosts")
 }
