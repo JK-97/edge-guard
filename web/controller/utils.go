@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"html/template"
+	"io"
 	"io/ioutil"
 	log "jxcore/lowapi/logger"
 	"net/http"
@@ -30,8 +31,8 @@ func RespondJSON(obj interface{}, w http.ResponseWriter, statusCode int) {
 		Error(w, err, http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
 	_, err = w.Write(b)
 	if err != nil {
 		logger.Error(err)
@@ -54,8 +55,8 @@ func ServeStatic(path string, w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	w.Write(body)
-	return nil
+	_, err = w.Write(body)
+	return err
 }
 
 func ServeTemplate(path string, data interface{}, w http.ResponseWriter, r *http.Request) error {
@@ -84,5 +85,17 @@ func CatchPanic(w http.ResponseWriter, r *http.Request, statusCode int) {
 	if err := recover(); err != nil {
 		log.Error("handler failed", err)
 		RespondJSON(err, w, statusCode)
+	}
+}
+
+func unmarshalJson(body io.ReadCloser, out interface{}) {
+	data, err := ioutil.ReadAll(body)
+	if err != nil {
+		panic(err)
+	}
+
+	err = json.Unmarshal(data, out)
+	if err != nil {
+		panic(err)
 	}
 }

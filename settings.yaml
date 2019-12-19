@@ -30,3 +30,6 @@ iface:
     - "usb1"
   backup: "usb0"
   switch_interval: 5s
+
+mount_cfg:
+    "/dev/mmcblk1p1": "/media/card"
