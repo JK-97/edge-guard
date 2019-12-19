@@ -64,6 +64,8 @@ const (
 	StatusLoaded SwitchModelStatus = "loaded"
 	// StatusFailed failed
 	StatusFailed SwitchModelStatus = "failed"
+
+	GrpcServerAddress = "127.0.0.1:50051"
 )
 
 type aiSwitchRequest struct {
@@ -344,25 +346,30 @@ cache 中都没成功 获取新的缓存状态
 
 */
 //  grpc AI 本地识别
+func unmarshalRequest(r *http.Request, httpRequest interface{}) error {
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(data, &httpRequest)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (h *AiServingHandler) aiLocalDetection(w http.ResponseWriter, r *http.Request) {
 
 	//httprequest
-	log.Info("-------------------------")
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return
-	}
-	httpRequest := inferenceLocalRequest{}
-	err = json.Unmarshal(data, &httpRequest)
-	if err != nil {
-		return
-	}
+	httpRequest := &inferenceLocalRequest{}
+	unmarshalRequest(r, &httpRequest)
 	//ctx
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	//rpc
-	conn, err := grpc.Dial("127.0.0.1:50051", grpc.WithInsecure())
+	conn, err := grpc.Dial(GrpcServerAddress, grpc.WithInsecure())
 	if err != nil {
 		log.Info(err.Error())
 		return
@@ -371,11 +378,11 @@ func (h *AiServingHandler) aiLocalDetection(w http.ResponseWriter, r *http.Reque
 
 	//获取 cam capture  path
 	capturePath := "/capture/"
-	// capturePath, err := getCapturePathByCamId(httpRequest.CamerID)
-	// if err != nil {
-	// 	responceJson(w, err, 400)
-	// 	return
-	// }
+	capturePath, err = getCapturePathByCamId(httpRequest.CamerID)
+	if err != nil {
+		responceJson(w, err, 400)
+		return
+	}
 
 	//通过model 名字获取backend 的bid
 	bidsResult, err := getBackendByModel(conn, ctx, httpRequest.Model)
@@ -405,7 +412,7 @@ func (h *AiServingHandler) aiLocalDetection(w http.ResponseWriter, r *http.Reque
 			removeBidCache(httpRequest.Model, bid, bidsResult)
 			continue
 		}
-
+		//通过uuid获取redis 数据
 		redis, err := dao.NewRedisClient()
 		if err != nil {
 			responceJson(w, err.Error(), 400)
@@ -426,6 +433,16 @@ func (h *AiServingHandler) aiLocalDetection(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *AiServingHandler) aiRemoteDetection(w http.ResponseWriter, r *http.Request) {
+	//httprequest
+	httpRequest := &inferenceRemoteRequset{}
+	unmarshalRequest(r, &httpRequest)
+
+	conn, err := grpc.Dial(GrpcServerAddress, grpc.WithInsecure())
+	if err != nil {
+		log.Info(err.Error())
+		return
+	}
+	defer conn.Close()
 
 }
 
