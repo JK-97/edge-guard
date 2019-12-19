@@ -24,7 +24,7 @@ func init() {
 	)
 
 	store.Options = &sessions.Options{
-		MaxAge:   60 * 1,
+		MaxAge:   60 * 60 * 24,
 		HttpOnly: true,
 	}
 
