@@ -359,11 +359,49 @@ func unmarshalRequest(r *http.Request, httpRequest interface{}) error {
 	return nil
 }
 
-func (h *AiServingHandler) aiLocalDetection(w http.ResponseWriter, r *http.Request) {
+func tryEveryBackend(conn *grpc.ClientConn, httpRequest *inferenceLocalRequest, w http.ResponseWriter, inference func(bid, detectUuid string) (*pb.ResultReply, error), ctx context.Context) error {
+	bidsResult, err := getBackendByModel(conn, ctx, httpRequest.Model)
+	if err != nil {
+		_, _ = createAndLoadModel(conn, ctx, httpRequest.Model, httpRequest.Version)
+		return errors.New("自动创建model后台,请重试")
+	}
+	log.Info("检索到的后台bid:", bidsResult)
+	//有缓存则尝试进行请求
+	//从第一个开始尝试
+	detectUuid := uuid.New().String()
+	for _, bid := range bidsResult {
+		reply, err := inference(bid, detectUuid)
+		if err != nil {
+			continue
+		}
+		if reply.GetCode() != 0 {
+			//如果失败，则删除这个bid缓存，尝试下一个bid 缓存
+			removeBidCache(httpRequest.Model, bid, bidsResult)
+			continue
+		}
+		//通过uuid获取redis 数据
+		redis, err := dao.NewRedisClient()
+		if err != nil {
+			return err
+		}
+		result, err := redis.Get(detectUuid).Result()
+		if err != nil {
+			return err
+		}
+		responceJson(w, result, 200)
+		return nil
+	}
+	return errors.New("not find useable backend in map")
+}
 
+func (h *AiServingHandler) aiLocalDetection(w http.ResponseWriter, r *http.Request) {
 	//httprequest
 	httpRequest := &inferenceLocalRequest{}
-	unmarshalRequest(r, &httpRequest)
+	err := unmarshalRequest(r, &httpRequest)
+	if err != nil {
+		log.Info(err.Error())
+		return
+	}
 	//ctx
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -385,57 +423,28 @@ func (h *AiServingHandler) aiLocalDetection(w http.ResponseWriter, r *http.Reque
 	}
 
 	//通过model 名字获取backend 的bid
-	bidsResult, err := getBackendByModel(conn, ctx, httpRequest.Model)
-	if err != nil {
-		log.Info(err.Error())
-		createAndLoadModel(conn, ctx, httpRequest.Model, httpRequest.Version)
-		responceJson(w, "自动创建model后台,请重试", 200)
-		return
-	}
-	log.Info("检索到的后台bid:", bidsResult)
 
-	//有缓存则尝试进行请求
-	//从第一个开始尝试
-	detectUuid := uuid.New().String()
-	for _, bid := range bidsResult {
-		reply, err := grpcInferenceLocal(conn, &pb.InferRequest{
+	err = tryEveryBackend(conn, httpRequest, w, func(bid, detectUuid string) (*pb.ResultReply, error) {
+		return grpcInferenceLocal(conn, &pb.InferRequest{
 			Bid:  bid,
 			Uuid: detectUuid,
 			Path: capturePath,
 			Type: "",
 		}, ctx)
-		if err != nil {
-			continue
-		}
-		if reply.GetCode() != 0 {
-			//如果失败，则删除这个bid缓存，尝试下一个bid 缓存
-			removeBidCache(httpRequest.Model, bid, bidsResult)
-			continue
-		}
-		//通过uuid获取redis 数据
-		redis, err := dao.NewRedisClient()
-		if err != nil {
-			responceJson(w, err.Error(), 400)
-			return
-		}
-		result, err := redis.Get(detectUuid).Result()
-		if err != nil {
-			responceJson(w, err.Error(), 400)
-			return
-		}
-		responceJson(w, result, 200)
-		return
+	}, ctx)
+	if err != nil {
+		responceJson(w, err.Error(), 200)
 	}
-
-	responceJson(w, "not find useable backend in map", 200)
-	//都没成功 更新状态，直接返回
-
 }
 
 func (h *AiServingHandler) aiRemoteDetection(w http.ResponseWriter, r *http.Request) {
 	//httprequest
 	httpRequest := &inferenceRemoteRequset{}
-	unmarshalRequest(r, &httpRequest)
+	err := unmarshalRequest(r, &httpRequest)
+	if err != nil {
+		responceJson(w, err.Error(), 400)
+		return
+	}
 
 	conn, err := grpc.Dial(GrpcServerAddress, grpc.WithInsecure())
 	if err != nil {
@@ -446,7 +455,7 @@ func (h *AiServingHandler) aiRemoteDetection(w http.ResponseWriter, r *http.Requ
 
 }
 
-// 创建对应模型的后台`
+// 创建对应模型的后台
 func (h *AiServingHandler) createAIBackend(w http.ResponseWriter, r *http.Request) {
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
