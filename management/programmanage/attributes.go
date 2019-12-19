@@ -288,6 +288,35 @@ stderr_logfile_backups=1
 stderr_capture_maxbytes=0
 stderr_events_enabled=false
 `
+
+var Speaker = `[program:speaker]
+directory=/edge/tools/speaker/
+command=/edge/tools/speaker/device-speaker
+process_name=%(program_name)s
+numprocs=1
+#numprocs_start=not support
+autostart=true
+startsecs=3
+startretries=3
+autorestart=true
+exitcodes=0,2
+stopsignal=TERM
+stopwaitsecs=10
+stopasgroup=true
+killasgroup=true
+user=root
+redirect_stderr=false
+stdout_logfile=/edge/logs/%(program_name)s_stdout.log
+stdout_logfile_maxbytes=50MB
+stdout_logfile_backups=1
+stdout_capture_maxbytes=0
+stdout_events_enabled=true
+stderr_logfile=/edge/logs/%(program_name)s_stderr.log
+stderr_logfile_maxbytes=50MB
+stderr_logfile_backups=1
+stderr_capture_maxbytes=0
+stderr_events_enabled=false
+`
 var Cadvisor = `[program:cadvisor]
 command=docker-compose -f /jxbootstrap/worker/docker-compose.d/cadvisor/docker-compose.yaml up 
 process_name=%(program_name)s
@@ -316,6 +345,7 @@ var ProgramCfgMap = map[string]string{
 	"cleaner":      Cleaner,
 	"cadvisor":     Cadvisor,
 	"fsindex":      Fsindex,
+	"speaker":      Speaker,
 }
 
 var ProgramSetting = ``
