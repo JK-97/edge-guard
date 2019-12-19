@@ -98,7 +98,10 @@ func AppendHostnameHosts() {
 	for _, line := range lines {
 		trimedLine := strings.TrimSpace(line)
 		words := strings.Split(trimedLine, " ")
-		HostRecordMap[words[len(words)-1]] = words[0]
+		if words[0] != "#" {
+			HostRecordMap[words[len(words)-1]] = words[0]
+		}
+
 	}
 
 	HostRecordMap[dev.WorkerID] = "127.0.0.1"
@@ -111,7 +114,7 @@ func AppendHostnameHosts() {
 	defer f.Close()
 
 	for k, v := range HostRecordMap {
-		_, _ = f.WriteString(v + " " + k)
+		_, _ = f.WriteString(v + " " + k + "\n")
 	}
 	logger.Info("Appended worker id to /etc/hosts")
 }
