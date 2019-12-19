@@ -44,4 +44,6 @@ type YamlSchema struct {
 		Backup         string   `yaml:"backup"`
 		SwitchInterval string   `yaml:"switch_interval"`
 	} `yaml:"iface"`
+
+	MountCfg map[string]string `yaml:"mount_cfg"`
 }

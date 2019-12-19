@@ -14,12 +14,11 @@ import (
 
 // ApplyInterfaceDNSResolv 将dhcp的resolv配置应用到dnsmasq
 func ApplyInterfaceDNSResolv(iFace string) error {
-	path := ifaceResolvPathPrefix + iFace
-	ifaceData, err := ioutil.ReadFile(path)
+	ifaceDNS, err := readInterfaceDnsResolv(iFace)
 	if err != nil {
 		return err
 	}
-	resolvData := readDNSResolvCustomContent() + ifaceDNSConfHeader + string(ifaceData)
+	resolvData := readDNSResolvCustomContent() + ifaceDNSConfHeader + ifaceDNS
 	return ioutil.WriteFile(dnsmasqResolvPath, []byte(resolvData), 0777)
 }
 
@@ -36,4 +35,28 @@ func readDNSResolvCustomContent() (customContent string) {
 		customContent += row + "\n"
 	}
 	return
+}
+
+func readInterfaceDnsResolv(iFace string) (string, error) {
+	path := ifaceResolvPathPrefix + iFace
+	ifaceData, err := ioutil.ReadFile(path)
+	return string(ifaceData), err
+}
+
+func ParseInterfaceDNSResolv(iFace string) ([]string, error) {
+	ifaceDNS, err := readInterfaceDnsResolv(iFace)
+	if err != nil {
+		return nil, err
+	}
+
+	var nameservers []string
+	l := strings.Split(ifaceDNS, "\n")
+	for _, row := range l {
+		if strings.HasPrefix(row, "nameserver") {
+			row = strings.TrimPrefix(row, "nameserver")
+			row = strings.TrimSpace(row)
+			nameservers = append(nameservers, row)
+		}
+	}
+	return nameservers, nil
 }
