@@ -3,14 +3,19 @@ package dns
 import (
 	"io/ioutil"
 	"jxcore/core/device"
+	"jxcore/internal/network"
 	"jxcore/internal/network/dns/dnsfile"
+	"math/rand"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"jxcore/lowapi/logger"
 	log "jxcore/lowapi/logger"
+	"jxcore/lowapi/utils"
 )
 
 // 添加dhcp hook，使得dhclient的resolv.conf 结果重定向到 /edge/resolv.d/dhclient.$interface
@@ -117,4 +122,40 @@ func AppendHostnameHosts() {
 		_, _ = f.WriteString(v + " " + k + "\n")
 	}
 	logger.Info("Appended worker id to /etc/hosts")
+}
+
+func AddMasterDns() error {
+	if utils.FileExists(dnsmasqUpstreamPath) {
+		return nil
+	}
+
+	device, err := device.GetDevice()
+	if err != nil {
+		return err
+	}
+
+	domain := network.GetHost(device.DhcpServer)
+	ipRecords, err := net.LookupIP(domain)
+	if err != nil {
+		return err
+	}
+
+	// Shuffle 打乱 DNS 记录
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(ipRecords), func(i, j int) {
+		ipRecords[i], ipRecords[j] = ipRecords[j], ipRecords[i]
+	})
+
+	f, err := os.OpenFile(dnsmasqUpstreamPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	for _, ip := range ipRecords {
+		_, err := f.WriteString("server=/.iotedge/" + ip.String() + "\n")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
