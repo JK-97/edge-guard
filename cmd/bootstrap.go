@@ -22,9 +22,9 @@ import (
 	"io/ioutil"
 	"jxcore/core/device"
 	"jxcore/core/register"
+	"jxcore/internal/network/dns"
 	"jxcore/lowapi/docker"
 	log "jxcore/lowapi/logger"
-	"net/url"
 	"os"
 	"os/exec"
 
@@ -114,6 +114,11 @@ to quickly create a Cobra application.`,
 			fmt.Println("DHCP     : ", currentDevice.DhcpServer)
 			fmt.Println("VPN      : ", currentDevice.Vpn)
 
+			err = dns.AddMasterDns()
+			if err != nil {
+				panic(err)
+			}
+
 		} else {
 
 			// docker images恢复
@@ -129,15 +134,6 @@ to quickly create a Cobra application.`,
 		}
 
 	},
-}
-
-// GetHost 从 url 中解析 Host
-func GetHost(u string) string {
-	uri, err := url.Parse(u)
-	if err != nil {
-		return u
-	}
-	return uri.Hostname()
 }
 
 func init() {

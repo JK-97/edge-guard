@@ -41,6 +41,7 @@ func ConfigNetwork() {
 	dns.ResetDNSMasqConf()
 	dns.AppendHostnameHosts()
 
+	// 按优先级切换网口
 	err := iface.InitIFace()
 	if err != nil {
 		log.Error(err)
@@ -48,6 +49,11 @@ func ConfigNetwork() {
 	err = dns.ResetHostFile()
 	if err != nil {
 		log.Error(err)
+	}
+
+	err = dns.AddMasterDns()
+	if err != nil {
+		logger.Error("Failed to update master dns: ", err)
 	}
 
 	err = docker.EnsureDockerDNSConfig()
