@@ -124,8 +124,8 @@ func AppendHostnameHosts() {
 	logger.Info("Appended worker id to /etc/hosts")
 }
 
-func AddMasterDns() error {
-	if utils.FileExists(dnsmasqUpstreamPath) {
+func AddMasterDns(force bool) error {
+	if utils.FileExists(dnsmasqUpstreamPath) && !force {
 		return nil
 	}
 
