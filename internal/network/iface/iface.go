@@ -125,4 +125,5 @@ func IFaceUp(netInterface string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	_ = exec.CommandContext(ctx, "ifup", "--force", netInterface).Run()
 	cancel()
+	_ = exec.Command("killall", "dhclient").Run()
 }
