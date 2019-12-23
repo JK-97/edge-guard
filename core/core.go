@@ -51,7 +51,7 @@ func ConfigNetwork() {
 		log.Error(err)
 	}
 
-	err = dns.AddMasterDns(true)
+	err = dns.AddMasterDns(false)
 	if err != nil {
 		logger.Error("Failed to update master dns: ", err)
 	}
