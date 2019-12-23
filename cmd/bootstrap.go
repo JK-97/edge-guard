@@ -114,7 +114,7 @@ to quickly create a Cobra application.`,
 			fmt.Println("DHCP     : ", currentDevice.DhcpServer)
 			fmt.Println("VPN      : ", currentDevice.Vpn)
 
-			err = dns.AddMasterDns()
+			err = dns.AddMasterDns(true)
 			if err != nil {
 				panic(err)
 			}
