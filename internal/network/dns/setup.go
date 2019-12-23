@@ -125,7 +125,7 @@ func AppendHostnameHosts() {
 }
 
 func AddMasterDns(force bool) error {
-	if utils.FileExists(dnsmasqUpstreamPath) && !force {
+	if !force && utils.FileExists(dnsmasqUpstreamPath) {
 		return nil
 	}
 
