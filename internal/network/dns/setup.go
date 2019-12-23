@@ -110,7 +110,7 @@ func AppendHostnameHosts() {
 	}
 
 	HostRecordMap[dev.WorkerID] = "127.0.0.1"
-	HostRecordMap["mongo"] = "127.0.0.1"
+	HostRecordMap["edgex-mongo"] = "127.0.0.1"
 
 	f, err := os.OpenFile("/etc/hosts", os.O_APPEND|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
