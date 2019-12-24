@@ -21,6 +21,7 @@ synctools:
   fs: true
 
 fixedresolver: ""
+fsindex: true
 
 iface:
   priority:
