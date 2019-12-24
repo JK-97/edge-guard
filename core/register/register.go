@@ -6,13 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"time"
+
 	"jxcore/core/device"
-	"jxcore/core/hearbeat"
+	"jxcore/core/heartbeat"
 	"jxcore/internal/network/dns"
 	"jxcore/internal/network/vpn"
 	"jxcore/version"
-	"net/http"
-	"time"
 
 	"jxcore/lowapi/logger"
 )
@@ -45,7 +46,7 @@ func MaintainMasterConnection(ctx context.Context, onFirstConnect func()) error 
 			onFirstConnect()
 		}
 		onMasterIPChanged(masterip)
-		err := hearbeat.AliveReport(ctx, masterip, 5)
+		err := heartbeat.AliveReport(ctx, masterip, 5)
 		if err != nil {
 			logger.Error(err)
 		}
@@ -106,7 +107,7 @@ func register(dev *device.Device) (*registerInfo, error) {
 		return nil, err
 	}
 
-	//register vpn对应url
+	// register vpn对应url
 	var url string
 	switch dev.Vpn {
 	case device.VPNModeWG:
@@ -129,7 +130,7 @@ func register(dev *device.Device) (*registerInfo, error) {
 
 	masterip := resp.Header.Get("X-Master-IP")
 
-	//获得加密wgkey zip 文件
+	// 获得加密wgkey zip 文件
 	buff, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -152,7 +153,7 @@ func encodeReqData(reqinfo reqRegister) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	//req base64加密
+	// req base64加密
 	n := enc.EncodedLen(len(reqdata))
 	dst := make([]byte, n)
 	enc.Encode(dst, reqdata)
