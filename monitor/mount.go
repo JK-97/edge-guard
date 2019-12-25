@@ -2,16 +2,18 @@ package monitor
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"io/ioutil"
 	"jxcore/config/yaml"
 	"jxcore/lowapi/logger"
+	"jxcore/lowapi/system"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
 	"syscall"
 
+	"github.com/pkg/errors"
 	"github.com/rjeczalik/notify"
 )
 
@@ -63,15 +65,12 @@ func fileHandler(ei notify.EventInfo, mapSrcDst map[string]string) error {
 		_, fileName := path.Split(ei.Path())
 		if dst, ok := mapSrcDst[fileName]; ok {
 			mountPath := "/media/" + fileName
-			err := os.MkdirAll(mountPath, 0755)
+
+			err := tryMount(ei.Path(), mountPath, dst)
 			if err != nil {
 				return err
 			}
-			err = tryMount(ei.Path(), mountPath, dst)
-			if err != nil {
-				return err
-			}
-			logger.Infof("Mounted media src: %s, dst: %s, link: %s", ei.Path(), mountPath, dst)
+
 		}
 	default:
 	}
@@ -122,7 +121,6 @@ func link(src, dst string) error {
 
 // 解除软链
 func unLink(dst string) error {
-	_ = os.RemoveAll(dst)
 	return exec.Command("unlink", dst).Run()
 }
 
@@ -136,14 +134,37 @@ func tryMount(srcPath, mountPath, linkPath string) error {
 	if !mountOk {
 		if !tfCardOk {
 			// 没有mount但没有插卡
-			return errors.New("没有插卡")
+			return fmt.Errorf("没有插卡")
+		}
+		_, err := os.Stat(mountPath)
+		if err != nil {
+			logger.Info("创建文件夹", mountPath)
+			_ = os.MkdirAll(mountPath, 0755)
 		}
 		//没有mount 而有插卡
-		err := mountTfCard(srcPath, mountPath)
+		logger.Info("备份文件", mountPath)
+		err, tmpCopied := tmpCopy(srcPath)
+		if err != nil {
+			return fmt.Errorf("目录有文件，备份文件失败")
+		}
+		logger.Info("mount 进行中")
+		err = mountTfCard(srcPath, mountPath)
+		if err != nil {
+			return errors.Wrap(err, "mount 失败")
+		}
+		if tmpCopied {
+			logger.Info("恢复文件")
+			err = tmpRestore(srcPath)
+			if err != nil {
+				return errors.Wrap(err, "恢复文件失败")
+			}
+		}
+		err = link(mountPath, linkPath)
 		if err != nil {
 			return err
 		}
-		return link(mountPath, linkPath)
+		logger.Infof("Mounted media src: %s, dst: %s, link: %s", srcPath, mountPath, linkPath)
+		return nil
 	}
 
 	if tfCardOk {
@@ -155,6 +176,62 @@ func tryMount(srcPath, mountPath, linkPath string) error {
 		if err != nil {
 			return err
 		}
-		return unLink(linkPath)
+		err = unLink(linkPath)
+		if err != nil {
+			return err
+		}
+		logger.Infof("卡拔出   Unmout ")
+		return nil
 	}
+}
+
+func tmpCopy(srcPath string) (error, bool) {
+	_, fileName := path.Split(srcPath)
+	dir, err := ioutil.ReadDir(path.Join("/media", fileName))
+	if err != nil {
+		return err, false
+	}
+	if len(dir) == 0 {
+		logger.Info("无文件备份")
+		return nil, false
+	}
+
+	logger.Info("正在拷贝文件")
+	cmdStr := fmt.Sprintf("cp -r %s %s", path.Join("/media", fileName), path.Join("/tmp", fileName))
+	err = system.RunCommand(cmdStr)
+	if err != nil {
+		return errors.Wrap(err, "拷贝文件失败"), false
+	}
+
+	cmdStr = fmt.Sprintf("rm -r %s/*", path.Join("/media", fileName))
+	err = system.RunCommand(cmdStr)
+	if err != nil {
+		return errors.Wrap(err, "拷贝文件失败"), false
+	}
+	return nil, true
+}
+
+func tmpRestore(srcPath string) error {
+	_, fileName := path.Split(srcPath)
+
+	_, err := os.Stat(path.Join("/tmp", fileName))
+	if err != nil {
+		return err
+	}
+	dir, err := ioutil.ReadDir(path.Join("/tmp", fileName))
+	if err != nil {
+		return nil
+	}
+	if len(dir) == 0 {
+		return nil
+	}
+	logger.Info("正在恢复文件")
+	cmdStr := fmt.Sprintf("cp -r /tmp/%s/* %s", fileName, path.Join("/media", fileName))
+	err = system.RunCommand(cmdStr)
+	if err != nil {
+		return errors.Wrap(err, "恢复文件失败")
+	}
+	os.RemoveAll(path.Join("/tmp", fileName))
+
+	return nil
 }
