@@ -2,18 +2,32 @@ package yaml
 
 import (
 	"io/ioutil"
+	"jxcore/lowapi/utils"
 	"jxcore/management/programmanage"
 	"reflect"
+	""
 	"strings"
 
 	"gopkg.in/yaml.v2"
 )
 
 func init() {
+	if !utils.FileExists(configExamplePath) {
+		_ = ioutil.WriteFile(configExamplePath, []byte(defaultConfig), 0755)
+	}
 	err := loadYaml(configPath)
-	if err != nil {
+	if err == nil {
+		return
+	}
+	err = useDefalutConfig()
+	if err == nil {
 		panic(err)
 	}
+}
+
+func useDefalutConfig() (err error) {
+	err = yaml.Unmarshal([]byte(defaultConfig), Config)
+	return
 }
 
 func loadYaml(path string) (err error) {
