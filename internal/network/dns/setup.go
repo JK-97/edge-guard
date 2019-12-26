@@ -159,3 +159,8 @@ func AddMasterDns(force bool) error {
 	}
 	return nil
 }
+
+// backward compatible
+func UnlockResolvConf() {
+	_ = exec.Command("chattr", "-i", resolvPath).Run()
+}

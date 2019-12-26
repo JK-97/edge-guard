@@ -31,6 +31,9 @@ func ConfigNetwork() {
 	network.DisableNetworkManager()
 	network.DisableSystemdResolved()
 
+	// 向前兼容：旧版本jxcore会锁/etc/resolv.conf
+	dns.UnlockResolvConf()
+
 	// nano: /etc/dhcp/dhclient-enter-hooks.d 里的脚本需要被移除。
 	// 如果脚本存在，`ifup`时不会更新 /etc/resolv.conf
 	dns.RemoveDHCPEnterHooks()
