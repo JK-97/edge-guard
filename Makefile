@@ -41,7 +41,7 @@ changelog:
 upload_changelog: changelog
 	curl -s --fail -F "changelog=@$(CHANGELOG)" "http://packages.debian.jiangxingai.com:8000/api/v1/packages/$(PACKAGE_NAME)/changelog"
 
-debian_base: frontend build
+debian_base: build
 	mkdir -p $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin
 	mkdir -p $(PACKAGE_DIR)/usr/bin
 	cp -r $(BINDIR)/$(NAME)-$(arch) $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin/$(NAME)

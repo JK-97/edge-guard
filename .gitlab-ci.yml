@@ -46,6 +46,7 @@ build:
     url: http://packages.debian.jiangxingai.com
   script:
     - make clean
+    - make frontend
     - make debian arch=amd64
     - make debian arch=arm64
     - make push_to_source
