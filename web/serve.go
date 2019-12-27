@@ -11,8 +11,6 @@ func Serve(ctx context.Context, addr string, handler http.Handler, wait time.Dur
 	cancelCtx, cancel := context.WithCancel(ctx)
 	srv := http.Server{
 		Addr:        addr,
-		ReadTimeout: time.Second * 15,
-		IdleTimeout: time.Second * 60,
 		Handler:     handler,
 	}
 	var err error
