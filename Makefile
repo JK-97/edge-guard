@@ -92,7 +92,7 @@ frontend:
 	npm config set registry http://npm.registry.jiangxingai.com:7001/
 	cd frontend; \
 		npm i; \
-		npm run build
+		CI=false npm run build
 	mkdir -p build
 	rm -rf build/frontend
 	mv frontend/build build/frontend
