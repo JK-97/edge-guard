@@ -12,7 +12,8 @@ type SetPasswordRequest struct {
 }
 
 const (
-	passwordKey = "password"
+	passwordKey     = "password"
+	defaultPassword = "d04db14aa76e3a03c4e383136f941c0d" // jiangxing123
 )
 
 // 设置Jxcore密码
@@ -39,6 +40,6 @@ func SetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getPassword() (string, error) {
-	data, err := filestore.KV.GetDefault(passwordKey, []byte(""))
+	data, err := filestore.KV.GetDefault(passwordKey, []byte(defaultPassword))
 	return string(data), err
 }
