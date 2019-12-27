@@ -7,6 +7,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const staticFilePath = "/edge/jxcore/frontend"
+
 func Routes() *mux.Router {
 	r := mux.NewRouter()
 	r.Use(logRequestMiddleware)
@@ -46,6 +48,9 @@ func Routes() *mux.Router {
 
 	// 密码
 	secretRouter.HandleFunc("/system/password", controller.SetPasswordHandler).Methods(http.MethodPost)
+
+	// 前端
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir(staticFilePath)))
 
 	return r
 }
