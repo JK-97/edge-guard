@@ -15,7 +15,7 @@ REPO=jxcore
 GO=CGO_ENABLED=0 GO111MODULE=on go
 GOFLAGS=-v -ldflags '-X "$(REPO)/version.Version=$(version)" -X "$(REPO)/version.GitCommit=$(commit)" -X "$(REPO)/version.BuildDate=$(builddate)"'
 
-.PHONY: build debian test clean check_version push_to_source check_rc
+.PHONY: build debian test clean check_version push_to_source check_rc frontend
 
 check_version:
 ifeq ($(version),)
@@ -41,7 +41,7 @@ changelog:
 upload_changelog: changelog
 	curl -s --fail -F "changelog=@$(CHANGELOG)" "http://packages.debian.jiangxingai.com:8000/api/v1/packages/$(PACKAGE_NAME)/changelog"
 
-debian_base:
+debian_base: frontend build
 	mkdir -p $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin
 	mkdir -p $(PACKAGE_DIR)/usr/bin
 	cp -r $(BINDIR)/$(NAME)-$(arch) $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin/$(NAME)
@@ -52,12 +52,13 @@ debian_base:
 	cp -r scripts/jxcore.service $(PACKAGE_DIR)/etc/systemd/system/
 	cp -r template $(PACKAGE_DIR)/$(EXTRACT_DIR)/template
 	cp -r DEBIAN $(PACKAGE_DIR)/DEBIAN/
+	cp -r build/frontend $(PACKAGE_DIR)/$(EXTRACT_DIR)/frontend
 
-debian: check_version build debian_base changelog
+debian: check_version debian_base changelog
 	cp  $(CHANGELOG) $(PACKAGE_DIR)/$(EXTRACT_DIR)/CHANGELOG.md
 	echo $(version) > $(PACKAGE_DIR)/$(EXTRACT_DIR)/VERSION
-	cp jxcorectl $(PACKAGE_DIR)/usr/bin/
-	chmod +x  $(PACKAGE_DIR)/usr/bin/jxcorectl
+	cp scripts/jxcorectl $(PACKAGE_DIR)/usr/bin/
+	chmod +x $(PACKAGE_DIR)/usr/bin/jxcorectl
 	sed -e "s/REPLACE_VERSION/$(version)/g" \
 		-e "s/REPLACE_ARCH/$(arch)/" \
 		-e "s/REPLACE_PACKAGE_NAME/$(PACKAGE_NAME)/g" \
@@ -65,7 +66,7 @@ debian: check_version build debian_base changelog
 	dpkg -b $(PACKAGE_DIR) build/$(NAME)_$(version)_$(arch).deb
 	rm -rf $(PACKAGE_DIR)
 
-debian_rc: check_rc build debian_base
+debian_rc: check_rc debian_base
 	sed -e "s/REPLACE_VERSION/0.1.0-$(RC_TAG)/g" \
 		-e "s/REPLACE_ARCH/$(arch)/g" \
 		-e "s/REPLACE_PACKAGE_NAME/$(PACKAGE_NAME)-dev/g" \
@@ -86,6 +87,15 @@ deploy_rc:
 test:
 	go test -v -cover -coverprofile=coverage.out ./...
 	go tool cover -func=coverage.out
+
+frontend:
+	npm config set registry http://npm.registry.jiangxingai.com:7001/
+	cd frontend; \
+		npm i; \
+		npm run build
+	mkdir -p build
+	rm -rf build/frontend
+	mv frontend/build build/frontend
 
 clean:
 	rm -rf build/
