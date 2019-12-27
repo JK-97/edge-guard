@@ -157,7 +157,9 @@ func (b *HeartBeater) beat(ctx context.Context, conn net.Conn) error {
 	defer cancel()
 
 	go func() {
-		b.readFromConn(conn)
+		if err := b.readFromConn(conn); err != nil {
+			logger.Error(err)
+		}
 		cancel()
 	}()
 
