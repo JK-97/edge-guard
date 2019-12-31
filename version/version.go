@@ -12,7 +12,6 @@ var (
 	BuildDate = "unknown"
 	GitStatus = "unknown"
 	GoVersion = runtime.Version()
-	Type      = Pro
 	OsArch    = fmt.Sprintf("%s %s", runtime.GOOS, runtime.GOARCH)
 )
 
