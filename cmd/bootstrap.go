@@ -138,7 +138,7 @@ to quickly create a Cobra application.`,
 
 func init() {
 	rootCmd.AddCommand(bootstrapCmd)
-	bootstrapCmd.PersistentFlags().StringVarP(&vpnmode, "mode", "m", device.VPNModeRandom.String(), "openvpn or wireguard or local")
+	bootstrapCmd.PersistentFlags().StringVarP(&vpnmode, "mode", "m", string(device.VPNModeRandom), "openvpn or wireguard or local")
 	bootstrapCmd.PersistentFlags().StringVarP(&ticket, "ticket", "t", "", "ticket for bootstrap")
 	bootstrapCmd.PersistentFlags().StringVarP(&authHost, "host", "", register.FallBackAuthHost, "host for bootstrap")
 	bootstrapCmd.PersistentFlags().BoolVarP(&install, "skip", "i", false, "skip restore")

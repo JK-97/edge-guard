@@ -25,7 +25,6 @@ import (
 	"jxcore/lowapi/ceph"
 	"jxcore/monitor"
 	"jxcore/subprocess"
-	"jxcore/version"
 	"jxcore/web"
 	"jxcore/web/route"
 	"os"
@@ -106,14 +105,12 @@ func serve() {
 	ssdpClient := ssdp.NewClient(currentdevice.WorkerID, 5)
 	errGroup.Go(func() error { return ssdpClient.Aliving(ctx) })
 
-	if device.GetDeviceType() == version.Pro {
-		log.Info("=======================Configuring Network============================")
-		core.ConfigNetwork()
+	log.Info("=======================Configuring Network============================")
+	core.ConfigNetwork()
 
-		// Network interface auto switch
-		// IoTEdge VPN auto reconnect
-		errGroup.Go(func() error { return core.MaintainNetwork(ctx, noUpdate) })
-	}
+	// Network interface auto switch
+	// IoTEdge VPN auto reconnect
+	errGroup.Go(func() error { return core.MaintainNetwork(ctx, noUpdate) })
 
 	log.Info("================Configuring Environment===================")
 	log.Info("ensure tmpfs is mounted")
