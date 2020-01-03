@@ -16,29 +16,28 @@ package cmd
 
 import (
 	"context"
-	"jxcore/config"
-	"jxcore/config/yaml"
-	"jxcore/core"
-	"jxcore/core/device"
-	"jxcore/gateway"
-	"jxcore/internal/network/ssdp"
-	"jxcore/lowapi/ceph"
-	"jxcore/monitor"
-	"jxcore/subprocess"
-	"jxcore/version"
-	"jxcore/web"
-	"jxcore/web/route"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	log "jxcore/lowapi/logger"
-
+	"jxcore/config"
+	"jxcore/core"
+	"jxcore/core/device"
+	"jxcore/gateway"
+	"jxcore/internal/network/ssdp"
+	"jxcore/lowapi/ceph"
+	"jxcore/lowapi/logger"
+	"jxcore/monitor"
+	"jxcore/subprocess"
+	"jxcore/version"
+	"jxcore/web"
+	"jxcore/web/route"
 	"net/http"
 	_ "net/http/pprof"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -47,100 +46,96 @@ const (
 )
 
 var (
-	debug    bool   = false
-	addr     string = ":80"
-	noUpdate bool   = false
+	debug     bool   = false
+	addr      string = ":80"
+	noUpdate  bool   = false
+	serverCmd        = &cobra.Command{
+		Use:   "serve",
+		Short: "Serve http backend for jxcore",
+		Long: `A longer description that spans multiple lines and likely contains examples
+	and usage of using your command. For example:
+
+	Cobra is a CLI library for Go that empowers applications.
+	This application is a tool to generate the needed files
+	to quickly create a Cobra application.`,
+		Run: func(cmd *cobra.Command, args []string) {
+
+			Deamonize(func() {
+				logger.Info("==================Jxcore Serve Starting=====================")
+				currentdevice, err := device.GetDevice()
+				if err != nil {
+					logger.Fatal(err)
+				}
+				logger.Info("workerid : ", currentdevice.WorkerID)
+
+				ctx, cancel := context.WithCancel(context.Background())
+				errGroup, ctx := errgroup.WithContext(ctx)
+
+				for dir, mapSrcDst := range monitor.GetMountCfg() {
+					errGroup.Go(func() error { return monitor.MountListener(ctx, dir, mapSrcDst) })
+				}
+
+				ssdpClient := ssdp.NewClient(currentdevice.WorkerID, 5)
+				errGroup.Go(func() error { return ssdpClient.Aliving(ctx) })
+
+				if device.GetDeviceType() == version.Pro {
+					logger.Info("=======================Configuring Network============================")
+					core.ConfigNetwork()
+
+					// Network interface auto switch
+					// IoTEdge VPN auto reconnect
+					errGroup.Go(func() error { return core.MaintainNetwork(ctx, noUpdate) })
+				}
+
+				logger.Info("================Configuring Environment===================")
+				logger.Info("ensure tmpfs is mounted")
+				err = ceph.EnsureTmpFs()
+				if err != nil {
+					logger.Fatal(err)
+				}
+
+				logger.Info("================Starting Subprocesses===================")
+				subprocess.LoadConfig(viper.GetStringMap("components"))
+
+				// start up all component process
+				errGroup.Go(func() error { return subprocess.RunServer(ctx) })
+
+				// web server
+				errGroup.Go(func() error { return gateway.ServeGateway(ctx, graceful) })
+				errGroup.Go(func() error { return web.Serve(ctx, addr, route.Routes(), graceful) })
+				errGroup.Go(func() error { return web.Serve(ctx, ":10880", http.DefaultServeMux, graceful) })
+
+				// handle SIGTERM and SIGINT
+				go func() {
+					termChan := make(chan os.Signal, 1)
+					signal.Notify(termChan, syscall.SIGINT, syscall.SIGTERM)
+					sig := <-termChan
+					logger.WithFields(logger.Fields{"signal": sig}).Info("receive a signal to stop all process & exit")
+					cancel()
+
+					time.Sleep(graceful)
+					logger.Info("===============Jxcore exited===============")
+					logger.Fatal("Jxcore cannot exit within graceful period: ", graceful.String())
+				}()
+
+				err = errGroup.Wait()
+				logger.Info("===============Jxcore exited===============")
+				if err != nil {
+					logger.Error("Exited with error: %+v", err)
+				}
+			})
+		},
+	}
 )
 
-// serveCmd represents the serve command
-var serveCmd = &cobra.Command{
-	Use:   "serve",
-	Short: "Serve http backend for jxcore",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		Deamonize(func() {
-			log.Info("==================Jxcore Serve Starting=====================")
-			log.Infof("Config: %+v", yaml.Config)
-
-			currentdevice, err := device.GetDevice()
-			if err != nil {
-				log.Fatal(err)
-			}
-			log.Info("workerid : ", currentdevice.WorkerID)
-
-			ctx, cancel := context.WithCancel(context.Background())
-			errGroup, ctx := errgroup.WithContext(ctx)
-
-			for dir, mapSrcDst := range monitor.GetMountCfg() {
-				errGroup.Go(func() error { return monitor.MountListener(ctx, dir, mapSrcDst) })
-			}
-
-			ssdpClient := ssdp.NewClient(currentdevice.WorkerID, 5)
-			errGroup.Go(func() error { return ssdpClient.Aliving(ctx) })
-
-			if device.GetDeviceType() == version.Pro {
-				log.Info("=======================Configuring Network============================")
-				core.ConfigNetwork()
-
-				// Network interface auto switch
-				// IoTEdge VPN auto reconnect
-				errGroup.Go(func() error { return core.MaintainNetwork(ctx, noUpdate) })
-			}
-
-			log.Info("================Configuring Environment===================")
-			log.Info("ensure tmpfs is mounted")
-			err = ceph.EnsureTmpFs()
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			log.Info("================Starting Subprocesses===================")
-			core.ConfigSupervisor()
-
-			// start up all component process
-			errGroup.Go(func() error { return subprocess.RunServer(ctx) })
-
-			// web server
-			errGroup.Go(func() error { return gateway.ServeGateway(ctx, graceful) })
-			errGroup.Go(func() error { return web.Serve(ctx, addr, route.Routes(), graceful) })
-			errGroup.Go(func() error { return web.Serve(ctx, ":10880", http.DefaultServeMux, graceful) })
-
-			// handle SIGTERM and SIGINT
-			go func() {
-				termChan := make(chan os.Signal, 1)
-				signal.Notify(termChan, syscall.SIGINT, syscall.SIGTERM)
-				sig := <-termChan
-				log.WithFields(log.Fields{"signal": sig}).Info("receive a signal to stop all process & exit")
-				cancel()
-
-				time.Sleep(graceful)
-				log.Info("===============Jxcore exited===============")
-				log.Fatal("Jxcore cannot exit within graceful period: ", graceful.String())
-			}()
-
-			err = errGroup.Wait()
-			log.Info("===============Jxcore exited===============")
-			if err != nil {
-				log.Error("Exited with error: %+v", err)
-			}
-		})
-	},
-}
-
 func init() {
-	rootCmd.AddCommand(serveCmd)
-	serveCmd.PersistentFlags().StringVar(&addr, "port", addr, "Addr to run Application server on")
-	serveCmd.PersistentFlags().BoolVar(&debug, "debug", debug, "Whether to enable pprof")
-	serveCmd.PersistentFlags().BoolVar(&noUpdate, "no-update", noUpdate, "Whether to check for update")
+	serverCmd.PersistentFlags().StringVarP(&addr, "port", "p", ":80", "Addr to run Application server on")
+	serverCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", true, "Whether to enable pprof")
+	serverCmd.PersistentFlags().BoolVarP(&noUpdate, "no-update", "n", false, "Whether to check for update")
+	serverCmd.PersistentFlags().StringVarP(&config.CfgFile, "config", "c", "", "yaml setting for component")
+	_ = viper.BindPFlag("port", serverCmd.PersistentFlags().Lookup("port"))
+	_ = viper.BindPFlag("debug", serverCmd.PersistentFlags().Lookup("debug"))
+	_ = viper.BindPFlag("no-update", serverCmd.PersistentFlags().Lookup("no-update"))
+	_ = viper.BindPFlag("config", serverCmd.PersistentFlags().Lookup("config"))
 
-	serveCmd.PersistentFlags().String("interface", "eth0", "gateway listen where")
-	serveCmd.PersistentFlags().String("config", "./settings.yaml", "yaml setting for component")
-	cfg := config.Config()
-	_ = cfg.BindPFlag("yamlsettings", serveCmd.PersistentFlags().Lookup("config"))
-	_ = cfg.BindPFlag("interface", serveCmd.PersistentFlags().Lookup("interface"))
 }

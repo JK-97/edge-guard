@@ -21,7 +21,3 @@ to quickly create a Cobra application.`,
 		client.Run(version.Version)
 	},
 }
-
-func init() {
-	rootCmd.AddCommand(controlCmd)
-}

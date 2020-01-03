@@ -3,6 +3,7 @@ package subprocess
 import (
 	"context"
 	"jxcore/management/programmanage"
+	"strings"
 
 	log "jxcore/lowapi/logger"
 )
@@ -37,5 +38,16 @@ func runProcess(ctx context.Context, config string) error {
 			log.Info("removedGroup: ", removedGroup)
 		}
 		s.WaitForExit(ctx)
+	}
+}
+
+func LoadConfig(config map[string]interface{}) {
+
+	for k, v := range config {
+		if value, ok := v.(bool); ok {
+			if value == true {
+				programmanage.AddDependStart(strings.ToLower(k))
+			}
+		}
 	}
 }

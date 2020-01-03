@@ -141,11 +141,5 @@ to quickly create a Cobra application.`,
 		} else {
 			fmt.Print(SetColor("JXCORE NOT RUNNING"+"\n", 0, 0, TextYellow))
 		}
-
 	},
-}
-
-func init() {
-	rootCmd.AddCommand(checkCmd)
-
 }

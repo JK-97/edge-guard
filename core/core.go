@@ -3,7 +3,6 @@ package core
 import (
 	"context"
 	"io/ioutil"
-	"jxcore/config/yaml"
 	"jxcore/core/register"
 	"jxcore/internal/network"
 	"jxcore/internal/network/dns"
@@ -20,11 +19,6 @@ import (
 
 	"golang.org/x/sync/errgroup"
 )
-
-func ConfigSupervisor() {
-	startupProgram := yaml.Config
-	yaml.ParseAndCheck(*startupProgram, "")
-}
 
 func ConfigNetwork() {
 	// NetworkManager 和 systemd-resolved 会更改 /etc/resolv.conf，使dns不可控。需要停止
