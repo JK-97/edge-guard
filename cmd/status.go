@@ -73,12 +73,8 @@ var statusCmd = &cobra.Command{
 	}}
 
 func init() {
-	// Here you will define your flags and configuration settings.
-	rootCmd.AddCommand(statusCmd)
-
 	flags := statusCmd.PersistentFlags()
 	flags.BoolP("device", "d", true, "Print device informations.")
 	flags.BoolP("vpn", "v", true, "Test VPN Status")
 	flags.BoolP("gateway", "g", true, "Test Gateway")
-
 }

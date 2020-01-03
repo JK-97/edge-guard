@@ -1,7 +1,8 @@
 package iface
 
 import (
-	"jxcore/config/yaml"
+	// "jxcore/config/yaml"
+	"github.com/spf13/viper"
 	"time"
 )
 
@@ -13,12 +14,12 @@ const (
 var (
 	currentIFace           string
 	checkBestIFaceInterval = time.Second * 5
-	ifacePriority          = yaml.Config.IFace.Priority
-	backupIFace            = yaml.Config.IFace.Backup
+	ifacePriority          = viper.GetStringMapString("backup")
+	backupIFace            = viper.GetString("backup")
 )
 
 func init() {
-	interval, err := time.ParseDuration(yaml.Config.IFace.SwitchInterval)
+	interval, err := time.ParseDuration(viper.GetString("switch_interval"))
 	if err == nil {
 		checkBestIFaceInterval = interval
 	}

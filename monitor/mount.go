@@ -3,8 +3,8 @@ package monitor
 import (
 	"context"
 	"fmt"
+	"github.com/spf13/viper"
 	"io/ioutil"
-	"jxcore/config/yaml"
 	"jxcore/lowapi/logger"
 	"jxcore/lowapi/system"
 	"os"
@@ -27,7 +27,7 @@ import (
 // 获取挂载配置: map[string]map[string]string 源文件夹->源文件名->目标路径
 func GetMountCfg() map[string]map[string]string {
 	var mergedCfg = map[string]map[string]string{}
-	for src, dst := range yaml.Config.MountCfg {
+	for src, dst := range viper.GetStringMapString("mount_cfg") {
 		dir, filename := path.Split(src)
 		if _, ok := mergedCfg[dir]; !ok {
 			mergedCfg[dir] = map[string]string{filename: dst}
