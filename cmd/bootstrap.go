@@ -27,6 +27,7 @@ import (
 	log "jxcore/lowapi/logger"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -70,14 +71,21 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		defer func() {
 			if err := recover(); err != nil {
-				log.Error(err)
+				log.Info("register failed")
+				cleanBootstrap()
+				panic(err)
 			}
 		}()
 
 		if len(ticket) < 2 {
 			panic(errors.New("Tickit Error"))
 		}
-		err := syncVersion()
+
+		err := initHardWare()
+		if err != nil {
+			panic(err)
+		}
+		err = syncVersion()
 		if err != nil {
 			panic(err)
 		}
@@ -130,6 +138,8 @@ to quickly create a Cobra application.`,
 			if err != nil {
 				panic(err)
 			}
+			//删除restore
+			os.RemoveAll("/restore")
 
 		}
 
@@ -159,10 +169,31 @@ func loadDockerImage() {
 	}
 }
 
+func initHardWare() error {
+	data, err := ioutil.ReadFile("/etc/device")
+	if err != nil {
+		return errors.New("Can not detect this device type")
+	}
+	deviceType := strings.TrimSpace(string(data))
+	switch deviceType {
+	case "rk3399":
+		// 重置 挂载的大小
+		err := exec.Command("resize2fs", "/dev/mmcblk0p5").Run()
+		fmt.Println("resize rootfs")
+		if err != nil {
+			return err
+		}
+	default:
+
+	}
+	return nil
+
+}
+
 // runBootstrapScript 运行安装脚本
 func runBootstrapScript() error {
 	if _, err := os.Stat(restoreBootstrapPath); err == nil {
-		basecmd := exec.Command("/jxbootstrap/worker/scripts/base.sh")
+		basecmd := exec.Command("/jxbootstrap/worker/scripts/docker_and_edgex.sh")
 		basecmd.Stdout = os.Stdout
 		basecmd.Stdout = os.Stderr
 		err = basecmd.Run()
@@ -192,4 +223,11 @@ func syncVersion() error {
 	}
 	return nil
 
+}
+
+// 清理bootstrap 产生的注册文件
+func cleanBootstrap() {
+	if _, err := os.Stat("/edge/init"); err != nil {
+		os.Remove("/edge/init")
+	}
 }
