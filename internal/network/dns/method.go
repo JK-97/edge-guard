@@ -11,7 +11,7 @@ import (
 )
 
 // 重设 /etc/dnsmasq.hosts
-func ResetHostFile() error {
+func resetHostFile() error {
 	content := fmt.Sprintf("%s %s\n", network.DockerHostIP, LocalHostName)
 	content += fmt.Sprintf("%s %s\n", network.DockerHostIP, IotedgeHostName)
 	err := ioutil.WriteFile(DnsmasqHostFile, []byte(content), 0644)

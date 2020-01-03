@@ -20,19 +20,15 @@ import (
 // jxcore启动时调用InitIFace，选择优先级最高，能ping通外网的网卡
 // 每隔checkBestIFaceInterval间隔，重新选择优先级最高，能ping通外网的网卡
 
-// 选择初始网口
-func InitIFace() error {
-	return switchIFace(findBestIFace())
-}
-
 func MaintainBestIFace(ctx context.Context) error {
+	bestIFace := findBestIFace()
 	ticker := time.NewTicker(checkBestIFaceInterval)
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
-			bestIFace := findBestIFace()
+			bestIFace = findBestIFace()
 			err := switchIFace(bestIFace)
 			if err != nil {
 				log.Error("Failed to switch network interface: ", err)
