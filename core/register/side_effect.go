@@ -26,9 +26,7 @@ func onMasterIPChanged(masterip string) {
 	currentdevice, err := device.GetDevice()
 	utils.CheckErr(err)
 
-	if utils.FileExists(consulConfigPath) {
-		updateConsulConfig(currentdevice)
-	}
+	updateConsulConfig(currentdevice)
 
 	updateTelegrafConfig(currentdevice, masterip)
 }
