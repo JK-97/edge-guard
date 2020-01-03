@@ -81,7 +81,7 @@ type aiSwitchModelReply struct {
 func NewAiServingHandler(u string) *AiServingHandler {
 	pURL, err := url.Parse(u)
 	if err != nil {
-		log.Fatalln(err)
+		log.Errorln(err)
 	}
 
 	return &AiServingHandler{pURL}

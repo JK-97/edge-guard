@@ -26,7 +26,7 @@ func Error(w http.ResponseWriter, reason string, code int) {
 
 	rs, err := json.Marshal(e)
 	if err != nil {
-		log.Fatalln(err)
+		log.Errorln(err)
 	}
 
 	w.Write(rs)
