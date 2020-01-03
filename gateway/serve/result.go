@@ -40,7 +40,7 @@ func WriteResult(w http.ResponseWriter, result *APIResult) {
 
 	rs, err := json.Marshal(result)
 	if err != nil {
-		log.Fatalln(err)
+		log.Errorln(err)
 	}
 
 	w.Write(rs)
