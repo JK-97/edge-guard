@@ -98,6 +98,10 @@ func testConnect(netInterface string) bool {
 		log.Info(err)
 		return false
 	}
+	if network.Ping(testIP) {
+		return true
+	}
+	IFaceUp(netInterface)
 	return network.Ping(testIP)
 }
 
