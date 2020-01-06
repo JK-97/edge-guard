@@ -54,19 +54,14 @@ var statusCmd = &cobra.Command{
 		}
 
 		if ok, _ := flags.GetBool("vpn"); ok && info.Vpn != device.VPNModeLocal {
-
 			log.Info("Test VPN Status")
-			var ip string
-			vpn.StartVpn(info.Vpn)
-			vpn.StopVpn(info.Vpn)
-			ip = vpn.GetClusterIP()
+			ip := vpn.GetClusterIP()
 			if ip != "" {
 				log.Info("VPN Test Success, ClusterIP: ", ip)
 			} else {
 				exitCode |= exitCodeVPNFailed
 				log.Error("VPN Test Failed!")
 			}
-			vpn.StopVpn(info.Vpn)
 		}
 
 		os.Exit(exitCode)

@@ -58,17 +58,17 @@ func (b *HeartBeater) RegisterHandler(rt message.RequireType, handler PacketHand
 }
 
 // 处理连接收到的请求，直到出错或者连接中断
-func (b *HeartBeater) readFromConn(c net.Conn) {
+func (b *HeartBeater) readFromConn(c net.Conn) error {
 	var err error
 	r := bufio.NewReader(c)
 	for {
 		err = skipProtocolHead(r)
 		if err != nil {
 			if isConnectionBroken(err) {
-				return
+				return err
 			}
 			if opErr, ok := err.(*net.OpError); ok && opErr.Op == "read" {
-				return
+				return err
 			}
 			logger.Warn(err)
 			time.Sleep(200 * time.Millisecond)
@@ -78,7 +78,7 @@ func (b *HeartBeater) readFromConn(c net.Conn) {
 		buf, err := readBody(r)
 		if err != nil {
 			if isConnectionBroken(err) {
-				return
+				return err
 			}
 			logger.Warn(err)
 			continue

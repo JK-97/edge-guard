@@ -28,11 +28,12 @@ import (
 	"jxcore/internal/network/ssdp"
 	"jxcore/lowapi/ceph"
 	"jxcore/lowapi/logger"
+	"jxcore/lowapi/utils"
 	"jxcore/monitor"
 	"jxcore/subprocess"
-	"jxcore/version"
 	"jxcore/web"
 	"jxcore/web/route"
+
 	"net/http"
 	_ "net/http/pprof"
 
@@ -46,10 +47,11 @@ const (
 )
 
 var (
-	debug     bool   = false
-	addr      string = ":80"
-	noUpdate  bool   = false
-	serverCmd        = &cobra.Command{
+	debug    bool   = false
+	addr     string = ":80"
+	noUpdate bool   = false
+	noDaemon bool   = false
+	serveCmd        = &cobra.Command{
 		Use:   "serve",
 		Short: "Serve http backend for jxcore",
 		Long: `A longer description that spans multiple lines and likely contains examples
@@ -58,84 +60,94 @@ var (
 	Cobra is a CLI library for Go that empowers applications.
 	This application is a tool to generate the needed files
 	to quickly create a Cobra application.`,
+
 		Run: func(cmd *cobra.Command, args []string) {
-
-			Deamonize(func() {
-				logger.Info("==================Jxcore Serve Starting=====================")
-				currentdevice, err := device.GetDevice()
-				if err != nil {
-					logger.Fatal(err)
-				}
-				logger.Info("workerid : ", currentdevice.WorkerID)
-
-				ctx, cancel := context.WithCancel(context.Background())
-				errGroup, ctx := errgroup.WithContext(ctx)
-
-				for dir, mapSrcDst := range monitor.GetMountCfg() {
-					errGroup.Go(func() error { return monitor.MountListener(ctx, dir, mapSrcDst) })
-				}
-
-				ssdpClient := ssdp.NewClient(currentdevice.WorkerID, 5)
-				errGroup.Go(func() error { return ssdpClient.Aliving(ctx) })
-
-				if device.GetDeviceType() == version.Pro {
-					logger.Info("=======================Configuring Network============================")
-					core.ConfigNetwork()
-
-					// Network interface auto switch
-					// IoTEdge VPN auto reconnect
-					errGroup.Go(func() error { return core.MaintainNetwork(ctx, noUpdate) })
-				}
-
-				logger.Info("================Configuring Environment===================")
-				logger.Info("ensure tmpfs is mounted")
-				err = ceph.EnsureTmpFs()
-				if err != nil {
-					logger.Fatal(err)
-				}
-
-				logger.Info("================Starting Subprocesses===================")
-				subprocess.LoadConfig(viper.GetStringMap("components"))
-
-				// start up all component process
-				errGroup.Go(func() error { return subprocess.RunServer(ctx) })
-
-				// web server
-				errGroup.Go(func() error { return gateway.ServeGateway(ctx, graceful) })
-				errGroup.Go(func() error { return web.Serve(ctx, addr, route.Routes(), graceful) })
-				errGroup.Go(func() error { return web.Serve(ctx, ":10880", http.DefaultServeMux, graceful) })
-
-				// handle SIGTERM and SIGINT
-				go func() {
-					termChan := make(chan os.Signal, 1)
-					signal.Notify(termChan, syscall.SIGINT, syscall.SIGTERM)
-					sig := <-termChan
-					logger.WithFields(logger.Fields{"signal": sig}).Info("receive a signal to stop all process & exit")
-					cancel()
-
-					time.Sleep(graceful)
-					logger.Info("===============Jxcore exited===============")
-					logger.Fatal("Jxcore cannot exit within graceful period: ", graceful.String())
-				}()
-
-				err = errGroup.Wait()
-				logger.Info("===============Jxcore exited===============")
-				if err != nil {
-					logger.Error("Exited with error: %+v", err)
-				}
-			})
+			if noDaemon {
+				serve()
+			} else {
+				Deamonize(serve)
+			}
 		},
 	}
 )
 
 func init() {
-	serverCmd.PersistentFlags().StringVarP(&addr, "port", "p", ":80", "Addr to run Application server on")
-	serverCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", true, "Whether to enable pprof")
-	serverCmd.PersistentFlags().BoolVarP(&noUpdate, "no-update", "n", false, "Whether to check for update")
-	serverCmd.PersistentFlags().StringVarP(&config.CfgFile, "config", "c", "", "yaml setting for component")
-	_ = viper.BindPFlag("port", serverCmd.PersistentFlags().Lookup("port"))
-	_ = viper.BindPFlag("debug", serverCmd.PersistentFlags().Lookup("debug"))
-	_ = viper.BindPFlag("no-update", serverCmd.PersistentFlags().Lookup("no-update"))
-	_ = viper.BindPFlag("config", serverCmd.PersistentFlags().Lookup("config"))
+	serveCmd.PersistentFlags().StringVarP(&addr, "port", "p", ":80", "Addr to run Application server on")
+	serveCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", true, "Whether to enable pprof")
+	serveCmd.PersistentFlags().BoolVarP(&noUpdate, "no-update", "n", false, "Whether to check for update")
+	serveCmd.PersistentFlags().StringVarP(&config.CfgFile, "config", "c", "", "yaml setting for component")
+	serveCmd.PersistentFlags().BoolVar(&noDaemon, "no-daemon", noDaemon, "Debug mode: don't fork to the background")
+	_ = viper.BindPFlag("port", serveCmd.PersistentFlags().Lookup("port"))
+	_ = viper.BindPFlag("debug", serveCmd.PersistentFlags().Lookup("debug"))
+	_ = viper.BindPFlag("no-update", serveCmd.PersistentFlags().Lookup("no-update"))
+	_ = viper.BindPFlag("config", serveCmd.PersistentFlags().Lookup("config"))
 
+}
+
+func serve() {
+	logger.Info("==================Jxcore Serve Starting=====================")
+	logger.Infof("Config: %+v", viper.GetViper().ConfigFileUsed())
+
+	currentdevice, err := device.GetDevice()
+	if err != nil {
+		logger.Fatal(err)
+	}
+	logger.Info("workerid : ", currentdevice.WorkerID)
+
+	// 自动切换网卡
+	// vpn 自动连接 IoTEdge
+	// 保证 网络连接 是第一优先级，如果发生错误重启jxcore
+	logger.Info("=======================Configuring Network============================")
+	ctx, cancel := context.WithCancel(context.Background())
+	errGroup, ctx := errgroup.WithContext(ctx)
+	go func() {
+		err := core.MaintainNetwork(ctx, noUpdate)
+		logger.Error("Maintain network error: ", err)
+		cancel()
+	}()
+
+	logger.Info("================Configuring File System===================")
+	logger.Info("ensure tmpfs is mounted")
+	go utils.RunAndLogError(ceph.EnsureTmpFs)
+
+	logger.Info("start auto sdcard mount")
+	for dir, mapSrcDst := range monitor.GetMountCfg() {
+		utils.GoAndRestartOnError(ctx, errGroup, "mount listener "+dir, func() error { return monitor.MountListener(ctx, dir, mapSrcDst) })
+	}
+
+	logger.Info("================Starting Subprocesses===================")
+	subprocess.LoadConfig(viper.GetStringMap("components"))
+
+	// start ssdp
+	ssdpClient := ssdp.NewClient(currentdevice.WorkerID, 5)
+	utils.GoAndRestartOnError(ctx, errGroup, "ssdp", func() error { return ssdpClient.Aliving(ctx) })
+
+	// start up all component process
+	utils.GoAndRestartOnError(ctx, errGroup, "subprocess", func() error { return subprocess.RunServer(ctx) })
+
+	// web server
+	utils.GoAndRestartOnError(ctx, errGroup, "gateway", func() error { return gateway.ServeGateway(ctx, graceful) })
+	utils.GoAndRestartOnError(ctx, errGroup, "web", func() error { return web.Serve(ctx, addr, route.Routes(), graceful) })
+	utils.GoAndRestartOnError(ctx, errGroup, "prof web", func() error { return web.Serve(ctx, ":10880", http.DefaultServeMux, graceful) })
+
+	// 处理 SIGTERM 和 SIGINT
+	go func() {
+		termChan := make(chan os.Signal, 1)
+		signal.Notify(termChan, syscall.SIGINT, syscall.SIGTERM)
+		sig := <-termChan
+		logger.WithFields(logger.Fields{"signal": sig}).Info("receive a signal to stop all process & exit")
+		cancel()
+	}()
+
+	<-ctx.Done()
+	// fatal after graceful period
+	go func() {
+		time.Sleep(graceful)
+		logger.Info("===============Jxcore exited===============")
+		logger.Fatal("Jxcore cannot exit within graceful period: ", graceful.String())
+	}()
+
+	_ = errGroup.Wait()
+
+	logger.Info("===============Jxcore exited===============")
 }

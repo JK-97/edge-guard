@@ -3,11 +3,14 @@ package updatemanage
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"jxcore/core/device"
 
 	"jxcore/internal/network/dns"
+	"jxcore/lowapi/logger"
 	log "jxcore/lowapi/logger"
+	"jxcore/lowapi/system"
 	"jxcore/lowapi/utils"
 
 	"net/http"
@@ -16,7 +19,6 @@ import (
 )
 
 func AddAptKey() {
-	//ip, _ := dns.ParseIpInTxt(UPLOADDOMAIN)
 	file, err := ioutil.ReadFile(SourceList)
 
 	utils.CheckErr(err)
@@ -31,7 +33,6 @@ func AddAptKey() {
 	lines = append(lines, "deb [arch=arm64] http://master.iotedge/public stable main")
 	out := strings.Join(lines, "\n")
 	ioutil.WriteFile(SourceList, []byte(out), 0666)
-
 }
 
 func ParseVersionFile() (versioninfo map[string]string) {
@@ -44,8 +45,8 @@ func ParseVersionFile() (versioninfo map[string]string) {
 	versioninfo["jx-toolset"] = jxtoolsetversion
 	return versioninfo
 }
-func NewUpdateProcess() *UpgradeProcess {
 
+func NewUpdateProcess() *UpgradeProcess {
 	targetdata, err := ioutil.ReadFile(TARGETVERSION)
 	if err != nil {
 		log.Error(err)
@@ -58,7 +59,6 @@ func NewUpdateProcess() *UpgradeProcess {
 		NowVersion: ParseVersionFile(),
 		Status:     FINISHED,
 	}
-
 }
 
 func GetUpdateProcess() *UpgradeProcess {
@@ -77,7 +77,10 @@ func GetUpdateProcess() *UpgradeProcess {
 func (up *UpgradeProcess) UpdateSource() {
 	up.ChangeToUpdating()
 	log.WithFields(log.Fields{"Operating": "Updating"}).Info("Updating Source")
-	exec.Command("apt", "update").Run()
+	err := system.RunCommand("apt update")
+	if err != nil {
+		logger.Warn(err)
+	}
 }
 
 func (up *UpgradeProcess) GetStatus() UpgradeStatus {
@@ -87,6 +90,7 @@ func (up *UpgradeProcess) GetStatus() UpgradeStatus {
 func (up *UpgradeProcess) FlushVersionInfo() {
 	up.NowVersion = ParseVersionFile()
 }
+
 func (up *UpgradeProcess) FlushTargetVersion() {
 	targetdata, err := ioutil.ReadFile(TARGETVERSION)
 	if err != nil {
@@ -96,6 +100,7 @@ func (up *UpgradeProcess) FlushTargetVersion() {
 	json.Unmarshal(targetdata, &targetinfo.Target)
 	up.Target = targetinfo.Target
 }
+
 func (up *UpgradeProcess) CheckUpdate() map[string]string {
 	var pkgneeddate = make(map[string]string)
 	log.WithFields(log.Fields{"Operating": "Updating"}).Info("Current Version : ", up.NowVersion)
@@ -106,11 +111,9 @@ func (up *UpgradeProcess) CheckUpdate() map[string]string {
 		}
 	}
 	return pkgneeddate
-
 }
 
 func (up *UpgradeProcess) ReportVersion() {
-
 	deviceinfo, _ := device.GetDevice()
 
 	resprawinfo := Respdatastruct{
@@ -130,32 +133,49 @@ func (up *UpgradeProcess) ReportVersion() {
 	if err != nil {
 		log.Error(err)
 	}
-
 }
 
-func (up *UpgradeProcess) UpdateComponent(componenttoupdate map[string]string) {
-
+func (up *UpgradeProcess) UpdateComponent(componenttoupdate map[string]string) error {
 	for pkgname, pkgversion := range componenttoupdate {
-		pkginfo := pkgname + "=" + pkgversion
-		log.WithFields(log.Fields{"Operating": "Updating"}).Info("Installing : ", pkginfo)
-		err := exec.Command("/bin/bash", "-c", "aptitude install -o Aptitude::ProblemResolver::SolutionCost='100*canceled-actions,200*removals' -y "+pkginfo).Run()
-		utils.CheckErr(err)
-
+		err := aptInstall(pkgname, pkgversion)
+		if err != nil {
+			return err
+		}
 	}
 	up.FlushVersionInfo()
 	up.ChangeToFinish()
+	return nil
 }
 
 func (up *UpgradeProcess) ChangeToFinish() {
 	up.Status = FINISHED
 
 }
+
 func (up *UpgradeProcess) ChangeToUpdating() {
 	up.Status = UPDATING
-
 }
 
 func (up *UpgradeProcess) SetNewTarget(indentdata []byte) {
 	ioutil.WriteFile(TARGETVERSION, indentdata, 0644)
 	up.FlushVersionInfo()
+}
+
+const noPackageInstalledPrompt = "No packages will be installed, upgraded, or removed."
+
+var ErrNoPackageInstalled = fmt.Errorf(noPackageInstalledPrompt)
+
+func aptInstall(pkgname, pkgversion string) error {
+	pkginfo := pkgname + "=" + pkgversion
+	log.WithFields(log.Fields{"Operating": "Updating"}).Info("Installing : ", pkginfo)
+
+	cmd := "aptitude install -o Aptitude::ProblemResolver::SolutionCost='100*canceled-actions,200*removals' -y " + pkginfo
+	output, err := exec.Command("/bin/bash", "-c", cmd).CombinedOutput()
+	if err != nil {
+		return err
+	}
+	if strings.Contains(string(output), noPackageInstalledPrompt) {
+		return ErrNoPackageInstalled
+	}
+	return nil
 }

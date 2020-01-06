@@ -28,5 +28,5 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(config.InitConfig, config.SetDefault)
-	rootCmd.AddCommand(bootstrapCmd, controlCmd, statusCmd, versionCmd, checkCmd, serverCmd)
+	rootCmd.AddCommand(bootstrapCmd, controlCmd, statusCmd, versionCmd, checkCmd, serveCmd)
 }

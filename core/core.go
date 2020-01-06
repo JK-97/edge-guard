@@ -4,10 +4,8 @@ import (
 	"context"
 	"io/ioutil"
 	"jxcore/core/register"
-	"jxcore/internal/network"
 	"jxcore/internal/network/dns"
 	"jxcore/internal/network/iface"
-	"jxcore/lowapi/docker"
 	"jxcore/lowapi/system"
 	"jxcore/lowapi/utils"
 	"jxcore/management/updatemanage"
@@ -20,46 +18,15 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func ConfigNetwork() {
-	// NetworkManager 和 systemd-resolved 会更改 /etc/resolv.conf，使dns不可控。需要停止
-	network.DisableNetworkManager()
-	network.DisableSystemdResolved()
+func MaintainNetwork(ctx context.Context, noUpdate bool) error {
+	dns.TrySetupDnsConfig()
 
-	// nano: /etc/dhcp/dhclient-enter-hooks.d 里的脚本需要被移除。
-	// 如果脚本存在，`ifup`时不会更新 /etc/resolv.conf
-	dns.RemoveDHCPEnterHooks()
-
-	// 将dhcp 获取的resolv 信息重定向到 /edge/resolv.d
-	dns.ApplyDHCPResolveUpdateHooks()
-	dns.ResetResolv()
-	dns.ResetDNSMasqConf()
-	dns.AppendHostnameHosts()
+	errGroup := errgroup.Group{}
 
 	// 按优先级切换网口
-	err := iface.InitIFace()
-	if err != nil {
-		log.Error(err)
-	}
-	err = dns.ResetHostFile()
-	if err != nil {
-		log.Error(err)
-	}
-
-	err = dns.AddMasterDns(false)
-	if err != nil {
-		logger.Error("Failed to update master dns: ", err)
-	}
-
-	err = docker.EnsureDockerDNSConfig()
-	if err != nil {
-		log.Error("Failed to configure docker DNS: ", err)
-	}
-}
-
-func MaintainNetwork(ctx context.Context, noUpdate bool) error {
-	errGroup := errgroup.Group{}
 	errGroup.Go(func() error { return iface.MaintainBestIFace(ctx) })
 
+	// 第一次连接master成功，检查固件更新
 	onFirstConnect := func() {
 		updatemanage.GetUpdateProcess().ReportVersion()
 		if !noUpdate {
@@ -78,7 +45,11 @@ func CheckCoreUpdate() {
 	pkgneedupdate := updateprocess.CheckUpdate()
 	if len(pkgneedupdate) != 0 {
 		updateprocess.UpdateSource()
-		updateprocess.UpdateComponent(pkgneedupdate)
+		err := updateprocess.UpdateComponent(pkgneedupdate)
+		if err != nil {
+			logger.Warn(err)
+			return
+		}
 		updateprocess.ReportVersion()
 		system.RestartJxcoreAfter(5 * time.Second)
 	}

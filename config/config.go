@@ -24,9 +24,9 @@ func InitConfig() {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found; ignore error if desired
 			logger.Info(err)
+		} else {
+			logger.Info("Using config file:", viper.ConfigFileUsed())
 		}
-	} else {
-		logger.Info("Using config file:", viper.ConfigFileUsed())
 	}
 
 }

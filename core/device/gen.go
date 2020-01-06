@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	log "jxcore/lowapi/logger"
 	"jxcore/lowapi/utils"
-	"jxcore/version"
 	"math/rand"
 	"net/http"
 	"os"
@@ -21,18 +20,112 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type Vpn string
+
+type Device struct {
+	WorkerID   string `yaml:"workerid"`
+	Key        string `yaml:"key"`
+	DhcpServer string `yaml:"dhcpserver"`
+	Vpn        Vpn    `yaml:"vpn"`
+}
+
+type buildkeyreq struct {
+	Workerid string `json:"wid"`
+	Ticket   string `json:"ticket"`
+}
+
+type data struct {
+	Key         string `json:"key"`
+	DeadLine    string `json:"deadLine"`
+	RemainCount int    `json:"remainCount"`
+}
+
+type deviceType string
+type buildkeyresp struct {
+	Data data `json:"data"`
+}
+
+// DeviceKey 设备信息
+var DeviceInstance = Device{}
+
+// VPN 模式
 const (
+	VPNModeRandom  Vpn = "random"
+	VPNModeWG      Vpn = "wireguard"
+	VPNModeOPENVPN Vpn = "openvpn"
+	VPNModeLocal   Vpn = "local"
+)
+const BOOTSTRAPATH string = "/api/v1/bootstrap"
+
+var vpnSlice []Vpn = []Vpn{VPNModeWG, VPNModeOPENVPN}
+
+const (
+	ARM       deviceType = "arm"
+	X86       deviceType = "x86"
+	NANO      deviceType = "nano"
+	TX2       deviceType = "tx2"
+	Rk3399PRO deviceType = "rk3399pro"
+	RK3399    deviceType = "rk3399"
+	UNKNOWN   deviceType = "unknown"
+)
+
+func (d deviceType) prefix() string {
+	switch d {
+	case "arm64", "arm32":
+		return "01"
+	case "amd64":
+		return "02"
+	case "nano":
+		return "03"
+	case "tx2":
+		return "04"
+	case "rk3399pro":
+		return "05"
+	case "rk3399":
+		return "06"
+	default:
+		return "00"
+	}
+}
+
+func (v Vpn) Interface() (string, error) {
+	switch v {
+	case VPNModeWG:
+		return "wg0", nil
+	case VPNModeOPENVPN:
+		return "tun0", nil
+	default:
+		return "unknown", errors.New("no supported " + string(v))
+	}
+}
+
+const (
+	devicePath      string = "/etc/device"
 	initPath        string = "/edge/init"
 	cpuInfoFile     string = "/proc/cpuinfo"
 	GpsInfoScript   string = "python /jxbootstrap/worker/scripts/G8100_NoMCU.py CMD AT+CGSN"
 	X86IdInfoScript string = "dmidecode | grep 'Serial Number' | head -1 | awk -F\":\" '{gsub(\" ^ \", \"\", $2); print $2}'"
 )
 
-var device *Device
+var UnknownDeviceError = errors.New("未知设备")
 
-func GetDeviceType() (devicetype string) {
-	return version.Type
+// 获取当前设备型号
+func GetDeviceType() (deviceType, error) {
+	data, err := ioutil.ReadFile(devicePath)
+	if err != nil {
+		switch runtime.GOARCH {
+		case "arm64":
+			return ARM, nil
+		case "x86":
+			return X86, nil
+		}
+		panic(UnknownDeviceError)
+	} else {
+		return deviceType(strings.TrimSpace(string(data))), nil
+	}
 }
+
+var device *Device
 
 func getDevice() error {
 	if _, err := os.Stat(initPath); err != nil {
@@ -57,38 +150,35 @@ func GetDevice() (*Device, error) {
 
 // BuildWokerID 生成wokerid
 func BuildWokerID() (string, error) {
-	perfilx := "J"
-	if runtime.GOARCH == "amd64" {
-		perfilx = perfilx + "02"
-	} else {
-		perfilx = perfilx + "01"
+	deviceType, err := GetDeviceType()
+	if err == UnknownDeviceError {
+		return "", err
 	}
-
+	fmt.Println("设备类型 :", deviceType)
 	var md5info = [16]byte{}
-	switch runtime.GOARCH {
-	case "amd64":
+	switch deviceType {
+	case X86:
 		err := buildX86ID(md5info[:])
-		if err == nil {
+		if err != nil {
 			return "", err
 		}
-	case "arm64":
+	case ARM, RK3399, Rk3399PRO:
 		err := buildRK3399ID(md5info[:])
 		if err != nil {
-			log.Error(err)
-		} else {
-			goto splice
+			return "", err
 		}
-		err = buildNanoID(md5info[:])
+	case NANO, TX2:
+		err := buildNanoID(md5info[:])
 		if err != nil {
 			return "", err
 		}
 	}
-splice:
+
 	md5str := fmt.Sprintf("%x", md5info)
-	if md5str == "0000000" {
+	if md5str[len(md5str)-7:] == "0000000" {
 		return "", errors.New("WorkerID Error")
 	}
-	workerid := perfilx + md5str[len(md5str)-7:]
+	workerid := "J" + deviceType.prefix() + md5str[len(md5str)-7:]
 	return workerid, nil
 }
 
@@ -207,10 +297,11 @@ func buildNanoID(md5info []byte) error {
 		utils.CheckErr(err)
 		result := strings.ReplaceAll(string(gpsInfo), "\n", "")
 		result = strings.TrimSpace(result)
-		if len(result) > 10 {
+		if len(result) >= 10 {
 			info := md5.Sum([]byte(result))
 			copy(md5info, info[:])
+			return nil
 		}
 	}
-	return nil
+	return errors.New("nano build id err")
 }

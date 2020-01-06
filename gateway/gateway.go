@@ -130,7 +130,7 @@ func appendContainerRouter(r *mux.Router) {
 	base := "/data/compose"
 	err := os.MkdirAll(base, os.ModePerm)
 	if err != nil {
-		logger.Fatal(err)
+		logger.Error(err)
 	}
 
 	router = r.PathPrefix(prefix).Subrouter()
