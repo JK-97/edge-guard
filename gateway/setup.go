@@ -1,9 +1,9 @@
 package gateway
 
 import (
-	"jxcore/lowapi/logger"
 	"jxcore/gateway/option"
 	"jxcore/gateway/store"
+	"jxcore/lowapi/logger"
 	"os"
 	"path/filepath"
 )
@@ -15,14 +15,13 @@ var (
 
 // Setup 配置 Gateway
 func Setup() {
-
 	if _, err := option.ServerConfigFromFile(configPath, &ServerOptions); err != nil {
 		if os.IsNotExist(err) {
 			ServerOptions = option.DefaultServerConfig()
 			logger.Infof("File Not Found Use Default Config\n")
 			ServerOptions.SaveToWriter(os.Stdout)
 		} else {
-			logger.Fatal(err)
+			logger.Error(err)
 		}
 	}
 
@@ -34,7 +33,7 @@ func Setup() {
 		}
 
 	} else if !fileInfo.IsDir() {
-		logger.Fatalf("[%v] is not directory\n", workingDir)
+		logger.Errorf("[%v] is not directory\n", workingDir)
 	} else {
 		defaultStore = store.NewLevelDBStore(filepath.Join(workingDir, "gateway.db"))
 		logger.Info("Working directory: ", workingDir)

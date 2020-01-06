@@ -1,4 +1,4 @@
-image: "golang:latest"
+image: "registry.jiangxingai.com:5000/cicd/golang-nodejs:0.1.0"
 
 variables:
   GO111MODULE: "on"
@@ -34,17 +34,19 @@ review:
     - /^rc-/
   except:
     - branches
-  
+
 build:
   cache:
     paths:
       - .cache
+      - frontend/node_modules
   stage: build
   environment:
     name: package
     url: http://packages.debian.jiangxingai.com
   script:
     - make clean
+    - make frontend
     - make debian arch=amd64
     - make debian arch=arm64
     - make push_to_source
