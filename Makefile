@@ -46,7 +46,7 @@ debian_base: build
 	mkdir -p $(PACKAGE_DIR)/usr/bin
 	cp -r $(BINDIR)/$(NAME)-$(arch) $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin/$(NAME)
 	chmod +x $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin/$(NAME)
-	# cp -r settings.yaml $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin
+	cp -r settings.yaml $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin
 	cp -r gateway.cfg $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin
 	mkdir -p $(PACKAGE_DIR)/etc/systemd/system/
 	cp -r scripts/jxcore.service $(PACKAGE_DIR)/etc/systemd/system/
