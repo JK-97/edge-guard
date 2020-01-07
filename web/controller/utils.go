@@ -37,6 +37,9 @@ func RespondJSON(obj interface{}, w http.ResponseWriter, statusCode int) {
 	if err != nil {
 		logger.Error(err)
 	}
+	if f, ok := w.(http.Flusher); ok {
+		f.Flush()
+	}
 }
 
 func RespondReasonJSON(obj interface{}, w http.ResponseWriter, reason string, statusCode int) {
