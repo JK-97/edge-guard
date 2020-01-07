@@ -33,10 +33,8 @@ func GetDeviceInfo(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	firmwareVersion, ok := updatemanage.ParseVersionFile()["jx-toolset"]
-	if !ok {
-		logger.Error("firmware version not found")
-	}
+	firmwareVersion := updatemanage.NewUpdateManager().GetCurrentVersion()
+
 	deviceNameData, err := filestore.KV.GetDefault(deviceNameKey, []byte(currentDevice.WorkerID))
 	if err != nil {
 		logger.Error("failed to get device name", err)
@@ -47,7 +45,7 @@ func GetDeviceInfo(w http.ResponseWriter, r *http.Request) {
 		WorkerID: currentDevice.WorkerID,
 		// TODO 需要产品定义
 		Model:           "",
-		FirmwareVersion: firmwareVersion,
+		FirmwareVersion: firmwareVersion["jx-toolset"],
 	}
 
 	RespondJSON(reponse, w, 200)
