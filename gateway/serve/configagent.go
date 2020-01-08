@@ -24,8 +24,9 @@ import (
 type ConfigWatcher interface {
 	WatchKey(key string, timeout time.Duration)
 	UnwatchKey(key string)
-	ResponseChan() <-chan watchKeyResponse
+	ResponseChan() <-chan *watchKeyResponse
 	Stop()
+	ConfigChanged(r *watchKeyResponse) bool
 }
 
 // ConfigClient 读取配置
@@ -36,6 +37,7 @@ type ConfigClient interface {
 
 type httpConfigClient struct {
 	Client http.Client
+	Host   string
 }
 
 // ConfigAgentHandler 转发 ConfigAgent 相关请求
@@ -51,8 +53,10 @@ type keysWatcher struct {
 	keys      map[string]time.Duration
 	Client    ConfigClient // *http.Client
 	stoped    bool
-	responseC chan watchKeyResponse
+	responseC chan *watchKeyResponse
 	mu        *sync.Mutex
+
+	ConfigIndexBucket map[string]int
 }
 
 // NewConfigAgentHandler 获取新的 ConfigAgentHandler 实例
@@ -75,6 +79,7 @@ func NewConfigAgentHandler(config option.ConfigAgentConfig) *ConfigAgentHandler 
 				},
 			},
 		},
+		Host: "edgegw.localhost",
 	}
 
 	return handler
@@ -99,7 +104,6 @@ type watchKeyResponse struct {
 	Key string `json:"key"`
 
 	configAgentData
-	// JSON interface{} `json:"json"`
 }
 
 type configAgentData struct {
@@ -121,8 +125,10 @@ func newKeysWatcher(client ConfigClient) *keysWatcher {
 		keys:      make(map[string]time.Duration),
 		Client:    client,
 		stoped:    false,
-		responseC: make(chan watchKeyResponse, 3),
+		responseC: make(chan *watchKeyResponse, 3),
 		mu:        new(sync.Mutex),
+
+		ConfigIndexBucket: make(map[string]int),
 	}
 }
 
@@ -131,16 +137,16 @@ func (w *httpConfigClient) GetConfig(key string, timeout time.Duration, watch bo
 	escapedKey := url.PathEscape(key)
 	var path string
 	if watch {
-		path = "/api/v1/watch/config/" + escapedKey
+		path = "/api/v1/config/watch/" + escapedKey
 	} else {
 		path = "/api/v1/config/" + escapedKey
 	}
 
 	u := url.URL{
 		Scheme:   "http",
-		Host:     "edgegw.localhost",
+		Host:     w.Host,
 		Path:     path,
-		RawQuery: fmt.Sprintf("timeout=%d", int(float32(timeout)/float32(time.Second))),
+		RawQuery: fmt.Sprintf("timeout=%d", int(float32(timeout)/float32(time.Microsecond))),
 	}
 	client := w.Client
 
@@ -149,8 +155,9 @@ func (w *httpConfigClient) GetConfig(key string, timeout time.Duration, watch bo
 		URL:    &u,
 	})
 	if err != nil || resp.StatusCode >= http.StatusBadRequest {
-		if resp.Body != nil {
+		if resp != nil && resp.Body != nil {
 			if buf, err := ioutil.ReadAll(resp.Body); err == nil {
+				log.Debug(u)
 				log.Debug(string(buf))
 				resp.Body.Close()
 			}
@@ -159,15 +166,11 @@ func (w *httpConfigClient) GetConfig(key string, timeout time.Duration, watch bo
 	}
 
 	if resp.Body != nil {
-		defer resp.Body.Close()
-		var buf []byte
-		buf, err = ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return
-		}
+
 		config := configAgentResponse{}
 
-		if err = json.Unmarshal(buf, &config); err == nil {
+		if err = json.NewDecoder(resp.Body).Decode(&config); err == nil {
+			defer resp.Body.Close()
 			reply = &watchKeyResponse{
 				Key:             key,
 				configAgentData: config.Data,
@@ -239,7 +242,9 @@ func (w *keysWatcher) watchKeybg(key string) {
 			break
 		}
 		if reply, err := w.Client.GetConfig(key, timeout, true); err == nil {
-			w.responseC <- *reply
+			if reply != nil {
+				w.responseC <- reply
+			}
 		}
 	}
 }
@@ -263,7 +268,7 @@ func (w *keysWatcher) UnwatchKey(key string) {
 	delete(w.keys, key)
 }
 
-func (w *keysWatcher) ResponseChan() <-chan watchKeyResponse {
+func (w *keysWatcher) ResponseChan() <-chan *watchKeyResponse {
 	return w.responseC
 }
 
@@ -273,6 +278,21 @@ func (w *keysWatcher) Stop() {
 
 	w.stoped = true
 	close(w.responseC)
+}
+
+func (w *keysWatcher) ConfigChanged(r *watchKeyResponse) bool {
+	if r == nil {
+		return false
+	}
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	index := w.ConfigIndexBucket[r.Key]
+	if r.Index != index {
+		w.ConfigIndexBucket[r.Key] = r.Index
+		return true
+	}
+	return false
 }
 
 func handleRequest(ch <-chan *getKeyRequest, configWatcher ConfigWatcher, c *websocket.Conn, client ConfigClient) {
@@ -306,7 +326,9 @@ func handleRequest(ch <-chan *getKeyRequest, configWatcher ConfigWatcher, c *web
 				c.WriteJSON(errorResponse{"unknown action"})
 			}
 		case resp := <-c1:
-			c.WriteJSON(resp)
+			if configWatcher.ConfigChanged(resp) {
+				c.WriteJSON(resp)
+			}
 		}
 	}
 }

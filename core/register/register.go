@@ -6,13 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"time"
+
 	"jxcore/core/device"
-	"jxcore/core/hearbeat"
+	"jxcore/core/heartbeat"
 	"jxcore/internal/network/dns"
 	"jxcore/internal/network/vpn"
 	"jxcore/version"
-	"net/http"
-	"time"
 
 	"jxcore/lowapi/logger"
 )
@@ -29,7 +30,7 @@ type registerInfo struct {
 	vpnConfig []byte
 }
 
-// 维持到 IoTEdge Master的连接
+// 维持到 IoTEdge Master的连接，第一次连接成功后执行onFirstConnect
 func MaintainMasterConnection(ctx context.Context, onFirstConnect func()) error {
 	once := false
 	for {
@@ -45,7 +46,7 @@ func MaintainMasterConnection(ctx context.Context, onFirstConnect func()) error 
 			onFirstConnect()
 		}
 		onMasterIPChanged(masterip)
-		err := hearbeat.AliveReport(ctx, masterip, 5)
+		err := heartbeat.AliveReport(ctx, masterip, 5)
 		if err != nil {
 			logger.Error(err)
 		}
@@ -63,7 +64,7 @@ func retryfindMaster(ctx context.Context) string {
 			return ""
 		case <-ticker.C:
 			logger.Info("Try to connect a new master")
-			masterip, err := findMasterFromDHCPServer()
+			masterip, err := findMasterFromDHCPServer(ctx)
 			if err != nil {
 				logger.Error("Failed to connect master: ", err)
 			} else {
@@ -74,7 +75,7 @@ func retryfindMaster(ctx context.Context) string {
 }
 
 // findMasterFromDHCPServer 尝试从 DHCP 服务器 获取 Master 节点的 IP
-func findMasterFromDHCPServer() (masterip string, err error) {
+func findMasterFromDHCPServer(ctx context.Context) (masterip string, err error) {
 	var dev *device.Device
 	dev, err = device.GetDevice()
 	if err != nil {
@@ -85,7 +86,7 @@ func findMasterFromDHCPServer() (masterip string, err error) {
 		return
 	}
 	masterip = info.masterip
-	err = vpn.UpdateVPN(info.vpnConfig)
+	err = vpn.UpdateConfig(ctx, info.vpnConfig)
 	if err != nil {
 		return
 	}
@@ -106,7 +107,7 @@ func register(dev *device.Device) (*registerInfo, error) {
 		return nil, err
 	}
 
-	//register vpn对应url
+	// register vpn对应url
 	var url string
 	switch dev.Vpn {
 	case device.VPNModeWG:
@@ -129,7 +130,7 @@ func register(dev *device.Device) (*registerInfo, error) {
 
 	masterip := resp.Header.Get("X-Master-IP")
 
-	//获得加密wgkey zip 文件
+	// 获得加密wgkey zip 文件
 	buff, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -152,7 +153,7 @@ func encodeReqData(reqinfo reqRegister) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	//req base64加密
+	// req base64加密
 	n := enc.EncodedLen(len(reqdata))
 	dst := make([]byte, n)
 	enc.Encode(dst, reqdata)

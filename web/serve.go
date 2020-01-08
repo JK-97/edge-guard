@@ -5,25 +5,27 @@ import (
 
 	"net/http"
 	"time"
-
-	"jxcore/lowapi/logger"
 )
 
 func Serve(ctx context.Context, addr string, handler http.Handler, wait time.Duration) error {
+	cancelCtx, cancel := context.WithCancel(ctx)
 	srv := http.Server{
-		Addr:         addr,
-		WriteTimeout: time.Second * 15,
-		ReadTimeout:  time.Second * 15,
-		IdleTimeout:  time.Second * 60,
-		Handler:      handler,
+		Addr:        addr,
+		Handler:     handler,
 	}
+	var err error
 	go func() {
-		if err := srv.ListenAndServe(); err != nil {
-			logger.Error(err)
+		if err = srv.ListenAndServe(); err != nil {
+			cancel()
 		}
 	}()
-	<-ctx.Done()
-	ctx, cancel := context.WithTimeout(context.Background(), wait)
-	defer cancel()
-	return srv.Shutdown(ctx)
+	<-cancelCtx.Done()
+
+	if err != nil {
+		return err
+	}
+
+	ctxShutdown, cancelShutdown := context.WithTimeout(context.Background(), wait)
+	defer cancelShutdown()
+	return srv.Shutdown(ctxShutdown)
 }
