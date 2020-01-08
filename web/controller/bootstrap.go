@@ -1,12 +1,12 @@
 package controller
 
-import "net/http"
+import (
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
 
-import "io/ioutil"
-
-import "jxcore/gateway/log"
-
-import "encoding/json"
+	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
+)
 
 type bootstrapRequest struct {
 	RegistrationCode string `json:"registercode"`
@@ -16,7 +16,7 @@ type bootstrapRequest struct {
 func Boostrap(w http.ResponseWriter, r *http.Request) {
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Error(err)
+		logger.Error(err)
 	}
 	request := bootstrapRequest{}
 	err = json.Unmarshal(data, &request)
