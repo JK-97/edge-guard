@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"jxcore/lowapi/logger"
+	"jxcore/web/controller"
 
 	"jxcore/gateway/option"
 	"jxcore/gateway/serve"
@@ -47,6 +48,7 @@ func makeRouter() http.Handler {
 	appendFileRouter(r)
 
 	r.HandleFunc("/api/v1/nodeinfo", serve.HandleGetNodeInfo)
+	r.HandleFunc("/network/interface/{iface}", controller.GetNetworkInterfaceByName).Methods(http.MethodGet)
 
 	if ServerOptions.EnableDynamicService {
 		appendDynamicServiceRouter(r)
@@ -128,7 +130,7 @@ func appendContainerRouter(r *mux.Router) {
 	base := "/data/compose"
 	err := os.MkdirAll(base, os.ModePerm)
 	if err != nil {
-		logger.Fatal(err)
+		logger.Error(err)
 	}
 
 	router = r.PathPrefix(prefix).Subrouter()

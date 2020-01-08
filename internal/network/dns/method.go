@@ -4,43 +4,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"jxcore/internal/network"
-	"math/rand"
-	"net"
 	"os"
 	"strings"
-	"time"
 
 	"jxcore/lowapi/logger"
 )
 
-func AddMasterDns(domain string) error {
-	ipRecords, err := net.LookupIP(domain)
-	if err != nil {
-		return err
-	}
-
-	// Shuffle 打乱 DNS 记录
-	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(ipRecords), func(i, j int) {
-		ipRecords[i], ipRecords[j] = ipRecords[j], ipRecords[i]
-	})
-
-	f, err := os.OpenFile("/etc/dnsmasq.d/dnsmasq.conf", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	for _, ip := range ipRecords {
-		_, err := f.WriteString("server=/.iotedge/" + ip.String() + "\n")
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // 重设 /etc/dnsmasq.hosts
-func ResetHostFile() error {
+func resetHostFile() error {
 	content := fmt.Sprintf("%s %s\n", network.DockerHostIP, LocalHostName)
 	content += fmt.Sprintf("%s %s\n", network.DockerHostIP, IotedgeHostName)
 	err := ioutil.WriteFile(DnsmasqHostFile, []byte(content), 0644)

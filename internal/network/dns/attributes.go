@@ -10,6 +10,7 @@ const (
 	resolvPath      = "/etc/resolv.conf"
 
 	dnsmasqConfPath       = "/etc/dnsmasq.conf"
+	dnsmasqUpstreamPath   = "/etc/dnsmasq.d/dnsmasq.conf"
 	dnsmasqResolvPath     = "/etc/dnsmasq.resolv.conf"
 	ifaceResolvPathPrefix = "/edge/resolv.d/dhclient."
 
