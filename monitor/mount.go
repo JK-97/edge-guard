@@ -23,9 +23,6 @@ import (
 3 进行mount，
 4 检测到 tf拔出，则umount
 */
-func init() {
-	InitTF()
-}
 
 // 获取挂载配置: map[string]map[string]string 源文件夹->源文件名->目标路径
 func GetMountCfg() map[string]map[string]string {
@@ -82,7 +79,7 @@ func fileHandler(ei notify.EventInfo, mapSrcDst map[string]string) error {
 
 func InitTF() {
 	for src, dst := range yaml.Config.MountCfg {
-		if _, err := os.Stat(src); err != nil {
+		if _, err := os.Stat(src); err == nil {
 			_, fileName := path.Split(src)
 			mountPath := "/media/" + fileName
 			err := tryMount(src, mountPath, dst)
