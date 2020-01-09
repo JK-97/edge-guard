@@ -155,23 +155,23 @@ func tryMount(srcPath, mountPath, linkPath string) error {
 			_ = os.MkdirAll(mountPath, 0755)
 		}
 		//没有mount 而有插卡
-		logger.Info("备份文件", mountPath)
-		err, tmpCopied := tmpCopy(srcPath)
+		logger.Info("remove文件", mountPath)
+		err = RemoveFile(srcPath)
 		if err != nil {
-			return fmt.Errorf("目录有文件，备份文件失败")
+			return fmt.Errorf("remove file failed")
 		}
 		logger.Info("mount 进行中")
 		err = mountTfCard(srcPath, mountPath)
 		if err != nil {
 			return errors.Wrap(err, "mount 失败")
 		}
-		if tmpCopied {
-			logger.Info("恢复文件")
-			err = tmpRestore(srcPath)
-			if err != nil {
-				return errors.Wrap(err, "恢复文件失败")
-			}
-		}
+		// if tmpCopied {
+		// 	logger.Info("恢复文件")
+		// 	err = tmpRestore(srcPath)
+		// 	if err != nil {
+		// 		return errors.Wrap(err, "恢复文件失败")
+		// 	}
+		// }
 		err = link(mountPath, linkPath)
 		if err != nil {
 			return err
@@ -196,6 +196,26 @@ func tryMount(srcPath, mountPath, linkPath string) error {
 		logger.Infof("卡拔出   Unmout ")
 		return nil
 	}
+
+}
+
+func RemoveFile(srcPath string) error {
+	_, fileName := path.Split(srcPath)
+	dir, err := ioutil.ReadDir(path.Join("/media", fileName))
+	if err != nil {
+		return err
+	}
+	if len(dir) == 0 {
+		logger.Info("无文件 remove")
+		return nil
+	}
+	logger.Info("正在remove file")
+	cmdStr := fmt.Sprintf("rm  -r %s", path.Join("/media", fileName, "*"))
+	err = system.RunCommand(cmdStr)
+	if err != nil {
+		return errors.Wrap(err, "remove file failed")
+	}
+	return nil
 }
 
 func tmpCopy(srcPath string) (error, bool) {
