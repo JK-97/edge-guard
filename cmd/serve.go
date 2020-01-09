@@ -110,7 +110,8 @@ func serve() {
 	logger.Info("================Configuring File System===================")
 	logger.Info("ensure tmpfs is mounted")
 	go utils.RunAndLogError(ceph.EnsureTmpFs)
-
+	logger.Info("init sdcard mount")
+	monitor.InitTF()
 	logger.Info("start auto sdcard mount")
 	for dir, mapSrcDst := range monitor.GetMountCfg() {
 		utils.GoAndRestartOnError(ctx, errGroup, "mount listener "+dir, func() error { return monitor.MountListener(ctx, dir, mapSrcDst) })
