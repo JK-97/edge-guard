@@ -103,7 +103,7 @@ func unmount(mountPath string) error {
 // checkMount 检查 mountPath的mount 状态
 // /dev/root / ext4 rw,relatime,data=ordered 0 0
 // devtmpfs /dev devtmpfs rw,relatime,size=1966428k,nr_inodes=491607,mode=755 0 0
-func checkMount(mountPath string) (bool, error) {
+func CheckMount(mountPath string) (bool, error) {
 	data, err := ioutil.ReadFile("/proc/mounts")
 	if err != nil {
 		return false, err
@@ -139,7 +139,7 @@ func unLink(dst string) error {
 
 func tryMount(srcPath, mountPath, linkPath string) error {
 	tfCardOk := CheckTfCard(srcPath)
-	mountOk, mountErr := checkMount(mountPath)
+	mountOk, mountErr := CheckMount(mountPath)
 	if mountErr != nil {
 		return mountErr
 	}
