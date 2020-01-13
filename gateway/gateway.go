@@ -49,7 +49,7 @@ func makeRouter() http.Handler {
 
 	r.HandleFunc("/api/v1/nodeinfo", serve.HandleGetNodeInfo)
 	r.HandleFunc("/network/interface/{iface}", controller.GetNetworkInterfaceByName).Methods(http.MethodGet)
-
+	r.HandleFunc("/node/storge/sdcard", controller.GetStorgeInfo).Methods(http.MethodGet)
 	if ServerOptions.EnableDynamicService {
 		appendDynamicServiceRouter(r)
 	}
