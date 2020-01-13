@@ -147,6 +147,7 @@ func tryMount(srcPath, mountPath, linkPath string) error {
 	if !mountOk {
 		if !tfCardOk {
 			// 没有mount但没有插卡
+			unLink(linkPath)
 			return fmt.Errorf("没有插卡")
 		}
 		_, err := os.Stat(mountPath)
