@@ -3,7 +3,8 @@ package route
 import (
 	"errors"
 	"jxcore/lowapi/logger"
-	"jxcore/web/controller"
+	"jxcore/web/controller/system"
+	"jxcore/web/controller/utils"
 	"net/http"
 )
 
@@ -27,7 +28,7 @@ func recoverMiddleware(next http.Handler) http.Handler {
 				default:
 					err = errors.New("Unknown panic")
 				}
-				controller.Error(w, err, 500)
+				utils.Error(w, err, 500)
 			}
 		}()
 		next.ServeHTTP(w, r)
@@ -36,7 +37,7 @@ func recoverMiddleware(next http.Handler) http.Handler {
 
 func requireLoginMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, err := controller.GetSessionUser(r)
+		user, err := system.GetSessionUser(r)
 		if err != nil {
 			panic(err)
 		}

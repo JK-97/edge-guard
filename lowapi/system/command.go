@@ -16,10 +16,10 @@ func RunCommand(command string) error {
 	}
 	return err
 }
+
 func RunCommandWithOutput(command string) ([]byte, error) {
 	logger.Info("run command: ", command)
 	return exec.Command("/bin/bash", "-c", command).CombinedOutput()
-
 }
 
 func StopDisableService(name string) error {
