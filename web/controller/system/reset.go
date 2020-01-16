@@ -1,7 +1,8 @@
-package controller
+package system
 
 import (
 	"jxcore/internal/config"
+	"jxcore/web/controller/utils"
 	"net/http"
 )
 
@@ -10,5 +11,5 @@ func Reset(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	RespondSuccessJSON(nil, w)
+	utils.RespondSuccessJSON(nil, w)
 }

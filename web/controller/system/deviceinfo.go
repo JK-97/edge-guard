@@ -1,4 +1,4 @@
-package controller
+package system
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"jxcore/core/device"
 	"jxcore/lowapi/store/filestore"
 	"jxcore/management/updatemanage"
+	"jxcore/web/controller/utils"
 	"net/http"
 
 	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
@@ -48,7 +49,7 @@ func GetDeviceInfo(w http.ResponseWriter, r *http.Request) {
 		FirmwareVersion: firmwareVersion["jx-toolset"],
 	}
 
-	RespondJSON(reponse, w, 200)
+	utils.RespondJSON(reponse, w, 200)
 }
 
 // 设置设备名称
@@ -70,7 +71,7 @@ func SetDeviceName(w http.ResponseWriter, r *http.Request) {
 	if !request.SkipUploadMaster {
 		reportMaster(request.Name)
 	}
-	RespondSuccessJSON(nil, w)
+	utils.RespondSuccessJSON(nil, w)
 }
 
 // 上报云端

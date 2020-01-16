@@ -1,9 +1,10 @@
-package controller
+package system
 
 import (
 	"fmt"
 	"jxcore/internal/network/dns"
 	"jxcore/internal/network/iface"
+	"jxcore/web/controller/utils"
 	"net"
 	"net/http"
 	"strings"
@@ -46,7 +47,7 @@ func GetNetworkInterfaces(w http.ResponseWriter, r *http.Request) {
 		resp.Interfaces = append(resp.Interfaces, info)
 	}
 
-	RespondSuccessJSON(resp, w)
+	utils.RespondSuccessJSON(resp, w)
 }
 
 func parseInterfaceInfo(i *net.Interface) (interfaceInfo, error) {
@@ -101,5 +102,5 @@ func GetNetworkInterfaceByName(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	RespondSuccessJSON(info, w)
+	utils.RespondSuccessJSON(info, w)
 }

@@ -1,8 +1,9 @@
-package controller
+package system
 
 import (
 	"jxcore/lowapi/system"
 	"jxcore/management/updatemanage"
+	"jxcore/web/controller/utils"
 	"net/http"
 	"time"
 )
@@ -13,6 +14,6 @@ func UploadAndUpdate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	RespondSuccessJSON(nil, w)
+	utils.RespondSuccessJSON(nil, w)
 	system.RestartJxcoreAfter(5 * time.Second)
 }

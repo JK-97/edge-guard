@@ -1,8 +1,9 @@
-package controller
+package system
 
 import (
 	"jxcore/core/device"
 	"jxcore/management/updatemanage"
+	"jxcore/web/controller/utils"
 	"net/http"
 )
 
@@ -14,11 +15,11 @@ func UpdateByDeb(w http.ResponseWriter, r *http.Request) {
 	manager := updatemanage.NewUpdateManager()
 
 	reqinfo := reqdatastruct{}
-	unmarshalJson(r.Body, &reqinfo)
+	utils.MustUnmarshalJson(r.Body, &reqinfo)
 
 	err := manager.SetTargetVersion(reqinfo.Data)
 	if err == updatemanage.ErrUpdating {
-		RespondReasonJSON(nil, w, "machine is busy to updating, please update later", 400)
+		utils.RespondReasonJSON(nil, w, "machine is busy to updating, please update later", 400)
 		return
 	}
 	if err != nil {
@@ -34,5 +35,5 @@ func UpdateByDeb(w http.ResponseWriter, r *http.Request) {
 		WorkerId: deviceinfo.WorkerID,
 		PkgInfo:  manager.GetCurrentVersion(),
 	}
-	RespondJSON(respdata, w, 200)
+	utils.RespondJSON(respdata, w, 200)
 }
