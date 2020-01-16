@@ -46,4 +46,6 @@ type YamlSchema struct {
 	} `yaml:"iface"`
 
 	MountCfg map[string]string `yaml:"mount_cfg"`
+
+	HeartbeatTimeoutSec int `yaml:"heartbeat_timeout_sec"`
 }

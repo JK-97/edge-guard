@@ -1,7 +1,6 @@
 package updatemanage
 
 import (
-	"fmt"
 	"jxcore/lowapi/logger"
 	"jxcore/lowapi/system"
 	"jxcore/lowapi/utils"
@@ -49,7 +48,8 @@ func (up *updateManager) tryUpdate() error {
 
 	needUpdate := getNeedUpdate(up.currentVersion, up.targetVersion)
 	if len(needUpdate) == 0 {
-		return fmt.Errorf("No update required")
+		logger.Info("No update required")
+		return nil
 	}
 
 	// TODO: add lock
