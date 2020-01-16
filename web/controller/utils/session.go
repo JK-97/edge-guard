@@ -1,4 +1,4 @@
-package controller
+package utils
 
 import (
 	"encoding/gob"
@@ -31,6 +31,6 @@ func init() {
 	gob.Register(User{})
 }
 
-func getSession(r *http.Request) (*sessions.Session, error) {
+func GetLoginSession(r *http.Request) (*sessions.Session, error) {
 	return store.Get(r, "jiangxing_login_jxcore_ticket")
 }

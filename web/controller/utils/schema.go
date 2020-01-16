@@ -1,4 +1,4 @@
-package controller
+package utils
 
 type BaseResp struct {
 	Data interface{} `json:"data"`

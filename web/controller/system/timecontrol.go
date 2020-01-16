@@ -1,4 +1,4 @@
-package controller
+package system
 
 import (
 	"encoding/json"
@@ -7,6 +7,7 @@ import (
 	"jxcore/internal/config"
 	"jxcore/lowapi/store/filestore"
 	"jxcore/lowapi/system"
+	"jxcore/web/controller/utils"
 	"net/http"
 	"time"
 
@@ -36,12 +37,12 @@ func SetTime(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	RespondJSON(nil, w, 200)
+	utils.RespondJSON(nil, w, 200)
 }
 
 func GetTime(w http.ResponseWriter, r *http.Request) {
 	resp := timeRequest{Time: time.Now().UnixNano()}
-	RespondJSON(resp, w, 200)
+	utils.RespondJSON(resp, w, 200)
 }
 
 type ntpConfig struct {
@@ -92,7 +93,7 @@ func SetNtpConfig(w http.ResponseWriter, r *http.Request) {
 	}
 	old, new, newData, err := patchConfig(oldData, patch)
 	if err != nil {
-		RespondReasonJSON(err, w, "Config not valid", 400)
+		utils.RespondReasonJSON(err, w, "Config not valid", 400)
 		return
 	}
 	err = filestore.KV.Set(timeConfigKey, newData)
@@ -117,7 +118,7 @@ func SetNtpConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	RespondJSON(nil, w, 200)
+	utils.RespondJSON(nil, w, 200)
 }
 
 func patchConfig(oldData, patch []byte) (old, new timeConfig, newData []byte, err error) {
