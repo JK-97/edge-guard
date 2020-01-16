@@ -12,6 +12,8 @@ import (
 	"jxcore/core/heartbeat/collector"
 	"jxcore/core/heartbeat/message"
 	"jxcore/lowapi/logger"
+
+	"golang.org/x/sys/unix"
 )
 
 // 默认配置
@@ -160,7 +162,7 @@ func setKeepaliveParameters(conn *net.TCPConn) {
 				timeoutSec = 10
 			}
 			// TCP_USER_TIMEOUT use millisecond
-			err = syscall.SetsockoptInt(fd, syscall.IPPROTO_TCP, syscall.TCP_USER_TIMEOUT, timeoutSec*1000)
+			err = syscall.SetsockoptInt(fd, syscall.IPPROTO_TCP, unix.TCP_USER_TIMEOUT, timeoutSec*1000)
 			if err != nil {
 				logger.Warn("on setting keepalive retry interval", err.Error())
 			}
