@@ -48,7 +48,7 @@ func updateConsulConfig(currentdevice *device.Device) {
 	if buf, err := json.Marshal(config); err == nil {
 		err := ioutil.WriteFile(consulConfigPath, buf, 0666)
 		if err == nil {
-			utils.RunAndLogError(func() error { return system.RunCommand("docker restart edgex-core-consul") })
+			go utils.RunAndLogError(func() error { return system.RunCommand("docker restart edgex-core-consul") })
 		} else {
 			logger.Error(err)
 		}
@@ -63,10 +63,10 @@ func updateTelegrafConfig(currentdevice *device.Device, masterip string) {
 	if VpnIP != "" {
 		config.Statsitecfg(masterip, VpnIP)
 	}
-	utils.RunAndLogError(func() error {
+	go utils.RunAndLogError(func() error {
 		return system.RunCommand("docker-compose -f /jxbootstrap/worker/docker-compose.d/cadvisor/docker-compose.yaml down && docker-compose -f /jxbootstrap/worker/docker-compose.d/cadvisor/docker-compose.yaml up -d")
 	})
-	utils.RunAndLogError(func() error {
+	go utils.RunAndLogError(func() error {
 		return system.RunCommand("docker-compose -f /jxbootstrap/worker/docker-compose.d/statsite/docker-compose.yml down && docker-compose -f /jxbootstrap/worker/docker-compose.d/statsite/docker-compose.yml up -d")
 	})
 }
