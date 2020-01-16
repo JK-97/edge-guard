@@ -1,8 +1,9 @@
-package controller
+package system
 
 import (
 	"fmt"
 	"jxcore/lowapi/store/filestore"
+	"jxcore/web/controller/utils"
 	"net/http"
 )
 
@@ -19,14 +20,14 @@ const (
 // 设置Jxcore密码
 func SetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 	request := SetPasswordRequest{}
-	unmarshalJson(r.Body, &request)
+	utils.MustUnmarshalJson(r.Body, &request)
 
 	oldPassword, err := getPassword()
 	if err != nil {
 		panic(err)
 	}
 	if oldPassword != request.OldPassword {
-		panic(HTTPError{
+		panic(utils.HTTPError{
 			Code: http.StatusBadRequest,
 			Err:  fmt.Errorf("old password incorrect."),
 		})
@@ -36,7 +37,7 @@ func SetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	RespondSuccessJSON(nil, w)
+	utils.RespondSuccessJSON(nil, w)
 }
 
 func getPassword() (string, error) {

@@ -1,7 +1,8 @@
-package controller
+package system
 
 import (
 	"jxcore/lowapi/system"
+	"jxcore/web/controller/utils"
 	"net/http"
 )
 
@@ -10,5 +11,5 @@ func Reboot(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	RespondSuccessJSON(nil, w)
+	utils.RespondSuccessJSON(nil, w)
 }
