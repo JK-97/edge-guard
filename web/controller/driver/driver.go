@@ -38,3 +38,12 @@ func GetEdgexDrivers(w http.ResponseWriter, r *http.Request) {
 
 	utils.RespondSuccessJSON(resp, w)
 }
+
+func PostInstallDriver(w http.ResponseWriter, r *http.Request) {
+	// file, fileInfo, err := r.FormFile("image")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fileInfo.Filename
+
+}
