@@ -42,6 +42,7 @@ func Routes() *mux.Router {
 
 	// 驱动
 	secretRouter.HandleFunc("/drivers", driver.GetEdgexDrivers).Methods(http.MethodGet)
+	secretRouter.HandleFunc("/drivers", driver.PostInstallDriver).Methods(http.MethodPost)
 
 	// 代理请求到device service
 	secretRouter.HandleFunc("/driver/{dsname}{path:.*}", driver.Proxy)
