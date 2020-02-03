@@ -8,7 +8,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-var dockerObj *DockerObj
+var dockerObj DockerObj
 
 const (
 	DockerRestorePath = "/restore/dockerimage/"
@@ -16,10 +16,6 @@ const (
 
 	daemonConfigPath = "/etc/docker/daemon.json"
 )
-
-type RestApi interface {
-	BuildImage(tarFile, project, imageName string) error
-}
 
 type DockerObj struct {
 	Messages     chan string
@@ -64,17 +60,17 @@ type DockerRestoreDesc struct {
 }
 
 //NewClient return a docker client
-func NewClient() (dockerobj *DockerObj) {
+func NewClient() (d DockerObj) {
 	var err error
-	dockerobj.Messages = make(chan string)
-	dockerobj.Mu = new(sync.Mutex)
-	dockerobj.dockersingle = nil
-	dockerobj.ctx = context.Background()
-	dockerobj.cli, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	d.Messages = make(chan string)
+	d.Mu = new(sync.Mutex)
+	d.dockersingle = nil
+	d.ctx = context.Background()
+	d.cli, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		logger.Error(err)
 	}
-	return dockerobj
+	return d
 }
 
 //var mu sync.Mutex
@@ -88,4 +84,8 @@ func (c *DockerObj) GetClient() *client.Client {
 	} // unnecessary locking if instance already created
 
 	return c.dockersingle
+}
+
+func init() {
+	dockerObj = NewClient()
 }

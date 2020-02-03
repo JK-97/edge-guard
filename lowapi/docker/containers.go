@@ -6,8 +6,8 @@ import (
 	"github.com/docker/docker/api/types"
 )
 
-func (c *DockerObj) ContainerList() ([]*DockerContainerResources, error) {
-	containers, err := c.cli.ContainerList(c.ctx, types.ContainerListOptions{})
+func ContainerList() ([]*DockerContainerResources, error) {
+	containers, err := dockerObj.cli.ContainerList(dockerObj.ctx, types.ContainerListOptions{})
 	if err != nil {
 		logger.Error(err)
 	}
@@ -23,17 +23,34 @@ func (c *DockerObj) ContainerList() ([]*DockerContainerResources, error) {
 }
 
 //ContainerAllRemove :it will remove all container
-func (c *DockerObj) ContainerAllRemove() {
-	containers, err := c.cli.ContainerList(c.ctx, types.ContainerListOptions{})
+func ContainerAllRemove() {
+	containers, err := dockerObj.cli.ContainerList(dockerObj.ctx, types.ContainerListOptions{})
 	if err != nil {
 		logger.Error(err)
 	}
 	for _, container := range containers {
-		err := c.cli.ContainerRemove(c.ctx, container.ID, types.ContainerRemoveOptions{Force: true, RemoveVolumes: true})
+		err := dockerObj.cli.ContainerRemove(dockerObj.ctx, container.ID, types.ContainerRemoveOptions{Force: true, RemoveVolumes: true})
 		if err != nil {
 			logger.Error(err)
 		}
 		logger.Info("has delete coontainer : " + container.ID)
 	}
 
+}
+
+//StopContainer return docker images list
+func StopContainer() {
+
+	containers, err := dockerObj.cli.ContainerList(dockerObj.ctx, types.ContainerListOptions{})
+	if err != nil {
+		logger.Error(err)
+	}
+
+	for _, container := range containers {
+		logger.Info("Stopping container ", container.ID[:10], "... ")
+		if err := dockerObj.cli.ContainerStop(dockerObj.ctx, container.ID, nil); err != nil {
+			logger.Error(err)
+		}
+		logger.Info("Success")
+	}
 }
