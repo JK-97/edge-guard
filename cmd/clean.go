@@ -43,9 +43,8 @@ to quickly create a Cobra application.`,
 			ifpython = "true"
 		}
 		if ifdocker == "true" {
-			var dockerobj = docker.NewClient()
-			dockerobj.ContainerAllRemove()
-			dockerobj.ImageAllRemove()
+			docker.ContainerAllRemove()
+			docker.ImageAllRemove()
 		}
 		if ifpython == "true" {
 			var c = pythonpkg.NewPkgClient()

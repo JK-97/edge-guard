@@ -3,6 +3,7 @@ package docker
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"jxcore/lowapi/logger"
 	"os"
@@ -14,22 +15,17 @@ import (
 )
 
 //BuildImage build image
-func (c *DockerObj) BuildImage(tarFile, project, imageName string) error {
-	dockerBuildContext, err := os.Open(tarFile)
-	if err != nil {
-		return err
-	}
-	defer dockerBuildContext.Close()
+func BuildImage(fileReader io.Reader, imageName string) error {
 
 	buildOptions := types.ImageBuildOptions{
-		Dockerfile: "Dockerfile", // optional, is the default
-		Tags:       []string{imageName},
-		Labels: map[string]string{
-			project: "project",
-		},
+		// Dockerfile: "Dockerfile", // optional, is the default
+		Tags: []string{imageName},
+		// Labels: map[string]string{
+		// 	project: "project",
+		// },
 	}
 
-	output, err := c.cli.ImageBuild(context.Background(), dockerBuildContext, buildOptions)
+	output, err := dockerObj.cli.ImageBuild(context.Background(), fileReader, buildOptions)
 	if err != nil {
 		return err
 	}
@@ -46,26 +42,9 @@ func (c *DockerObj) BuildImage(tarFile, project, imageName string) error {
 	return nil
 }
 
-//StopContainer return docker images list
-func (c *DockerObj) StopContainer() {
-
-	containers, err := c.cli.ContainerList(c.ctx, types.ContainerListOptions{})
-	if err != nil {
-		logger.Error(err)
-	}
-
-	for _, container := range containers {
-		fmt.Print("Stopping container ", container.ID[:10], "... ")
-		if err := c.cli.ContainerStop(c.ctx, container.ID, nil); err != nil {
-			logger.Error(err)
-		}
-		fmt.Println("Success")
-	}
-}
-
 //ImagesList is
-func (c *DockerObj) ImagesList() ([]*DockerImageResources, error) {
-	images, err := c.cli.ImageList(c.ctx, types.ImageListOptions{})
+func ImagesList() ([]*DockerImageResources, error) {
+	images, err := dockerObj.cli.ImageList(dockerObj.ctx, types.ImageListOptions{})
 	if err != nil {
 		logger.Error(err)
 	}
@@ -80,13 +59,13 @@ func (c *DockerObj) ImagesList() ([]*DockerImageResources, error) {
 }
 
 //ImageAllRemove remove all images
-func (c *DockerObj) ImageAllRemove() {
-	images, err := c.cli.ImageList(c.ctx, types.ImageListOptions{})
+func ImageAllRemove() {
+	images, err := dockerObj.cli.ImageList(dockerObj.ctx, types.ImageListOptions{})
 	if err != nil {
 		logger.Error(err)
 	}
 	for _, image := range images {
-		_, err := c.cli.ImageRemove(c.ctx, image.ID, types.ImageRemoveOptions{Force: true, PruneChildren: true})
+		_, err := dockerObj.cli.ImageRemove(dockerObj.ctx, image.ID, types.ImageRemoveOptions{Force: true, PruneChildren: true})
 		if err != nil {
 			logger.Error(err)
 		}
@@ -95,9 +74,15 @@ func (c *DockerObj) ImageAllRemove() {
 
 }
 
+func LoadImage(fileReader io.Reader) error {
+	_, err := dockerObj.cli.ImageLoad(dockerObj.ctx, fileReader, true)
+	return err
+	// dockerObj.cli.ImageTag(dockerObj.ctx, info["id"], info["repo"])
+}
+
 // DockerRestore 恢复 docker 镜像
-func (c *DockerObj) DockerRestore() error {
-	// get docker_desc from desc.json
+func DockerRestore() error {
+	// get docker_desc from desdockerObj.json
 	logger.Info("Reading from ", DockerDesc)
 	data, err := ioutil.ReadFile(DockerDesc)
 	if err != nil {
@@ -119,11 +104,11 @@ func (c *DockerObj) DockerRestore() error {
 		fileObj, err = os.Open(path)
 		if err == nil {
 			defer fileObj.Close()
-			_, err := c.cli.ImageLoad(c.ctx, fileObj, true)
+			_, err := dockerObj.cli.ImageLoad(dockerObj.ctx, fileObj, true)
 			if err != nil {
 				logger.Error(err)
 			}
-			c.cli.ImageTag(c.ctx, info["id"], info["repo"])
+			dockerObj.cli.ImageTag(dockerObj.ctx, info["id"], info["repo"])
 		} else {
 			logger.Error("Import Failed", filename, err)
 		}
@@ -132,8 +117,8 @@ func (c *DockerObj) DockerRestore() error {
 	return nil
 }
 
-func (c *DockerObj) Removebyimage(imagename string) {
-	containers, err := c.cli.ContainerList(c.ctx, types.ContainerListOptions{})
+func Removebyimage(imagename string) {
+	containers, err := dockerObj.cli.ContainerList(dockerObj.ctx, types.ContainerListOptions{})
 	if err != nil {
 
 		logger.Error("docker", err)
@@ -143,8 +128,8 @@ func (c *DockerObj) Removebyimage(imagename string) {
 		if perone.Image == imagename {
 			thecontanierid := perone.ID
 			//theimageid := perone.ImageID
-			c.cli.ContainerRemove(c.ctx, thecontanierid, types.ContainerRemoveOptions{Force: true, RemoveVolumes: true})
-			//c.cli.ImageRemove(c.ctx, theimageid, types.ImageRemoveOptions{Force: true, PruneChildren: true})
+			dockerObj.cli.ContainerRemove(dockerObj.ctx, thecontanierid, types.ContainerRemoveOptions{Force: true, RemoveVolumes: true})
+			//dockerObj.cli.ImageRemove(dockerObj.ctx, theimageid, types.ImageRemoveOptions{Force: true, PruneChildren: true})
 			break
 		}
 	}

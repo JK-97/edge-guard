@@ -159,8 +159,7 @@ func init() {
 func loadDockerImage() {
 	if _, err := os.Stat(restoreImagePath); err == nil {
 		logger.Info("Restore Docker Images")
-		var dockerobj = docker.NewClient()
-		err := dockerobj.DockerRestore()
+		err := docker.DockerRestore()
 		if err != nil {
 			logger.Error(err)
 		} else {
