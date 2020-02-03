@@ -2,9 +2,11 @@ package system
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"jxcore/internal/config"
+	"jxcore/internal/network"
 	"jxcore/lowapi/store/filestore"
 	"jxcore/lowapi/system"
 	"jxcore/web/controller/utils"
@@ -83,6 +85,11 @@ func GetNtpConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 func SetNtpConfig(w http.ResponseWriter, r *http.Request) {
+	queryValues := r.URL.Query()
+	if queryValues.Get("test") == "true" {
+		TestNtpConfig(w, r)
+		return
+	}
 	patch, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		panic(err)
@@ -119,6 +126,22 @@ func SetNtpConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.RespondJSON(nil, w, 200)
+}
+
+func TestNtpConfig(w http.ResponseWriter, r *http.Request) {
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		panic(err)
+	}
+	timeConfig := timeConfig{}
+	err = json.Unmarshal(data, &timeConfig)
+	if err != nil {
+		panic(err)
+	}
+	if !network.Ping(timeConfig.Ntp.ServerAddr) {
+		panic(errors.New("The ntp server arn't reachable"))
+	}
+	utils.RespondSuccessJSON(nil, w)
 }
 
 func patchConfig(oldData, patch []byte) (old, new timeConfig, newData []byte, err error) {

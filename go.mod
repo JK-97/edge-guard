@@ -24,7 +24,6 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.2.0
 	github.com/gorilla/websocket v1.4.1
-	github.com/hashicorp/consul/api v1.3.0
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/koron/go-ssdp v0.0.0-20191105050749-2e1c40ed0b5d
@@ -57,7 +56,6 @@ require (
 	github.com/vishvananda/netns v0.0.0-20190625233234-7109fa855b0f // indirect
 	gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils v0.0.0-00010101000000-000000000000
 	go.uber.org/zap v1.11.0 // indirect
-	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550 // indirect
 	golang.org/x/net v0.0.0-20191027093000-83d349e8ac1a
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
 	golang.org/x/sys v0.0.0-20191128015809-6d18c012aee9
