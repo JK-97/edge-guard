@@ -3,7 +3,6 @@ package monitor
 import (
 	"context"
 	"fmt"
-	"github.com/spf13/viper"
 	"io/ioutil"
 	"jxcore/lowapi/logger"
 	"jxcore/lowapi/system"
@@ -12,6 +11,8 @@ import (
 	"path"
 	"strings"
 	"syscall"
+
+	"github.com/spf13/viper"
 
 	"github.com/pkg/errors"
 	"github.com/rjeczalik/notify"
@@ -77,6 +78,19 @@ func fileHandler(ei notify.EventInfo, mapSrcDst map[string]string) error {
 	return nil
 }
 
+func InitTF() {
+	for src, dst := range viper.GetStringMapString("mount_cfg") {
+		if _, err := os.Stat(src); err == nil {
+			_, fileName := path.Split(src)
+			mountPath := "/media/" + fileName
+			err := tryMount(src, mountPath, dst)
+			if err != nil {
+				logger.Info(err)
+			}
+		}
+	}
+}
+
 // mountTfCard 进行mount
 func mountTfCard(mountPoint, mountPath string) error {
 	return exec.Command("mount", mountPoint, mountPath).Run()
@@ -90,7 +104,7 @@ func unmount(mountPath string) error {
 // checkMount 检查 mountPath的mount 状态
 // /dev/root / ext4 rw,relatime,data=ordered 0 0
 // devtmpfs /dev devtmpfs rw,relatime,size=1966428k,nr_inodes=491607,mode=755 0 0
-func checkMount(mountPath string) (bool, error) {
+func CheckMount(mountPath string) (bool, error) {
 	data, err := ioutil.ReadFile("/proc/mounts")
 	if err != nil {
 		return false, err
@@ -126,7 +140,7 @@ func unLink(dst string) error {
 
 func tryMount(srcPath, mountPath, linkPath string) error {
 	tfCardOk := CheckTfCard(srcPath)
-	mountOk, mountErr := checkMount(mountPath)
+	mountOk, mountErr := CheckMount(mountPath)
 	if mountErr != nil {
 		return mountErr
 	}
@@ -134,6 +148,7 @@ func tryMount(srcPath, mountPath, linkPath string) error {
 	if !mountOk {
 		if !tfCardOk {
 			// 没有mount但没有插卡
+			unLink(linkPath)
 			return fmt.Errorf("没有插卡")
 		}
 		_, err := os.Stat(mountPath)
@@ -142,23 +157,23 @@ func tryMount(srcPath, mountPath, linkPath string) error {
 			_ = os.MkdirAll(mountPath, 0755)
 		}
 		//没有mount 而有插卡
-		logger.Info("备份文件", mountPath)
-		err, tmpCopied := tmpCopy(srcPath)
+		logger.Info("remove文件", mountPath)
+		err = RemoveFile(srcPath)
 		if err != nil {
-			return fmt.Errorf("目录有文件，备份文件失败")
+			return fmt.Errorf("remove file failed")
 		}
 		logger.Info("mount 进行中")
 		err = mountTfCard(srcPath, mountPath)
 		if err != nil {
 			return errors.Wrap(err, "mount 失败")
 		}
-		if tmpCopied {
-			logger.Info("恢复文件")
-			err = tmpRestore(srcPath)
-			if err != nil {
-				return errors.Wrap(err, "恢复文件失败")
-			}
-		}
+		// if tmpCopied {
+		// 	logger.Info("恢复文件")
+		// 	err = tmpRestore(srcPath)
+		// 	if err != nil {
+		// 		return errors.Wrap(err, "恢复文件失败")
+		// 	}
+		// }
 		err = link(mountPath, linkPath)
 		if err != nil {
 			return err
@@ -183,6 +198,26 @@ func tryMount(srcPath, mountPath, linkPath string) error {
 		logger.Infof("卡拔出   Unmout ")
 		return nil
 	}
+
+}
+
+func RemoveFile(srcPath string) error {
+	_, fileName := path.Split(srcPath)
+	dir, err := ioutil.ReadDir(path.Join("/media", fileName))
+	if err != nil {
+		return err
+	}
+	if len(dir) == 0 {
+		logger.Info("无文件 remove")
+		return nil
+	}
+	logger.Info("正在remove file")
+	cmdStr := fmt.Sprintf("rm  -r %s", path.Join("/media", fileName, "*"))
+	err = system.RunCommand(cmdStr)
+	if err != nil {
+		return errors.Wrap(err, "remove file failed")
+	}
+	return nil
 }
 
 func tmpCopy(srcPath string) (error, bool) {

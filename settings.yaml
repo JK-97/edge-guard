@@ -21,3 +21,4 @@ priority:
 - eth1
 - usb1
 switch_interval: 5s
+heartbeat_timeout_sec: 10
