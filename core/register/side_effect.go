@@ -7,6 +7,8 @@ import (
 	"jxcore/internal/config"
 	"jxcore/internal/network/dns"
 	"jxcore/internal/network/vpn"
+	"jxcore/lowapi/logger"
+	"jxcore/lowapi/system"
 	"jxcore/lowapi/utils"
 )
 
@@ -44,7 +46,12 @@ func updateConsulConfig(currentdevice *device.Device) {
 		UI:               true,
 	}
 	if buf, err := json.Marshal(config); err == nil {
-		ioutil.WriteFile(consulConfigPath, buf, 0666)
+		err := ioutil.WriteFile(consulConfigPath, buf, 0666)
+		if err == nil {
+			go utils.RunAndLogError(func() error { return system.RunCommand("docker restart edgex-core-consul") })
+		} else {
+			logger.Error(err)
+		}
 	}
 }
 
@@ -56,4 +63,10 @@ func updateTelegrafConfig(currentdevice *device.Device, masterip string) {
 	if VpnIP != "" {
 		config.Statsitecfg(masterip, VpnIP)
 	}
+	go utils.RunAndLogError(func() error {
+		return system.RunCommand("docker-compose -f /jxbootstrap/worker/docker-compose.d/cadvisor/docker-compose.yaml down && docker-compose -f /jxbootstrap/worker/docker-compose.d/cadvisor/docker-compose.yaml up -d")
+	})
+	go utils.RunAndLogError(func() error {
+		return system.RunCommand("docker-compose -f /jxbootstrap/worker/docker-compose.d/statsite/docker-compose.yml down && docker-compose -f /jxbootstrap/worker/docker-compose.d/statsite/docker-compose.yml up -d")
+	})
 }

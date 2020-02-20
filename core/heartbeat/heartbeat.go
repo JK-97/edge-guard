@@ -5,11 +5,15 @@ import (
 	"context"
 	"encoding/binary"
 	"net"
+	"syscall"
 	"time"
 
 	"jxcore/core/heartbeat/collector"
 	"jxcore/core/heartbeat/message"
 	"jxcore/lowapi/logger"
+
+	"github.com/spf13/viper"
+	"golang.org/x/sys/unix"
 )
 
 // 默认配置
@@ -92,40 +96,77 @@ func NewDefaultHeartBeater(addr string, AllowErrorCount int) *HeartBeater {
 
 // Beat 向服务器发送心跳包
 func (b *HeartBeater) Beat(ctx context.Context) error {
-	var errCount int
-	for b.conn == nil {
+	for {
+		errCount := 0
 		// 连接 Device Manager
-		err := b.connect()
-		if isDNSError(err) && b.OnDNSError != nil {
-			err = b.OnDNSError(err)
-		}
-		if err != nil {
-			errCount++
-			if errCount > b.AllowErrorCount {
-				return err
+		logger.Info("Trying to connect device manager")
+		for b.conn == nil {
+			err := b.connect()
+			if isDNSError(err) && b.OnDNSError != nil {
+				err = b.OnDNSError(err)
 			}
-			logger.Warn(err)
-			time.Sleep(200 * time.Millisecond)
+			if err != nil {
+				errCount++
+				if errCount > b.AllowErrorCount {
+					return err
+				}
+				logger.Warn(err)
+				time.Sleep(200 * time.Millisecond)
+			}
 		}
-	}
 
-	defer func() {
-		err := b.disconnect()
-		if err != nil {
+		logger.Info("Connected to device manager")
+		if err := b.beat(ctx, b.conn); err != nil {
+			logger.Warn(err)
+		}
+
+		if err := b.disconnect(); err != nil {
 			logger.Error(err)
 		}
-	}()
-	return b.beat(ctx, b.conn)
+	}
 }
 
 // connect 连接服务器
 func (b *HeartBeater) connect() error {
-	conn, err := net.Dial("tcp", b.RemoteAddress)
-	if err == nil {
-		b.conn = conn
-		b.Status = Connected
+	conn, err := net.DialTimeout("tcp", b.RemoteAddress, b.WriteTimeout)
+	if err != nil {
+		return err
+	}
+
+	b.conn = conn
+	b.Status = Connected
+	if tcpConn, ok := conn.(*net.TCPConn); ok {
+		setKeepaliveParameters(tcpConn)
+	} else {
+		logger.Error("not a tcp connection")
 	}
 	return err
+}
+
+func setKeepaliveParameters(conn *net.TCPConn) {
+	rawConn, err := conn.SyscallConn()
+	if err != nil {
+		logger.Warn("on getting raw connection object for keepalive parameter setting", err.Error())
+	}
+
+	err = rawConn.Control(
+		func(fdPtr uintptr) {
+			// got socket file descriptor. Setting parameters.
+			fd := int(fdPtr)
+
+			// 修复连接重连慢，原因是jxcore心跳包write无法发现tcp连接断开。
+			// 设置ack timeout，使得如果write在10秒内没有收到ack，断开连接。
+			// https://blog.cloudflare.com/when-tcp-sockets-refuse-to-die/
+			timeoutSec := viper.GetInt("heartbeat_timeout_sec")
+			// TCP_USER_TIMEOUT use millisecond
+			err = syscall.SetsockoptInt(fd, syscall.IPPROTO_TCP, unix.TCP_USER_TIMEOUT, timeoutSec*1000)
+			if err != nil {
+				logger.Warn("on setting keepalive retry interval", err.Error())
+			}
+		})
+	if err != nil {
+		logger.Error(err)
+	}
 }
 
 // disconnect 断开心跳连接
@@ -146,13 +187,11 @@ func (b *HeartBeater) sendEmpty() {
 
 // sendPacket 发送数据包
 func (b *HeartBeater) sendPacket(p []byte, option Option) {
-	packet := b.getPacket(p, byte(option))
+	packet := b.makePacket(p, byte(option))
 	b.toBeSent <- packet
 }
 
 func (b *HeartBeater) beat(ctx context.Context, conn net.Conn) error {
-	var errorCount = 0
-
 	ctxWithCancel, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -169,6 +208,7 @@ func (b *HeartBeater) beat(ctx context.Context, conn net.Conn) error {
 	ticker := time.NewTicker(b.Interval)
 	defer ticker.Stop()
 
+	errorCount := 0
 	for {
 		if errorCount >= b.AllowErrorCount {
 			return ErrMaxErrorCountExceed
@@ -201,7 +241,7 @@ func (b *HeartBeater) beat(ctx context.Context, conn net.Conn) error {
 	}
 }
 
-func (b *HeartBeater) getPacket(p []byte, option byte) []byte {
+func (b *HeartBeater) makePacket(p []byte, option byte) []byte {
 	var buffer bytes.Buffer
 	buffer.Write(protocolHead)
 	if len(p) == 0 {

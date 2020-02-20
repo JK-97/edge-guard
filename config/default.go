@@ -41,4 +41,5 @@ func SetDefault() {
 		"/dev/mmcblk1p1": "/media/card",
 	})
 	viper.SetDefault("port", ":80")
+	viper.SetDefault("heartbeat_timeout_sec", 10)
 }

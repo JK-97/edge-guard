@@ -9,6 +9,7 @@ import (
 var CfgFile string
 
 func InitConfig() {
+	//初始化configure
 	if CfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(CfgFile)
