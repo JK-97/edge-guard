@@ -45,13 +45,13 @@ func MaintainMasterConnection(ctx context.Context, onFirstConnect func()) error 
 		default:
 		}
 
-		masterIP, masterVpnIp := retryfindMaster(ctx)
+		masterIP, masterVpnIP := retryfindMaster(ctx)
 		if !once {
 			once = true
 			onFirstConnect()
 		}
 		if yaml.Config.HeartBeatThroughVpn {
-			masterIP = masterVpnIp
+			masterIP = masterVpnIP
 		}
 		onMasterIPChanged(masterIP)
 		err := heartbeat.AliveReport(ctx, masterIP, 5)
