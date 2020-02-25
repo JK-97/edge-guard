@@ -4,3 +4,4 @@
 [submodule "frontend"]
 	path = frontend
 	url = http://gitlab.jiangxingai.com/applications/iot-edge/jxcore-front
+	branch = jackfan_dev
