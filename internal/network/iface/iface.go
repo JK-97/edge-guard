@@ -3,16 +3,38 @@ package iface
 import (
 	"context"
 	"fmt"
+	"jxcore/config/yaml"
+	"jxcore/core/device"
+	"jxcore/gateway/log"
 	"jxcore/internal/network"
 	"jxcore/internal/network/dns"
 	"net"
+	"net/url"
 	"os/exec"
 	"time"
 
-	log "jxcore/lowapi/logger"
-
 	"github.com/vishvananda/netlink"
 )
+
+const (
+	testIP       = "114.114.114.114"
+	highPriority = 5
+	dhcpPriority = 6
+)
+
+var (
+	currentIFace           string
+	checkBestIFaceInterval = time.Second * 5
+	ifacePriority          = yaml.Config.IFace.Priority
+	backupIFace            = yaml.Config.IFace.Backup
+)
+
+func init() {
+	interval, err := time.ParseDuration(yaml.Config.IFace.SwitchInterval)
+	if err == nil {
+		checkBestIFaceInterval = interval
+	}
+}
 
 // 网卡切换方案:
 // 所有网卡连接上后，操作系统自动添加一条默认路由，metric（优先级）为100+。
@@ -21,15 +43,23 @@ import (
 // 每隔checkBestIFaceInterval间隔，重新选择优先级最高，能ping通外网的网卡
 
 func MaintainBestIFace(ctx context.Context) error {
-	bestIFace := findBestIFace()
+	// parse the dhcpserver ip
+	deviceInfo, err := device.GetDevice()
+	if err != nil {
+		return err
+	}
+	urlInfo, err := url.Parse(deviceInfo.DhcpServer)
+	if err != nil {
+		return err
+	}
 	ticker := time.NewTicker(checkBestIFaceInterval)
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
-			bestIFace = findBestIFace()
-			err := switchIFace(bestIFace)
+			bestIFace := findBestIFace()
+			err = switchIFace(bestIFace, urlInfo.Hostname())
 			if err != nil {
 				log.Error("Failed to switch network interface: ", err)
 			}
@@ -47,7 +77,7 @@ func findBestIFace() string {
 	return backupIFace
 }
 
-func switchIFace(iface string) (err error) {
+func switchIFace(iface, dhcpServer string) (err error) {
 	if iface == currentIFace {
 		return nil
 	}
@@ -55,11 +85,25 @@ func switchIFace(iface string) (err error) {
 	if err != nil {
 		return err
 	}
-	route.Priority = highPriority
-	err = netlink.RouteReplace(route)
+	servers, err := net.LookupHost(dhcpServer)
 	if err != nil {
 		return err
 	}
+	// dhcpserver maybe not only one
+	for _, addr := range servers {
+		route.Priority = dhcpPriority
+		route.Dst = &net.IPNet{
+			// only add route to dhcpserver,do not change system default route
+			IP:   net.ParseIP(addr),
+			Mask: net.IPv4Mask(255, 255, 255, 255),
+		}
+
+		err = netlink.RouteReplace(route)
+		if err != nil {
+			return err
+		}
+	}
+
 	err = dns.ApplyInterfaceDNSResolv(iface)
 	if err != nil {
 		IFaceUp(iface)
@@ -126,4 +170,12 @@ func IFaceUp(netInterface string) {
 	_ = exec.CommandContext(ctx, "ifup", "--force", netInterface).Run()
 	cancel()
 	_ = exec.Command("killall", "dhclient").Run()
+}
+
+func GetCurrentIFcae() string {
+	return currentIFace
+}
+
+func SetHighPriority(route *netlink.Route) {
+	route.Priority = highPriority
 }

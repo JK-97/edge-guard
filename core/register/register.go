@@ -6,16 +6,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"time"
 
+	"jxcore/config/yaml"
 	"jxcore/core/device"
 	"jxcore/core/heartbeat"
 	"jxcore/internal/network/dns"
+	"jxcore/internal/network/iface"
 	"jxcore/internal/network/vpn"
 	"jxcore/version"
 
 	"jxcore/lowapi/logger"
+
+	"github.com/vishvananda/netlink"
 )
 
 type reqRegister struct {
@@ -40,36 +45,65 @@ func MaintainMasterConnection(ctx context.Context, onFirstConnect func()) error 
 		default:
 		}
 
-		masterip := retryfindMaster(ctx)
+		masterIP, masterVpnIp := retryfindMaster(ctx)
 		if !once {
 			once = true
 			onFirstConnect()
 		}
-		onMasterIPChanged(masterip)
-		err := heartbeat.AliveReport(ctx, masterip, 5)
+		if yaml.Config.HeartBeatThroughVpn {
+			masterIP = masterVpnIp
+		}
+		onMasterIPChanged(masterIP)
+		err := heartbeat.AliveReport(ctx, masterIP, 5)
 		if err != nil {
 			logger.Error(err)
 		}
 	}
 }
 
-// retryfindMaster 从 DHCP 服务器 获取 Master 节点的 IP，直到获取成功
-func retryfindMaster(ctx context.Context) string {
+// retryfindMaster 从 DHCP 服务器 获取 Master 节点的 IP,vpnIp，直到获取成功
+func retryfindMaster(ctx context.Context) (string, string) {
 	ticker := time.NewTicker(3 * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
-			return ""
+			return "", ""
 		case <-ticker.C:
 			logger.Info("Try to connect a new master")
-			masterip, err := findMasterFromDHCPServer(ctx)
+			// get vpnIP
+			masterVpnIp, err := findMasterFromDHCPServer(ctx)
 			if err != nil {
-				logger.Error("Failed to connect master: ", err)
-			} else {
-				return masterip
+				logger.Error(err)
+				continue
 			}
+			//get Public network IP
+			masterIP, err := vpn.ParseMasterIPFromVpnConfig()
+			if err != nil {
+				logger.Error(err)
+				continue
+			}
+
+			route, err := iface.GetGWRoute(iface.GetCurrentIFcae())
+			if err != nil {
+				logger.Error("Failded to get current interface")
+				continue
+			}
+			// add Public network route
+			iface.SetHighPriority(route)
+			route.Dst = &net.IPNet{
+				IP:   net.ParseIP(masterIP),
+				Mask: net.IPv4Mask(255, 255, 255, 255),
+			}
+
+			err = netlink.RouteReplace(route)
+			if err != nil {
+				logger.Error("Failed to add materIp route")
+				continue
+			}
+			return masterIP, masterVpnIp
+
 		}
 	}
 }

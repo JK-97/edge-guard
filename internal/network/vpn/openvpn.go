@@ -63,3 +63,7 @@ func (v *openvpn) getIp(ctx context.Context) (string, error) {
 	})
 	return ip, err
 }
+
+func GetOpenvpnConfig() string {
+	return openvpnConfigPath
+}

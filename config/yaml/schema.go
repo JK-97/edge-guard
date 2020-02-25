@@ -45,7 +45,7 @@ type YamlSchema struct {
 		SwitchInterval string   `yaml:"switch_interval"`
 	} `yaml:"iface"`
 
-	MountCfg map[string]string `yaml:"mount_cfg"`
-
-	HeartbeatTimeoutSec int `yaml:"heartbeat_timeout_sec"`
+	MountCfg            map[string]string `yaml:"mount_cfg"`
+	HeartBeatThroughVpn bool              `yaml:"heartbeat_throughtVpn"`
+	HeartbeatTimeoutSec int               `yaml:"heartbeat_timeout_sec"`
 }
