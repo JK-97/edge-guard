@@ -2,9 +2,12 @@ package vpn
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"jxcore/core/device"
-	log "jxcore/lowapi/logger"
+	"jxcore/lowapi/logger"
+	"strings"
 	"time"
 )
 
@@ -52,7 +55,7 @@ func getVpnInstance() (vpn, error) {
 
 // 更新vpn配置
 func UpdateConfig(ctx context.Context, vpnConfig []byte) error {
-	log.Info("Updating VPN")
+	logger.Info("Updating VPN")
 	vpn, err := getVpnInstance()
 	if err != nil {
 		return err
@@ -94,4 +97,36 @@ func Restart(ctx context.Context) error {
 // GetClusterIP 获取集群内网 VPN IP
 func GetClusterIP() string {
 	return lastVpnIp
+}
+
+func ParseMasterIPFromVpnConfig() (string, error) {
+	dev, err := device.GetDevice()
+	if err != nil {
+		return "", fmt.Errorf("Can not get device config")
+
+	}
+	switch dev.Vpn {
+	case device.VPNModeOPENVPN:
+		return parseOpenvpnConfig()
+	case device.VPNModeWG:
+		return "", fmt.Errorf("cant not support wg")
+	}
+	return "", fmt.Errorf("cant not support %v", dev.Vpn)
+}
+func parseOpenvpnConfig() (string, error) {
+	data, err := ioutil.ReadFile(openvpnConfigPath)
+	if err != nil {
+		return "", err
+	}
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		if strings.HasPrefix(line, "remote") {
+			res := strings.Split(line, " ")
+			logger.Info(res)
+			if len(res) > 2 {
+				return res[1], nil
+			}
+		}
+	}
+	return "", errors.New("parse config failed")
 }

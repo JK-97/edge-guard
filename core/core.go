@@ -22,6 +22,7 @@ func MaintainNetwork(ctx context.Context, noUpdate bool) error {
 	errGroup := errgroup.Group{}
 
 	// 按优先级切换网口
+	// fist should be true connection between local and dhcpserver
 	errGroup.Go(func() error { return iface.MaintainBestIFace(ctx) })
 
 	// 第一次连接master成功，检查固件更新
@@ -32,6 +33,7 @@ func MaintainNetwork(ctx context.Context, noUpdate bool) error {
 			manager.Start()
 		}
 	}
+	// second should be true connection between local and master
 	errGroup.Go(func() error { return register.MaintainMasterConnection(ctx, onFirstConnect) })
 
 	return errGroup.Wait()
