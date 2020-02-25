@@ -2,12 +2,9 @@ package vpn
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"io/ioutil"
 	"jxcore/core/device"
 	"jxcore/lowapi/logger"
-	"strings"
 	"time"
 )
 
@@ -107,26 +104,10 @@ func ParseMasterIPFromVpnConfig() (string, error) {
 	}
 	switch dev.Vpn {
 	case device.VPNModeOPENVPN:
-		return parseOpenvpnConfig()
+		return ParseOpenvpnConfig()
 	case device.VPNModeWG:
-		return "", fmt.Errorf("cant not support wg")
+
+		return ParseWireGuardConfig()
 	}
 	return "", fmt.Errorf("cant not support %v", dev.Vpn)
-}
-func parseOpenvpnConfig() (string, error) {
-	data, err := ioutil.ReadFile(openvpnConfigPath)
-	if err != nil {
-		return "", err
-	}
-	lines := strings.Split(string(data), "\n")
-	for _, line := range lines {
-		if strings.HasPrefix(line, "remote") {
-			res := strings.Split(line, " ")
-			logger.Info(res)
-			if len(res) > 2 {
-				return res[1], nil
-			}
-		}
-	}
-	return "", errors.New("parse config failed")
 }

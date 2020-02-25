@@ -2,10 +2,14 @@ package vpn
 
 import (
 	"context"
+	"errors"
+	"io/ioutil"
 	"jxcore/internal/network"
+	"jxcore/lowapi/logger"
 	"jxcore/lowapi/system"
 	"jxcore/lowapi/utils"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -66,4 +70,22 @@ func (v *openvpn) getIp(ctx context.Context) (string, error) {
 
 func GetOpenvpnConfig() string {
 	return openvpnConfigPath
+}
+
+func ParseOpenvpnConfig() (string, error) {
+	data, err := ioutil.ReadFile(openvpnConfigPath)
+	if err != nil {
+		return "", err
+	}
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		if strings.HasPrefix(line, "remote") {
+			res := strings.Split(line, " ")
+			logger.Info(res)
+			if len(res) > 2 {
+				return res[1], nil
+			}
+		}
+	}
+	return "", errors.New("parse config failed")
 }
