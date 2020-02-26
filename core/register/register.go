@@ -3,6 +3,7 @@ package register
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -22,6 +23,23 @@ import (
 
 	"github.com/vishvananda/netlink"
 )
+
+const (
+	// FallBackAuthHost 默认集群地址
+	FallBackAuthHost = "http://auth.iotedge.jiangxingai.com:1054"
+
+	wireguardRegisterPath = "/api/v1/wg/register"
+	openvpnRegisterPath   = "/api/v1/openvpn/register"
+
+	prefix = 512
+	suffix = 128
+
+	registerTimeout = time.Second * 10
+
+	consulConfigPath = "/data/edgex/consul/config/consul_conf.json"
+)
+
+var enc = base64.NewEncoding("ABCDEFGHIJKLMNOabcdefghijklmnopqrstuvwxyzPQRSTUVWXYZ0123456789-_").WithPadding(base64.NoPadding)
 
 type reqRegister struct {
 	WorkerID string `json:"wid"`
@@ -50,9 +68,29 @@ func MaintainMasterConnection(ctx context.Context, onFirstConnect func()) error 
 			once = true
 			onFirstConnect()
 		}
+
 		if yaml.Config.HeartBeatThroughVpn {
 			masterIP = masterVpnIP
+		} else {
+			// add Public network route
+			route, err := iface.GetGWRoute(iface.GetCurrentIFcae())
+			if err != nil {
+				logger.Error("Failed to get gwroute")
+				continue
+			}
+			iface.SetHighPriority(route)
+			route.Dst = &net.IPNet{
+				IP:   net.ParseIP(masterIP),
+				Mask: net.IPv4Mask(255, 255, 255, 255),
+			}
+
+			err = netlink.RouteReplace(route)
+			if err != nil {
+				logger.Error("Failed to add materIp route")
+				continue
+			}
 		}
+
 		onMasterIPChanged(masterIP)
 		err := heartbeat.AliveReport(ctx, masterIP, 5)
 		if err != nil {
@@ -85,23 +123,11 @@ func retryfindMaster(ctx context.Context) (string, string) {
 				continue
 			}
 
-			route, err := iface.GetGWRoute(iface.GetCurrentIFcae())
 			if err != nil {
 				logger.Error("Failded to get current interface")
 				continue
 			}
-			// add Public network route
-			iface.SetHighPriority(route)
-			route.Dst = &net.IPNet{
-				IP:   net.ParseIP(masterIP),
-				Mask: net.IPv4Mask(255, 255, 255, 255),
-			}
 
-			err = netlink.RouteReplace(route)
-			if err != nil {
-				logger.Error("Failed to add materIp route")
-				continue
-			}
 			return masterIP, masterVpnIp
 
 		}
