@@ -33,6 +33,10 @@ func GetDeviceInfo(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+	deviceType, err := device.GetDeviceType()
+	if err != nil {
+		panic(err)
+	}
 
 	firmwareVersion := updatemanage.NewUpdateManager().GetCurrentVersion()
 
@@ -45,7 +49,7 @@ func GetDeviceInfo(w http.ResponseWriter, r *http.Request) {
 		Name:     string(deviceNameData),
 		WorkerID: currentDevice.WorkerID,
 		// TODO 需要产品定义
-		Model:           "",
+		Model:           string(deviceType),
 		FirmwareVersion: firmwareVersion["jx-toolset"],
 	}
 
