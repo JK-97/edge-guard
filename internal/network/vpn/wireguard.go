@@ -2,15 +2,20 @@ package vpn
 
 import (
 	"context"
+	"errors"
+	"io/ioutil"
 	"jxcore/internal/network"
 	log "jxcore/lowapi/logger"
 	"jxcore/lowapi/utils"
+	"net"
 	"os/exec"
+	"strings"
 )
 
 const (
-	WireGuardInterface = "wg0"
-	wireguardConfigDir = "/etc/wireguard/"
+	WireGuardInterface  = "wg0"
+	wireguardConfigDir  = "/etc/wireguard/"
+	wireguardConfigFile = "/etc/wireguard/wg0.conf"
 )
 
 type wireguard struct{}
@@ -44,4 +49,25 @@ func (v *wireguard) updateConfig(vpnConfig []byte) error {
 
 func (v *wireguard) getIp(ctx context.Context) (string, error) {
 	return network.GetMyIP(WireGuardInterface)
+}
+
+func ParseWireGuardConfig() (string, error) {
+	data, err := ioutil.ReadFile(wireguardConfigFile)
+	if err != nil {
+		return "", err
+	}
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		if strings.HasPrefix(line, "Endpoint") {
+			res := strings.Split(line, " ")
+			if len(res) >= 2 {
+				ip, _, err := net.SplitHostPort(res[2])
+				if err != nil {
+					return "", err
+				}
+				return ip, nil
+			}
+		}
+	}
+	return "", errors.New("parse config failed")
 }

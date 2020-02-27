@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"jxcore/core/device"
-	log "jxcore/lowapi/logger"
+	"jxcore/lowapi/logger"
 	"time"
 )
 
@@ -52,7 +52,7 @@ func getVpnInstance() (vpn, error) {
 
 // 更新vpn配置
 func UpdateConfig(ctx context.Context, vpnConfig []byte) error {
-	log.Info("Updating VPN")
+	logger.Info("Updating VPN")
 	vpn, err := getVpnInstance()
 	if err != nil {
 		return err
@@ -94,4 +94,19 @@ func Restart(ctx context.Context) error {
 // GetClusterIP 获取集群内网 VPN IP
 func GetClusterIP() string {
 	return lastVpnIp
+}
+
+func ParseMasterIPFromVpnConfig() (string, error) {
+	dev, err := device.GetDevice()
+	if err != nil {
+		return "", fmt.Errorf("Can not get device config")
+
+	}
+	switch dev.Vpn {
+	case device.VPNModeOPENVPN:
+		return ParseOpenvpnConfig()
+	case device.VPNModeWG:
+		return ParseWireGuardConfig()
+	}
+	return "", fmt.Errorf("cant not support %v", dev.Vpn)
 }
