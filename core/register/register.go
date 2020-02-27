@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"time"
 
@@ -20,8 +19,6 @@ import (
 	"jxcore/version"
 
 	"jxcore/lowapi/logger"
-
-	"github.com/vishvananda/netlink"
 )
 
 const (
@@ -62,37 +59,33 @@ func MaintainMasterConnection(ctx context.Context, onFirstConnect func()) error 
 			return nil
 		default:
 		}
-
-		masterIP, masterVpnIP := retryfindMaster(ctx)
+		heartbeatIP := ""
+		masterPublicIP, masterVpnIP := retryfindMaster(ctx)
 		if !once {
 			once = true
 			onFirstConnect()
 		}
 
 		if yaml.Config.HeartBeatThroughVpn {
-			masterIP = masterVpnIP
+			heartbeatIP = masterVpnIP
 		} else {
-			// add Public network route
-			route, err := iface.GetGWRoute(iface.GetCurrentIFcae())
-			if err != nil {
-				logger.Error("Failed to get gwroute")
-				continue
-			}
-			iface.SetHighPriority(route)
-			route.Dst = &net.IPNet{
-				IP:   net.ParseIP(masterIP),
-				Mask: net.IPv4Mask(255, 255, 255, 255),
-			}
-
-			err = netlink.RouteReplace(route)
-			if err != nil {
-				logger.Error("Failed to add materIp route")
-				continue
-			}
+			heartbeatIP = masterPublicIP
+		}
+		// add Public network route
+		route, err := iface.GetGWRoute(iface.GetCurrentIFcae())
+		if err != nil {
+			logger.Error("Failed to get gwroute")
+			continue
+		}
+		iface.SetHighPriority(route)
+		err = iface.ReplcaeRouteMask32(route, heartbeatIP)
+		if err != nil {
+			logger.Error("Failed to add materIp route")
+			continue
 		}
 
-		onMasterIPChanged(masterIP)
-		err := heartbeat.AliveReport(ctx, masterIP, 5)
+		onMasterIPChanged(heartbeatIP)
+		err = heartbeat.AliveReport(ctx, heartbeatIP, 5)
 		if err != nil {
 			logger.Error(err)
 		}
@@ -122,12 +115,6 @@ func retryfindMaster(ctx context.Context) (string, string) {
 				logger.Error(err)
 				continue
 			}
-
-			if err != nil {
-				logger.Error("Failded to get current interface")
-				continue
-			}
-
 			return masterIP, masterVpnIp
 
 		}

@@ -91,14 +91,8 @@ func switchIFace(iface, dhcpServer string) (err error) {
 	}
 	// dhcpserver maybe not only one
 	for _, addr := range servers {
-		route.Priority = dhcpPriority
-		route.Dst = &net.IPNet{
-			// only add route to dhcpserver,do not change system default route
-			IP:   net.ParseIP(addr),
-			Mask: net.IPv4Mask(255, 255, 255, 255),
-		}
-
-		err = netlink.RouteReplace(route)
+		SetHighPriority(route)
+		err := ReplcaeRouteMask32(route, addr)
 		if err != nil {
 			return err
 		}
@@ -178,4 +172,13 @@ func GetCurrentIFcae() string {
 
 func SetHighPriority(route *netlink.Route) {
 	route.Priority = highPriority
+}
+
+func ReplcaeRouteMask32(route *netlink.Route, IP string) error {
+	route.Dst = &net.IPNet{
+		IP:   net.ParseIP(IP),
+		Mask: net.IPv4Mask(255, 255, 255, 255),
+	}
+
+	return netlink.RouteReplace(route)
 }
