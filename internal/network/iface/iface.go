@@ -59,7 +59,7 @@ func MaintainBestIFace(ctx context.Context) error {
 			return nil
 		case <-ticker.C:
 			bestIFace := findBestIFace()
-			err = switchIFace(bestIFace, urlInfo.Hostname())
+			err = switchDhcpRouter(bestIFace, urlInfo.Hostname())
 			if err != nil {
 				log.Error("Failed to switch network interface: ", err)
 			}
@@ -77,7 +77,7 @@ func findBestIFace() string {
 	return backupIFace
 }
 
-func switchIFace(iface, dhcpServer string) (err error) {
+func switchDhcpRouter(iface, dhcpServer string) (err error) {
 	if iface == currentIFace {
 		return nil
 	}
