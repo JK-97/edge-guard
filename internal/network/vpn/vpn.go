@@ -106,7 +106,6 @@ func ParseMasterIPFromVpnConfig() (string, error) {
 	case device.VPNModeOPENVPN:
 		return ParseOpenvpnConfig()
 	case device.VPNModeWG:
-
 		return ParseWireGuardConfig()
 	}
 	return "", fmt.Errorf("cant not support %v", dev.Vpn)
