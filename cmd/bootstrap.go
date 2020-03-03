@@ -81,10 +81,10 @@ to quickly create a Cobra application.`,
 			panic(errors.New("Tickit Error"))
 		}
 
-		err := initHardWare()
-		if err != nil {
-			logger.Info(err)
-		}
+		// err := initHardWare()
+		// if err != nil {
+		// 	logger.Info(err)
+		// }
 		err = syncVersion()
 		if err != nil {
 			panic(err)
