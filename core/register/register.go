@@ -13,6 +13,9 @@ import (
 	"jxcore/core/heartbeat"
 	"jxcore/internal/network/dns"
 	"jxcore/internal/network/vpn"
+	"jxcore/oplog"
+	"jxcore/oplog/logs"
+	"jxcore/oplog/types"
 	"jxcore/version"
 
 	"jxcore/lowapi/logger"
@@ -49,6 +52,7 @@ func MaintainMasterConnection(ctx context.Context, onFirstConnect func()) error 
 		err := heartbeat.AliveReport(ctx, masterip, 5)
 		if err != nil {
 			logger.Error(err)
+			oplog.Insert(logs.NewOplog(types.NETWORKE, fmt.Sprintf("heartbeat failed ->%s", masterip)))
 		}
 	}
 }
