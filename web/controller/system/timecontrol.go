@@ -9,6 +9,9 @@ import (
 	"jxcore/internal/network"
 	"jxcore/lowapi/store/filestore"
 	"jxcore/lowapi/system"
+	"jxcore/oplog"
+	"jxcore/oplog/logs"
+	"jxcore/oplog/types"
 	"jxcore/web/controller/utils"
 	"net/http"
 	"time"
@@ -23,6 +26,7 @@ type timeRequest struct {
 }
 
 func SetTime(w http.ResponseWriter, r *http.Request) {
+
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		panic(err)
@@ -39,6 +43,7 @@ func SetTime(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+	oplog.Insert(logs.NewOplog(types.DEVICE, fmt.Sprintf("set time %s", time.Unix(request.Time, 0).Format("2006-01-02 15:04:05"))))
 	utils.RespondJSON(nil, w, 200)
 }
 
@@ -124,7 +129,7 @@ func SetNtpConfig(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 	}
-
+	oplog.Insert(logs.NewOplog(types.DEVICE, fmt.Sprintf("set ntp time server %s", patch)))
 	utils.RespondJSON(nil, w, 200)
 }
 

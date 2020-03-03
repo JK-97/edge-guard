@@ -5,6 +5,9 @@ import (
 	"jxcore/internal/network/dns"
 	"jxcore/internal/network/iface"
 	"jxcore/lowapi/system"
+	"jxcore/oplog"
+	"jxcore/oplog/logs"
+	"jxcore/oplog/types"
 	"jxcore/web/controller/utils"
 	"net"
 	"net/http"
@@ -113,9 +116,11 @@ type fourGInfo struct {
 	IP             string  `json:"ip"`
 }
 
+var fourGInterface = "usb0"
+
 func GetFourGInterface(w http.ResponseWriter, r *http.Request) {
 	scpritPath := "/jxbootstrap/worker/scripts/G8100_NoMCU.py"
-	fourGInterface := "usb0"
+
 	resp := &fourGInfo{}
 
 	iface, err := net.InterfaceByName(fourGInterface)
@@ -159,4 +164,29 @@ func parseFourGInfo(output []byte) (float64, error) {
 	logger.Info("csq:" + res)
 	return strconv.ParseFloat(res, 64)
 
+}
+
+func EnableFourGInterface(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	flag, ok := vars["enable"]
+	if !ok {
+		utils.RespondReasonJSON(nil, w, "notfound args", 400)
+		return
+	}
+	enable, err := strconv.ParseBool(flag)
+	if err != nil {
+		utils.RespondReasonJSON(nil, w, "invaild args", 400)
+		return
+	}
+	if enable {
+		err = system.RunCommand(fmt.Sprintf("ifup %s", fourGInterface))
+	} else {
+		err = system.RunCommand(fmt.Sprintf("ifdown %s", fourGInterface))
+	}
+	if err != nil {
+		utils.RespondReasonJSON(nil, w, fmt.Sprintf("operated faild with err : %s", err.Error()), 400)
+		return
+	}
+	oplog.Insert(logs.NewOplog(types.NETWORKE, fmt.Sprintf("set 4g %s", flag)))
+	utils.RespondSuccessJSON(nil, w)
 }

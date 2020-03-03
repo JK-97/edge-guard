@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"jxcore/internal/network"
 	"jxcore/internal/network/dns"
+	"jxcore/oplog"
+	"jxcore/oplog/logs"
+	"jxcore/oplog/types"
 	"net"
 	"os/exec"
 	"time"
@@ -70,6 +73,7 @@ func switchIFace(iface string) (err error) {
 	}
 
 	log.Infof("Switch network interface %s -> %s", currentIFace, iface)
+	oplog.Insert(logs.NewOplog(types.NETWORKE, fmt.Sprintf("Switch network interface %s -> %s", currentIFace, iface)))
 	currentIFace = iface
 	return
 }

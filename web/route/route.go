@@ -51,6 +51,9 @@ func Routes() *mux.Router {
 	secretRouter.HandleFunc("/network/interfaces", system.GetNetworkInterfaces).Methods(http.MethodGet)
 	secretRouter.HandleFunc("/network/interface/{iface}", system.GetNetworkInterfaceByName).Methods(http.MethodGet)
 	secretRouter.HandleFunc("/network/interfaces/fourg", system.GetFourGInterface).Methods(http.MethodGet)
+	secretRouter.HandleFunc("/network/interfaces/fourg", system.EnableFourGInterface).Methods(http.MethodPost)
+	//日志系统
+	secretRouter.HandleFunc("/log/logs", system.GetWebOplog).Methods(http.MethodGet)
 
 	// 密码
 	secretRouter.HandleFunc("/system/password", system.SetPasswordHandler).Methods(http.MethodPost)

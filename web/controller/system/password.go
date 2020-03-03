@@ -3,6 +3,9 @@ package system
 import (
 	"fmt"
 	"jxcore/lowapi/store/filestore"
+	"jxcore/oplog"
+	"jxcore/oplog/logs"
+	"jxcore/oplog/types"
 	"jxcore/web/controller/utils"
 	"net/http"
 )
@@ -37,6 +40,7 @@ func SetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+	oplog.Insert(logs.NewOplog(types.AUTH, "change passwd"))
 	utils.RespondSuccessJSON(nil, w)
 }
 
