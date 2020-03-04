@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"encoding/json"
 	"fmt"
 	"jxcore/oplog/logs"
 	"jxcore/oplog/types"
@@ -9,6 +10,10 @@ import (
 )
 
 func TestInsert(t *testing.T) {
+	// err := os.RemoveAll(defaultLogPath)
+	// if err != nil {
+	// 	t.Error(err)
+	// }
 	aLog := logs.NewOplog(types.NETWORKE, "注册到master")
 	bLog := logs.NewOplog(types.NETWORKE, "hello")
 	wg := &sync.WaitGroup{}
@@ -30,5 +35,10 @@ func TestInsert(t *testing.T) {
 	for _, log := range logs {
 		fmt.Println(string(log.Marshal()))
 	}
+	data, err := json.Marshal(logs)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(string(data))
 
 }

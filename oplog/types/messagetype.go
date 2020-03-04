@@ -2,7 +2,7 @@ package types
 
 const (
 	NETWORKE = "NETWORKE"
-	REGISTE  = "REGISTE"
+	REGISTER = "REGISTER"
 	AUTH     = "AUTH"
 	DEVICE   = "DEVICE"
 	UPDATE   = "UPDATE"
