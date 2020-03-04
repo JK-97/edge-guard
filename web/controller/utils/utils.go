@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	log "jxcore/lowapi/logger"
 	"net/http"
+	"strconv"
 
 	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 )
@@ -104,4 +105,14 @@ func UnmarshalJson(body io.ReadCloser, out interface{}) error {
 		return err
 	}
 	return json.Unmarshal(data, out)
+}
+
+func GetPageInfo(r *http.Request) (int, int) {
+	offset := 0
+	v := r.URL.Query()["offset"]
+	if len(v) == 1 {
+		offset, _ = strconv.Atoi(v[0])
+	}
+	limit := 10
+	return offset, limit
 }
