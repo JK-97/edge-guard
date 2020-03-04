@@ -25,6 +25,9 @@ import (
 	"jxcore/internal/network/dns"
 	"jxcore/lowapi/docker"
 	"jxcore/lowapi/logger"
+	"jxcore/oplog"
+	"jxcore/oplog/logs"
+	"jxcore/oplog/types"
 	"os"
 	"os/exec"
 	"strings"
@@ -81,10 +84,10 @@ to quickly create a Cobra application.`,
 			panic(errors.New("Tickit Error"))
 		}
 
-		// err := initHardWare()
-		// if err != nil {
-		// 	logger.Info(err)
-		// }
+		err := initHardWare()
+		if err != nil {
+			logger.Info(err)
+		}
 		err = syncVersion()
 		if err != nil {
 			panic(err)
@@ -126,6 +129,7 @@ to quickly create a Cobra application.`,
 			if err != nil {
 				panic(err)
 			}
+			oplog.Insert(logs.NewOplog(types.NETWORKE, fmt.Sprintf("register success ->%s", currentDevice.DhcpServer)))
 
 		} else {
 

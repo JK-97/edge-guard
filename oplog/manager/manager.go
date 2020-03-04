@@ -50,26 +50,29 @@ func (m *Manager) listByFiliter(f ...types.FilterFunc) ([]types.Oplog, error) {
 	if err != nil {
 		return nil, err
 	}
-	rawData := strings.Split(string(data), "\n")
+	rawData := strings.Split(strings.TrimSpace(string(data)), "\n")
 
 	res := make([]types.Oplog, 0)
-
 	for _, line := range rawData {
-		log := &logs.LogMessage{}
-		log.UnMarshal([]byte(line))
+		logMessage := &logs.LogMessage{}
+		logMessage.UnMarshal([]byte(line))
 		if len(f) > 0 {
 			for _, fn := range f {
-				if !fn.Filter(log) {
+				if !fn.Filter(logMessage) {
 					continue
 				}
 			}
 		}
+		res = append(res, logMessage)
 
-		res = append(res, log)
 	}
 	return res, nil
 }
 
 func (m *Manager) FindMany(f ...types.FilterFunc) ([]types.Oplog, error) {
 	return m.listByFiliter(f...)
+}
+
+func (m *Manager) GetLogFileName() string {
+	return m.logFile.Name()
 }

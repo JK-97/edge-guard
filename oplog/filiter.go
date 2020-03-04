@@ -5,8 +5,21 @@ import (
 	"time"
 )
 
-func DefaultTimeFilter(o Oplog, from, until time.Time) types.FilterFunc {
-	return func(oplog) bool {
+func DefaultTimeFilter(from, until time.Time) types.FilterFunc {
+	return func(o types.Oplog) bool {
+		recordTime := o.GetRecordTime()
+		if !(recordTime.Before(until) && recordTime.After(from)) {
+			return false
+		}
+		return true
+	}
+}
 
+func DefaultTypeFilter(logMessageType string) types.FilterFunc {
+	return func(o types.Oplog) bool {
+		if !(o.GetMessageType() == logMessageType) {
+			return false
+		}
+		return true
 	}
 }

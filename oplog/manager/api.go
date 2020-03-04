@@ -25,3 +25,6 @@ func ListAll() ([]types.Oplog, error) {
 func FindMany(f ...types.FilterFunc) ([]types.Oplog, error) {
 	return This.FindMany(f...)
 }
+func GetLogFileName() string {
+	return This.logFile.Name()
+}

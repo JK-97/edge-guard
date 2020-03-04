@@ -7,6 +7,12 @@ import (
 	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 )
 
+func init() {
+	logger.SetLoggerConfig(logger.Configuration{
+		CallerSkip: 1,
+	})
+}
+
 type Fields logger.Fields
 
 func Debugf(format string, args ...interface{}) {
