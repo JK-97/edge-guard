@@ -58,6 +58,8 @@ func GetOplog(w http.ResponseWriter, r *http.Request) {
 		findResult = []types.Oplog{}
 	} else if offset+limit < length {
 		findResult = findResult[offset : offset+limit]
+	} else if offset+limit > length {
+		findResult = findResult[offset:]
 	}
 
 	resp := &responce{
