@@ -53,17 +53,24 @@ func (m *Manager) listByFiliter(f ...types.FilterFunc) ([]types.Oplog, error) {
 	rawData := strings.Split(strings.TrimSpace(string(data)), "\n")
 
 	res := make([]types.Oplog, 0)
+
 	for _, line := range rawData {
 		logMessage := &logs.LogMessage{}
 		logMessage.UnMarshal([]byte(line))
+		filterPass := true
 		if len(f) > 0 {
+
 			for _, fn := range f {
 				if !fn.Filter(logMessage) {
-					continue
+					filterPass = false
+					break
 				}
 			}
+
 		}
-		res = append(res, logMessage)
+		if filterPass {
+			res = append(res, logMessage)
+		}
 
 	}
 	return res, nil

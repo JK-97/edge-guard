@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"fmt"
 	"net"
 	"syscall"
 	"time"
@@ -12,6 +13,9 @@ import (
 	"jxcore/core/heartbeat/collector"
 	"jxcore/core/heartbeat/message"
 	"jxcore/lowapi/logger"
+	"jxcore/oplog"
+	"jxcore/oplog/logs"
+	"jxcore/oplog/types"
 
 	"golang.org/x/sys/unix"
 )
@@ -107,14 +111,16 @@ func (b *HeartBeater) Beat(ctx context.Context) error {
 			}
 			if err != nil {
 				errCount++
+				oplog.Insert(logs.NewOplog(types.NETWORKE, fmt.Sprintf("heartbeat error %v times", errCount)))
 				if errCount > b.AllowErrorCount {
+					oplog.Insert(logs.NewOplog(types.NETWORKE, fmt.Sprintf("heartbeat error more than %v,please check ", b.AllowErrorCount)))
 					return err
 				}
 				logger.Warn(err)
 				time.Sleep(200 * time.Millisecond)
 			}
 		}
-
+		oplog.Insert(logs.NewOplog(types.NETWORKE, fmt.Sprintf("heartbeat success")))
 		logger.Info("Connected to device manager")
 		if err := b.beat(ctx, b.conn); err != nil {
 			logger.Warn(err)
