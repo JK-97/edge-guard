@@ -114,5 +114,10 @@ func GetPageInfo(r *http.Request) (int, int) {
 		offset, _ = strconv.Atoi(v[0])
 	}
 	limit := 10
+	v = r.URL.Query()["page"]
+	if len(v) == 0 {
+		limit = 1 << 16
+	}
+
 	return offset, limit
 }

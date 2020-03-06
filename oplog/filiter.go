@@ -17,6 +17,9 @@ func DefaultTimeFilter(from, until time.Time) types.FilterFunc {
 
 func DefaultTypeFilter(logMessageType string) types.FilterFunc {
 	return func(o types.Oplog) bool {
+		if logMessageType == "all" {
+			return true
+		}
 		if !(o.GetMessageType() == logMessageType) {
 			return false
 		}
