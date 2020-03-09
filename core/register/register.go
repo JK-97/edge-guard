@@ -91,7 +91,7 @@ func MaintainMasterConnection(ctx context.Context, onFirstConnect func()) error 
 		err = heartbeat.AliveReport(ctx, heartbeatIP, 5)
 		if err != nil {
 			logger.Error(err)
-			oplog.Insert(logs.NewOplog(types.NETWORKE, fmt.Sprintf("heartbeat failed ->%s", masterip)))
+			oplog.Insert(logs.NewOplog(types.NETWORKE, fmt.Sprintf("heartbeat failed ->%s", heartbeatIP)))
 		}
 	}
 }
