@@ -2,7 +2,6 @@ package system
 
 import (
 	"fmt"
-	"jxcore/lowapi/logger"
 	"jxcore/oplog"
 	"jxcore/oplog/types"
 	"jxcore/web/controller/utils"
@@ -28,6 +27,10 @@ func GetOplog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	logMessageType, ok := querys["type"]
+
+	if logMessageType[0] == "" {
+		logMessageType[0] = "all"
+	}
 	if !ok {
 		utils.RespondReasonJSON(nil, w, "notfound args type", 400)
 		return
@@ -44,8 +47,6 @@ func GetOplog(w http.ResponseWriter, r *http.Request) {
 	}
 	untilTime := time.Unix(until, 0)
 	fromTime := time.Unix(from, 0)
-	logger.Info(untilTime.Format("2006-01-02 15:04:05"), fromTime.Format("2006-01-02 15:04:05"), logMessageType[0])
-
 	findResult, err := oplog.FindMany(oplog.DefaultTimeFilter(fromTime, untilTime), oplog.DefaultTypeFilter(logMessageType[0]))
 	if err != nil {
 		utils.RespondReasonJSON(nil, w, err.Error(), 400)
