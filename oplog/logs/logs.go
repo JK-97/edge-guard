@@ -10,6 +10,8 @@ import (
 
 const indent = "   "
 
+const DateLayout = "2006-01-02 15:04:05 -0700"
+
 type LogMessage struct {
 	recordTime  time.Time `json:"recordtime"`
 	messageType string    `json:"messagetype"`
@@ -38,12 +40,12 @@ func (l *LogMessage) GetDescription() string {
 }
 
 func (l *LogMessage) Marshal() []byte {
-	return []byte(fmt.Sprintf(strings.Join([]string{"%s", "%s", "%s\n"}, indent), l.recordTime.Format("2006-01-02 15:04:05"), l.messageType, l.description))
+	return []byte(fmt.Sprintf(strings.Join([]string{"%s", "%s", "%s\n"}, indent), l.recordTime.Format(DateLayout), l.messageType, l.description))
 }
 
 func (l *LogMessage) UnMarshal(data []byte) error {
 	info := strings.Split(string(data), indent)
-	time, err := time.Parse("2006-01-02 15:04:05", info[0])
+	time, err := time.Parse(DateLayout, info[0])
 	if err != nil {
 		return err
 	}
@@ -62,7 +64,7 @@ func (l *LogMessage) MarshalJSON() ([]byte, error) {
 		MessageType string `json:"messagetype"`
 		Description string `json:"description"`
 	}{
-		RecordTime:  l.GetRecordTime().Format("2006-01-02 15:04:05"),
+		RecordTime:  l.GetRecordTime().Format(DateLayout),
 		MessageType: l.GetMessageType(),
 		Description: l.GetDescription(),
 	})
