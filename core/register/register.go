@@ -73,22 +73,22 @@ func MaintainMasterConnection(ctx context.Context, onFirstConnect func()) error 
 			heartbeatIP = masterVpnIP
 		} else {
 			heartbeatIP = masterPublicIP
+			route, err := iface.GetGWRoute(iface.GetCurrentIFcae())
+			if err != nil {
+				logger.Error("Failed to get gwroute")
+				continue
+			}
+			iface.SetHighPriority(route)
+			err = iface.ReplcaeRouteMask32(route, heartbeatIP)
+			if err != nil {
+				logger.Error("Failed to add materIp route")
+				continue
+			}
 		}
 		// add Public network route
-		route, err := iface.GetGWRoute(iface.GetCurrentIFcae())
-		if err != nil {
-			logger.Error("Failed to get gwroute")
-			continue
-		}
-		iface.SetHighPriority(route)
-		err = iface.ReplcaeRouteMask32(route, heartbeatIP)
-		if err != nil {
-			logger.Error("Failed to add materIp route")
-			continue
-		}
 
 		onMasterIPChanged(heartbeatIP)
-		err = heartbeat.AliveReport(ctx, heartbeatIP, 5)
+		err := heartbeat.AliveReport(ctx, heartbeatIP, 5)
 		if err != nil {
 			logger.Error(err)
 			oplog.Insert(logs.NewOplog(types.NETWORKE, fmt.Sprintf("heartbeat failed ->%s", heartbeatIP)))

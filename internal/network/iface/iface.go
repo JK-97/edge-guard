@@ -90,21 +90,22 @@ func switchDhcpRouter(iface, dhcpServer string) (err error) {
 	}
 	servers, err := net.LookupHost(dhcpServer)
 	if err != nil {
+		err = dns.ApplyInterfaceDNSResolv(iface)
+		if err != nil {
+			IFaceUp(iface)
+			err = dns.ApplyInterfaceDNSResolv(iface)
+			if err != nil {
+
+				return err
+			}
+		}
 		return err
 	}
+
 	// dhcpserver maybe not only one
 	for _, addr := range servers {
 		SetHighPriority(route)
 		err := ReplcaeRouteMask32(route, addr)
-		if err != nil {
-			return err
-		}
-	}
-
-	err = dns.ApplyInterfaceDNSResolv(iface)
-	if err != nil {
-		IFaceUp(iface)
-		err = dns.ApplyInterfaceDNSResolv(iface)
 		if err != nil {
 			return err
 		}
