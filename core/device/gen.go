@@ -66,6 +66,7 @@ const (
 	TX2       deviceType = "tx2"
 	Rk3399PRO deviceType = "rk3399pro"
 	RK3399    deviceType = "rk3399"
+	RK1808    deviceType = "rk1808"
 	UNKNOWN   deviceType = "unknown"
 )
 
@@ -83,6 +84,8 @@ func (d deviceType) prefix() string {
 		return "05"
 	case "rk3399":
 		return "06"
+	case "rk1808":
+		return "07"
 	default:
 		return "00"
 	}
@@ -162,7 +165,7 @@ func BuildWokerID() (string, error) {
 		if err != nil {
 			return "", err
 		}
-	case ARM, RK3399, Rk3399PRO:
+	case ARM, RK3399, Rk3399PRO, RK1808:
 		err := buildRK3399ID(md5info[:])
 		if err != nil {
 			return "", err
