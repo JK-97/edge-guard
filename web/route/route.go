@@ -1,7 +1,8 @@
 package route
 
 import (
-	"jxcore/web/controller"
+	"jxcore/web/controller/driver"
+	"jxcore/web/controller/system"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -15,39 +16,45 @@ func Routes() *mux.Router {
 	r.Use(recoverMiddleware)
 
 	//固件升级
-	r.HandleFunc("/edgenode/exec/update", controller.UpdateByDeb).Methods(http.MethodPost)
+	r.HandleFunc("/edgenode/exec/update", system.UpdateByDeb).Methods(http.MethodPost)
 
 	v1Router := r.PathPrefix("/api/v1").Subrouter()
 	// 登陆登出
-	v1Router.HandleFunc("/login", controller.PostLogin).Methods(http.MethodPost)
-	v1Router.HandleFunc("/logout", controller.PostLogout).Methods(http.MethodPost)
+	v1Router.HandleFunc("/login", system.PostLogin).Methods(http.MethodPost)
+	v1Router.HandleFunc("/logout", system.PostLogout).Methods(http.MethodPost)
 
 	secretRouter := v1Router.NewRoute().Subrouter()
 	secretRouter.Use(requireLoginMiddleware)
 
 	//操作
-	secretRouter.HandleFunc("/system/upgrade", controller.UploadAndUpdate).Methods(http.MethodPost)
-	secretRouter.HandleFunc("/system/reboot", controller.Reboot).Methods(http.MethodPost)
+	secretRouter.HandleFunc("/system/upgrade", system.UploadAndUpdate).Methods(http.MethodPost)
+	secretRouter.HandleFunc("/system/reboot", system.Reboot).Methods(http.MethodPost)
 
 	//设置时间
-	secretRouter.HandleFunc("/settings/time", controller.GetNtpConfig).Methods(http.MethodGet)
-	secretRouter.HandleFunc("/settings/time", controller.SetNtpConfig).Methods(http.MethodPost)
-	secretRouter.HandleFunc("/time", controller.GetTime).Methods(http.MethodGet)
-	secretRouter.HandleFunc("/time", controller.SetTime).Methods(http.MethodPost)
+	secretRouter.HandleFunc("/settings/time", system.GetNtpConfig).Methods(http.MethodGet)
+	secretRouter.HandleFunc("/settings/time", system.SetNtpConfig).Methods(http.MethodPost)
+	secretRouter.HandleFunc("/time", system.GetTime).Methods(http.MethodGet)
+	secretRouter.HandleFunc("/time", system.SetTime).Methods(http.MethodPost)
 
 	//更改信息
-	secretRouter.HandleFunc("/node/info", controller.GetDeviceInfo).Methods(http.MethodGet)
-	secretRouter.HandleFunc("/node/name", controller.SetDeviceName).Methods(http.MethodPost)
+	secretRouter.HandleFunc("/node/info", system.GetDeviceInfo).Methods(http.MethodGet)
+	secretRouter.HandleFunc("/node/name", system.SetDeviceName).Methods(http.MethodPost)
 
 	// 驱动
-	secretRouter.HandleFunc("/drivers", controller.GetEdgexDrivers).Methods(http.MethodGet)
+	secretRouter.HandleFunc("/drivers", driver.GetEdgexDrivers).Methods(http.MethodGet)
+
+	// 代理请求到device service
+	secretRouter.HandleFunc("/driver/{dsname}{path:.*}", driver.Proxy)
 
 	// 网络
-	secretRouter.HandleFunc("/network/interfaces", controller.GetNetworkInterfaces).Methods(http.MethodGet)
-	secretRouter.HandleFunc("/network/interface/{iface}", controller.GetNetworkInterfaceByName).Methods(http.MethodGet)
+	secretRouter.HandleFunc("/network/interfaces", system.GetNetworkInterfaces).Methods(http.MethodGet)
+	secretRouter.HandleFunc("/network/interface/{iface}", system.GetNetworkInterfaceByName).Methods(http.MethodGet)
 
 	// 密码
-	secretRouter.HandleFunc("/system/password", controller.SetPasswordHandler).Methods(http.MethodPost)
+	secretRouter.HandleFunc("/system/password", system.SetPasswordHandler).Methods(http.MethodPost)
+
+	// 前端
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir(staticFilePath)))
 
 	// 前端
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir(staticFilePath)))

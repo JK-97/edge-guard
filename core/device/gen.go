@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	log "jxcore/lowapi/logger"
+	"jxcore/lowapi/logger"
 	"jxcore/lowapi/utils"
 	"math/rand"
 	"net/http"
@@ -234,7 +234,7 @@ func (d *Device) RequestKey(ticket string) (*buildkeyresp, error) {
 
 	resp, err := http.Post(d.DhcpServer+BOOTSTRAPATH, "application/json", body)
 	if err != nil {
-		log.Error(err)
+		logger.Error(err)
 		return nil, err
 	}
 

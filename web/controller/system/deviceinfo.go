@@ -1,4 +1,4 @@
-package controller
+package system
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"jxcore/core/device"
 	"jxcore/lowapi/store/filestore"
 	"jxcore/management/updatemanage"
+	"jxcore/web/controller/utils"
 	"net/http"
 
 	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
@@ -33,10 +34,8 @@ func GetDeviceInfo(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	firmwareVersion, ok := updatemanage.ParseVersionFile()["jx-toolset"]
-	if !ok {
-		logger.Error("firmware version not found")
-	}
+	firmwareVersion := updatemanage.NewUpdateManager().GetCurrentVersion()
+
 	deviceNameData, err := filestore.KV.GetDefault(deviceNameKey, []byte(currentDevice.WorkerID))
 	if err != nil {
 		logger.Error("failed to get device name", err)
@@ -47,10 +46,10 @@ func GetDeviceInfo(w http.ResponseWriter, r *http.Request) {
 		WorkerID: currentDevice.WorkerID,
 		// TODO 需要产品定义
 		Model:           "",
-		FirmwareVersion: firmwareVersion,
+		FirmwareVersion: firmwareVersion["jx-toolset"],
 	}
 
-	RespondJSON(reponse, w, 200)
+	utils.RespondJSON(reponse, w, 200)
 }
 
 // 设置设备名称
@@ -72,7 +71,7 @@ func SetDeviceName(w http.ResponseWriter, r *http.Request) {
 	if !request.SkipUploadMaster {
 		reportMaster(request.Name)
 	}
-	RespondSuccessJSON(nil, w)
+	utils.RespondSuccessJSON(nil, w)
 }
 
 // 上报云端

@@ -1,12 +1,11 @@
-package controller
+package system
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 
-	log "jxcore/lowapi/logger"
-
-	"encoding/json"
+	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 )
 
 type bootstrapRequest struct {
@@ -17,7 +16,7 @@ type bootstrapRequest struct {
 func Boostrap(w http.ResponseWriter, r *http.Request) {
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Error(err)
+		logger.Error(err)
 	}
 	request := bootstrapRequest{}
 	err = json.Unmarshal(data, &request)
