@@ -5,7 +5,7 @@ import (
 	// "log"
 	"net/http"
 
-	log "jxcore/lowapi/logger"
+	"jxcore/lowapi/logger"
 )
 
 // APIError api 异常类型
@@ -26,7 +26,7 @@ func Error(w http.ResponseWriter, reason string, code int) {
 
 	rs, err := json.Marshal(e)
 	if err != nil {
-		log.Errorln(err)
+		logger.Error(err)
 	}
 
 	w.Write(rs)
@@ -46,7 +46,7 @@ type notFoundHandler struct {
 }
 
 func (h *notFoundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Printf("In: 404 \t%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+	logger.Printf("In: 404 \t%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 
 	ErrorNotFound(w)
 }
