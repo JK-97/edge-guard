@@ -17,7 +17,7 @@ import (
 
 	"jxcore/gateway/dao"
 	pb "jxcore/gateway/trueno"
-	log "jxcore/lowapi/logger"
+	"jxcore/lowapi/logger"
 
 	"github.com/google/uuid"
 	"github.com/patrickmn/go-cache"
@@ -125,7 +125,7 @@ type aiSwitchModelReply struct {
 func NewAiServingHandler(u string) *AiServingHandler {
 	pURL, err := url.Parse(u)
 	if err != nil {
-		log.Errorln(err)
+		logger.Error(err)
 	}
 
 	return &AiServingHandler{pURL}
@@ -174,7 +174,7 @@ func (h *AiServingHandler) handleDetect(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	log.Printf("AI Detect: [%s]\n", b.Path)
+	logger.Printf("AI Detect: [%s]\n", b.Path)
 
 	r.Body = ioutil.NopCloser(bytes.NewReader(buff))
 	_url := h.ServingAddr
@@ -206,7 +206,7 @@ func (h *AiServingHandler) aiLocalDetection(w http.ResponseWriter, r *http.Reque
 	httpRequest := &inferenceLocalRequest{}
 	err := unmarshalRequest(r, &httpRequest)
 	if err != nil {
-		log.Info(err.Error())
+		logger.Info(err.Error())
 		return
 	}
 	//ctx
@@ -216,7 +216,7 @@ func (h *AiServingHandler) aiLocalDetection(w http.ResponseWriter, r *http.Reque
 	//rpc
 	conn, err := grpc.Dial(GrpcServerAddress, grpc.WithInsecure())
 	if err != nil {
-		log.Info(err.Error())
+		logger.Info(err.Error())
 		return
 	}
 	defer conn.Close()
@@ -258,7 +258,7 @@ func (h *AiServingHandler) aiRemoteDetection(w http.ResponseWriter, r *http.Requ
 
 	conn, err := grpc.Dial(GrpcServerAddress, grpc.WithInsecure())
 	if err != nil {
-		log.Info(err.Error())
+		logger.Info(err.Error())
 		return
 	}
 	defer conn.Close()
@@ -304,8 +304,8 @@ func (h *AiServingHandler) createAIBackend(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	log.Info("创建模型后台:", httpRequest.Model, httpRequest.Version)
-	log.Info("创建后台bid:", msg)
+	logger.Info("创建模型后台:", httpRequest.Model, httpRequest.Version)
+	logger.Info("创建后台bid:", msg)
 	responceJson(w, "success", 200)
 }
 
@@ -344,7 +344,7 @@ func tryEveryBackend(conn *grpc.ClientConn, model string, version string, w http
 		_, _ = grpcCreateAndLoadModel(conn, ctx, model, version)
 		return errors.New("自动创建model后台,请重试")
 	}
-	log.Info("检索到的后台bid:", bidsResult)
+	logger.Info("检索到的后台bid:", bidsResult)
 	//有缓存则尝试进行请求
 	//从第一个开始尝试
 	detectUuid := uuid.New().String()
@@ -389,7 +389,7 @@ func updateCache(resply []*pb.RunningReply_Status) {
 			return
 		}
 		c.Set(backend.GetModel(), thisModelCache, 5*time.Minute)
-		log.Info("更新缓存:", thisModelCache)
+		logger.Info("更新缓存:", thisModelCache)
 	}
 }
 
@@ -412,7 +412,7 @@ func grpcRunningBackend(conn *grpc.ClientConn, ctx context.Context) ([]*pb.Runni
 		return nil, err
 	}
 	reply := resoponse.GetStatus()
-	log.Info("正在运行的模型后台连列表", reply)
+	logger.Info("正在运行的模型后台连列表", reply)
 	return reply, nil
 }
 
@@ -446,7 +446,7 @@ func grpcListStoreModel(conn *grpc.ClientConn, ctx context.Context) ([]*pb.Model
 		return nil, err
 	}
 	reply := resoponse.GetList()
-	log.Info("model info", reply)
+	logger.Info("model info", reply)
 	return reply, nil
 }
 
@@ -473,7 +473,7 @@ func grpcCreateAndLoadModel(conn *grpc.ClientConn, ctx context.Context, model, v
 //通过model名字获取对应bids
 func grpcGetBackendByModel(conn *grpc.ClientConn, ctx context.Context, model string) ([]string, error) {
 	result, ok := c.Get(model)
-	log.Info("缓存结果：", ok, result)
+	logger.Info("缓存结果：", ok, result)
 	if !ok {
 		// 没有缓存先更新下缓存
 		resply, err := grpcRunningBackend(conn, ctx)
@@ -522,7 +522,7 @@ func unmarshalRequest(r *http.Request, httpRequest interface{}) error {
 }
 
 func (h *AiServingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// log.Printf("In:\t%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+	// logger.Printf("In:\t%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 	path := r.URL.Path
 
 	switch path {
@@ -549,6 +549,6 @@ func (h *AiServingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_url := h.ServingAddr
 	proxy := httputil.NewSingleHostReverseProxy(_url)
 
-	// log.Printf("Out:\t%v %s %s\n", _url, r.Method, r.URL)
+	// logger.Printf("Out:\t%v %s %s\n", _url, r.Method, r.URL)
 	proxy.ServeHTTP(w, r)
 }

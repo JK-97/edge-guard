@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"sync"
 
-	log "jxcore/lowapi/logger"
+	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 )
 
 var once sync.Once
@@ -40,7 +40,7 @@ func WriteResult(w http.ResponseWriter, result *APIResult) {
 
 	rs, err := json.Marshal(result)
 	if err != nil {
-		log.Errorln(err)
+		logger.Error(err)
 	}
 
 	w.Write(rs)
