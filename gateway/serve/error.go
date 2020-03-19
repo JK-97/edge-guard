@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"jxcore/gateway/log"
-	"jxcore/lowapi/logger"
 )
 
 // APIError api 异常类型
@@ -47,7 +46,7 @@ type notFoundHandler struct {
 }
 
 func (h *notFoundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	logger.Printf("In: 404 \t%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+	log.Printf("In: 404 \t%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 
 	ErrorNotFound(w)
 }

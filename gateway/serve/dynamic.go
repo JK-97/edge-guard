@@ -11,9 +11,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/BurntSushi/toml"
-	log "jxcore/lowapi/logger"
+	"jxcore/gateway/log"
 	"jxcore/gateway/store"
+
+	"github.com/BurntSushi/toml"
 )
 
 // DynamicService 动态服务
