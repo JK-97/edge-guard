@@ -56,8 +56,5 @@ func Routes() *mux.Router {
 	// 前端
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir(staticFilePath)))
 
-	// 前端
-	r.PathPrefix("/").Handler(http.FileServer(http.Dir(staticFilePath)))
-
 	return r
 }

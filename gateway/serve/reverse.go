@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	log "jxcore/lowapi/logger"
+	"jxcore/gateway/log"
 	"jxcore/gateway/option"
 )
 
