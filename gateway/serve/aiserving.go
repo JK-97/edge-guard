@@ -21,6 +21,7 @@ import (
 	"jxcore/lowapi/logger"
 
 	"github.com/google/uuid"
+	consulapi "github.com/hashicorp/consul/api"
 	"github.com/patrickmn/go-cache"
 	"google.golang.org/grpc"
 )
@@ -522,6 +523,82 @@ func unmarshalRequest(r *http.Request, httpRequest interface{}) error {
 	return nil
 }
 
+type registry struct {
+	AIName       string `json:"ai_name"`
+	HeartbeatURL string `json:"heartbeat_url"`
+	ServiceURL   string `json:"service_url"`
+}
+
+// ----------------------------------------------------------------------------------------
+// cache 存储的结构
+var consulServiceCache = cache.New(5*time.Minute, 5*time.Minute)
+
+func (h *AiServingHandler) registerAIHandler(w http.ResponseWriter, r *http.Request) {
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	resp := &registry{}
+	err = json.Unmarshal(data, resp)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	config := consulapi.DefaultConfig()
+	client, err := consulapi.NewClient(config)
+	if err != nil {
+		log.Fatal("consul client error : ", err)
+	}
+
+	uuid, err := uuid.NewUUID()
+	registration := new(consulapi.AgentServiceRegistration)
+	registration.ID = uuid.String()
+	registration.Tags = []string{"ai_service"}
+	registration.Name = resp.AIName
+	registration.Check = &consulapi.AgentServiceCheck{
+		HTTP:                           resp.HeartbeatURL,
+		Timeout:                        "3s",
+		Interval:                       "5s",
+		DeregisterCriticalServiceAfter: "30s", //check失败后30秒删除本服务
+	}
+	registration.
+		err = client.Agent().ServiceRegister(registration)
+	if err != nil {
+		log.Error("register server error : ", err)
+		return
+	}
+	w.Write([]byte("success"))
+
+}
+
+func (h *AiServingHandler) handleDetectHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		ErrorWithCode(w, http.StatusMethodNotAllowed)
+		return
+	}
+	aiName := r.Header.Get("ai_name")
+	raw, ok := consulServiceCache.Get(aiName)
+	if !ok {
+
+		ErrorNotFound(w)
+	}
+	serverURL, ok := raw.(string)
+	if !ok {
+		ErrorNotFound(w)
+		return
+	}
+	proxyURL, err := url.Parse(serverURL)
+	if err != nil {
+		ErrorNotFound(w)
+		return
+	}
+	proxy := httputil.NewSingleHostReverseProxy(proxyURL)
+	proxy.ServeHTTP(w, r)
+}
+
 func (h *AiServingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// logger.Printf("In:\t%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 	path := r.URL.Path
@@ -541,11 +618,17 @@ func (h *AiServingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	case "/v2/localdetect":
 		h.aiLocalDetection(w, r)
-		return
 	case "/v2/remotedetect":
 		h.aiRemoteDetection(w, r)
 	case "/v2/create":
 		h.createAIBackend(w, r)
+
+	case "/v3/register":
+		h.registerAIHandler(w, r)
+
+	case "/v3/remotedetect":
+		h.handleDetectHTTP(w, r)
+		return
 	}
 	_url := h.ServingAddr
 	proxy := httputil.NewSingleHostReverseProxy(_url)
