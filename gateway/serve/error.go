@@ -5,6 +5,7 @@ import (
 	// "log"
 	"net/http"
 
+	"jxcore/gateway/log"
 	"jxcore/lowapi/logger"
 )
 
@@ -26,7 +27,7 @@ func Error(w http.ResponseWriter, reason string, code int) {
 
 	rs, err := json.Marshal(e)
 	if err != nil {
-		logger.Error(err)
+		log.Errorln(err)
 	}
 
 	w.Write(rs)

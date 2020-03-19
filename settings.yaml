@@ -34,3 +34,5 @@ iface:
 
 mount_cfg:
     "/dev/mmcblk1p1": "/media/card"
+
+heartbeat_timeout_sec: 10

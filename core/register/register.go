@@ -3,20 +3,40 @@ package register
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
 
+	"jxcore/config/yaml"
 	"jxcore/core/device"
 	"jxcore/core/heartbeat"
 	"jxcore/internal/network/dns"
+	"jxcore/internal/network/iface"
 	"jxcore/internal/network/vpn"
 	"jxcore/version"
 
 	"jxcore/lowapi/logger"
 )
+
+const (
+	// FallBackAuthHost 默认集群地址
+	FallBackAuthHost = "http://auth.iotedge.jiangxingai.com:1054"
+
+	wireguardRegisterPath = "/api/v1/wg/register"
+	openvpnRegisterPath   = "/api/v1/openvpn/register"
+
+	prefix = 512
+	suffix = 128
+
+	registerTimeout = time.Second * 10
+
+	consulConfigPath = "/data/edgex/consul/config/consul_conf.json"
+)
+
+var enc = base64.NewEncoding("ABCDEFGHIJKLMNOabcdefghijklmnopqrstuvwxyzPQRSTUVWXYZ0123456789-_").WithPadding(base64.NoPadding)
 
 type reqRegister struct {
 	WorkerID string `json:"wid"`
@@ -39,37 +59,64 @@ func MaintainMasterConnection(ctx context.Context, onFirstConnect func()) error 
 			return nil
 		default:
 		}
-
-		masterip := retryfindMaster(ctx)
+		heartbeatIP := ""
+		masterPublicIP, masterVpnIP := retryfindMaster(ctx)
 		if !once {
 			once = true
 			onFirstConnect()
 		}
-		onMasterIPChanged(masterip)
-		err := heartbeat.AliveReport(ctx, masterip, 5)
+
+		if yaml.Config.HeartBeatThroughVpn {
+			heartbeatIP = masterVpnIP
+		} else {
+			heartbeatIP = masterPublicIP
+		}
+		// add Public network route
+		route, err := iface.GetGWRoute(iface.GetCurrentIFcae())
+		if err != nil {
+			logger.Error("Failed to get gwroute")
+			continue
+		}
+		iface.SetHighPriority(route)
+		err = iface.ReplcaeRouteMask32(route, heartbeatIP)
+		if err != nil {
+			logger.Error("Failed to add materIp route")
+			continue
+		}
+
+		onMasterIPChanged(heartbeatIP)
+		err = heartbeat.AliveReport(ctx, heartbeatIP, 5)
 		if err != nil {
 			logger.Error(err)
 		}
 	}
 }
 
-// retryfindMaster 从 DHCP 服务器 获取 Master 节点的 IP，直到获取成功
-func retryfindMaster(ctx context.Context) string {
+// retryfindMaster 从 DHCP 服务器 获取 Master 节点的 IP,vpnIp，直到获取成功
+func retryfindMaster(ctx context.Context) (string, string) {
 	ticker := time.NewTicker(3 * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
-			return ""
+			return "", ""
 		case <-ticker.C:
 			logger.Info("Try to connect a new master")
-			masterip, err := findMasterFromDHCPServer(ctx)
+			// get vpnIP
+			masterVpnIp, err := findMasterFromDHCPServer(ctx)
 			if err != nil {
-				logger.Error("Failed to connect master: ", err)
-			} else {
-				return masterip
+				logger.Error(err)
+				continue
 			}
+			//get Public network IP
+			masterIP, err := vpn.ParseMasterIPFromVpnConfig()
+			if err != nil {
+				logger.Error(err)
+				continue
+			}
+			return masterIP, masterVpnIp
+
 		}
 	}
 }

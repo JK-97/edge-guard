@@ -1,4 +1,4 @@
-package controller
+package utils
 
 import (
 	"encoding/json"
@@ -36,6 +36,9 @@ func RespondJSON(obj interface{}, w http.ResponseWriter, statusCode int) {
 	_, err = w.Write(b)
 	if err != nil {
 		logger.Error(err)
+	}
+	if f, ok := w.(http.Flusher); ok {
+		f.Flush()
 	}
 }
 
@@ -88,14 +91,17 @@ func CatchPanic(w http.ResponseWriter, r *http.Request, statusCode int) {
 	}
 }
 
-func unmarshalJson(body io.ReadCloser, out interface{}) {
+func MustUnmarshalJson(body io.ReadCloser, out interface{}) {
+	err := UnmarshalJson(body, out)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func UnmarshalJson(body io.ReadCloser, out interface{}) error {
 	data, err := ioutil.ReadAll(body)
 	if err != nil {
-		panic(err)
+		return err
 	}
-
-	err = json.Unmarshal(data, out)
-	if err != nil {
-		panic(err)
-	}
+	return json.Unmarshal(data, out)
 }
