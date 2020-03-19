@@ -14,10 +14,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gorilla/websocket"
-
+	"jxcore/gateway/log"
 	"jxcore/gateway/option"
-	log "jxcore/lowapi/logger"
+
+	"github.com/gorilla/websocket"
 )
 
 // ConfigWatcher 监听配置变化
@@ -337,7 +337,7 @@ func handleRequest(ch <-chan *getKeyRequest, configWatcher ConfigWatcher, c *web
 func (h *ConfigAgentHandler) ServeWebsocket(w http.ResponseWriter, r *http.Request) {
 	c, err := h.Upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("upgrade:", err)
+		log.Print("upgrade:", err)
 		return
 	}
 	defer c.Close()
@@ -358,7 +358,7 @@ func (h *ConfigAgentHandler) ServeWebsocket(w http.ResponseWriter, r *http.Reque
 		mt, message, err := c.ReadMessage()
 
 		if err != nil {
-			log.Println("read:", err)
+			log.Print("read:", err)
 			break
 		}
 

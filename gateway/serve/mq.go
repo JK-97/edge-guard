@@ -12,9 +12,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 
+	"jxcore/gateway/log"
 	"jxcore/gateway/option"
 	"jxcore/gateway/store"
-	log "jxcore/lowapi/logger"
 )
 
 const jsonContentType = "application/json"
