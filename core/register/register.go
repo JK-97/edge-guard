@@ -69,7 +69,7 @@ func MaintainMasterConnection(ctx context.Context, onFirstConnect func()) error 
 			onFirstConnect()
 		}
 
-		if yaml.Config.HeartBeatThroughVpn {
+		if !yaml.Config.HeartBeatThroughPublic {
 			heartbeatIP = masterVpnIP
 		} else {
 			heartbeatIP = masterPublicIP
