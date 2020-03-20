@@ -335,6 +335,7 @@ func (h *AiServingHandler) handleDetectHTTP(w http.ResponseWriter, r *http.Reque
 		UseCache: true,
 		MaxAge:   3 * time.Hour,
 	})
+
 	dstServiceURL := ""
 	for _, service := range services {
 		if service.ServiceName == aiName {
