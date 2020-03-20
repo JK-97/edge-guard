@@ -2,11 +2,9 @@ package serve
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"io/ioutil"
+	"strings"
 	"time"
 
 	// "log"
@@ -15,15 +13,11 @@ import (
 	"net/url"
 	"os"
 
-	"jxcore/gateway/dao"
 	"jxcore/gateway/log"
-	pb "jxcore/gateway/trueno"
 	"jxcore/lowapi/logger"
 
-	"github.com/google/uuid"
 	consulapi "github.com/hashicorp/consul/api"
 	"github.com/patrickmn/go-cache"
-	"google.golang.org/grpc"
 )
 
 var CamerApiPath string = "http://localhost:48082/api/v1/device/%s/command/%s"
@@ -202,304 +196,6 @@ request 进来 ， 先在cache 中获取当前运行对应模型的后台中 选
 cache 中都没成功 获取新的缓存状态
 */
 
-// 本地识别
-func (h *AiServingHandler) aiLocalDetection(w http.ResponseWriter, r *http.Request) {
-	//httprequest
-	httpRequest := &inferenceLocalRequest{}
-	err := unmarshalRequest(r, &httpRequest)
-	if err != nil {
-		logger.Info(err.Error())
-		return
-	}
-	//ctx
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	//rpc
-	conn, err := grpc.Dial(GrpcServerAddress, grpc.WithInsecure())
-	if err != nil {
-		logger.Info(err.Error())
-		return
-	}
-	defer conn.Close()
-
-	//获取 cam capture  path
-	capturePath := "/capture/"
-	capturePath, err = getCapturePathByCamId(httpRequest.CamerID)
-	if err != nil {
-		responceJson(w, err, 400)
-		return
-	}
-
-	//通过model 名字获取backend 的bid
-	err = tryEveryBackend(conn, httpRequest.Model, httpRequest.Version, w, func(bid, detectUuid string) (*pb.ResultReply, error) {
-		return grpcInferenceLocal(conn, &pb.InferRequest{
-			Bid:  bid,
-			Uuid: detectUuid,
-			Path: capturePath,
-			Type: "",
-		}, ctx)
-	}, ctx)
-	if err != nil {
-		responceJson(w, err.Error(), 200)
-	}
-}
-
-//远程识别
-func (h *AiServingHandler) aiRemoteDetection(w http.ResponseWriter, r *http.Request) {
-	//httprequest
-	httpRequest := &inferenceRemoteRequset{}
-	err := unmarshalRequest(r, &httpRequest)
-	if err != nil {
-		responceJson(w, err.Error(), 400)
-		return
-	}
-	//ctx
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	conn, err := grpc.Dial(GrpcServerAddress, grpc.WithInsecure())
-	if err != nil {
-		logger.Info(err.Error())
-		return
-	}
-	defer conn.Close()
-	err = tryEveryBackend(conn, httpRequest.Model, httpRequest.Version, w, func(bid, detectUuid string) (*pb.ResultReply, error) {
-		return grpcInferenceRemote(conn, &pb.InferRequest{
-			Bid:    bid,
-			Uuid:   detectUuid,
-			Base64: httpRequest.Base64,
-			Type:   "",
-		}, ctx)
-	}, ctx)
-	if err != nil {
-		responceJson(w, err.Error(), 200)
-	}
-
-}
-
-// 创建对应模型的后台
-func (h *AiServingHandler) createAIBackend(w http.ResponseWriter, r *http.Request) {
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return
-	}
-	httpRequest := inferenceLocalRequest{}
-	err = json.Unmarshal(data, &httpRequest)
-	if err != nil {
-		responceJson(w, err.Error(), 400)
-		return
-	}
-	//rpc
-	conn, err := grpc.Dial("127.0.0.1:50051", grpc.WithInsecure())
-	if err != nil {
-		responceJson(w, err.Error(), 400)
-		return
-	}
-	defer conn.Close()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	msg, err := grpcCreateAndLoadModel(conn, ctx, httpRequest.Model, httpRequest.Version)
-	if err != nil {
-		responceJson(w, err.Error(), 400)
-		return
-	}
-
-	logger.Info("创建模型后台:", httpRequest.Model, httpRequest.Version)
-	logger.Info("创建后台bid:", msg)
-	responceJson(w, "success", 200)
-}
-
-//通过camerid 获取 capture path
-func getCapturePathByCamId(camId string) (string, error) {
-	responce, err := http.Get(fmt.Sprintf(CamerApiPath, camId, camId))
-	if err != nil {
-		return "", err
-	}
-	data, err := ioutil.ReadAll(responce.Body)
-	if err != nil {
-		return "", err
-	}
-	capturePathReponce := getCapturePathReponce{}
-	err = json.Unmarshal(data, &capturePathReponce)
-	if err != nil {
-		return "", err
-	}
-	for _, device := range capturePathReponce.Readings {
-		if device.Name == "capture_path" {
-			valuemap := map[string]string{}
-			err := json.Unmarshal([]byte(device.Value), &valuemap)
-			if err != nil {
-				return "", err
-			}
-			return valuemap["capture_path"], nil
-
-		}
-	}
-	return "", errors.New("can not find camera device")
-}
-
-func tryEveryBackend(conn *grpc.ClientConn, model string, version string, w http.ResponseWriter, inference func(bid, detectUuid string) (*pb.ResultReply, error), ctx context.Context) error {
-	bidsResult, err := grpcGetBackendByModel(conn, ctx, model)
-	if err != nil {
-		_, _ = grpcCreateAndLoadModel(conn, ctx, model, version)
-		return errors.New("自动创建model后台,请重试")
-	}
-	logger.Info("检索到的后台bid:", bidsResult)
-	//有缓存则尝试进行请求
-	//从第一个开始尝试
-	detectUuid := uuid.New().String()
-	for _, bid := range bidsResult {
-		reply, err := inference(bid, detectUuid)
-		if err != nil {
-			continue
-		}
-		if reply.GetCode() != 0 {
-			//如果失败，则删除这个bid缓存，尝试下一个bid 缓存
-			removeBidCache(model, bid, bidsResult)
-			continue
-		}
-		//通过uuid获取redis 数据
-		redis, err := dao.NewRedisClient()
-		if err != nil {
-			return err
-		}
-		result, err := redis.Get(detectUuid).Result()
-		if err != nil {
-			return err
-		}
-		responceJson(w, result, 200)
-		return nil
-	}
-	return errors.New("not find useable backend in map")
-}
-
-// 更新缓存
-func updateCache(resply []*pb.RunningReply_Status) {
-	thisModelCache := []string{}
-	for _, backend := range resply {
-		if cache, ok := c.Get(backend.GetModel()); ok {
-			if result, ok := cache.([]string); ok {
-				thisModelCache = result
-			}
-
-		}
-		thisModelCache = append(thisModelCache, backend.GetBid())
-		if len(thisModelCache) == 0 {
-			c.Delete(backend.GetModel())
-			return
-		}
-		c.Set(backend.GetModel(), thisModelCache, 5*time.Minute)
-		logger.Info("更新缓存:", thisModelCache)
-	}
-}
-
-//删除模型对应的bid
-func removeBidCache(model, bid string, cache []string) {
-	newCache := []string{}
-	for _, beackendId := range cache {
-		if bid != beackendId {
-			newCache = append(newCache, beackendId)
-		}
-	}
-	c.Set(model, newCache, 5*time.Minute)
-}
-
-// 获取正在运行的模型
-func grpcRunningBackend(conn *grpc.ClientConn, ctx context.Context) ([]*pb.RunningReply_Status, error) {
-	client := pb.NewBackendClient(conn)
-	resoponse, err := client.ListRunningBackends(ctx, &pb.PingRequest{Client: "client"})
-	if err != nil {
-		return nil, err
-	}
-	reply := resoponse.GetStatus()
-	logger.Info("正在运行的模型后台连列表", reply)
-	return reply, nil
-}
-
-// 本地检测
-func grpcInferenceLocal(conn *grpc.ClientConn, InferRequest *pb.InferRequest, ctx context.Context) (*pb.ResultReply, error) {
-	client := pb.NewInferenceClient(conn)
-	reply, err := client.InferenceLocal(ctx, InferRequest)
-	if err != nil {
-		return nil, err
-	}
-
-	return reply, nil
-}
-
-// 远程检测
-func grpcInferenceRemote(conn *grpc.ClientConn, InferRequest *pb.InferRequest, ctx context.Context) (*pb.ResultReply, error) {
-	client := pb.NewInferenceClient(conn)
-	reply, err := client.InferenceRemote(ctx, InferRequest)
-	if err != nil {
-		return nil, err
-	}
-
-	return reply, nil
-}
-
-// 列举存在的模型
-func grpcListStoreModel(conn *grpc.ClientConn, ctx context.Context) ([]*pb.ModelInfo, error) {
-	client := pb.NewModelClient(conn)
-	resoponse, err := client.ListStoredModel(ctx, &pb.PingRequest{Client: "client"})
-	if err != nil {
-		return nil, err
-	}
-	reply := resoponse.GetList()
-	logger.Info("model info", reply)
-	return reply, nil
-}
-
-// 创建加载模型
-func grpcCreateAndLoadModel(conn *grpc.ClientConn, ctx context.Context, model, version string) (string, error) {
-	client := pb.NewInferenceClient(conn)
-	resoponse, err := client.CreateAndLoadModel(ctx, &pb.LoadRequest{
-		Bid:       "",
-		Btype:     "tensorflow",
-		Model:     model,
-		Version:   version,
-		Mode:      "frozen",
-		Encrypted: 0,
-	})
-	if err != nil {
-		return "", err
-	}
-	if resoponse.GetCode() != 0 {
-		return "", errors.New("出现错误")
-	}
-	return resoponse.GetMsg(), nil
-}
-
-//通过model名字获取对应bids
-func grpcGetBackendByModel(conn *grpc.ClientConn, ctx context.Context, model string) ([]string, error) {
-	result, ok := c.Get(model)
-	logger.Info("缓存结果：", ok, result)
-	if !ok {
-		// 没有缓存先更新下缓存
-		resply, err := grpcRunningBackend(conn, ctx)
-		if err != nil {
-			return nil, err
-		}
-		updateCache(resply)
-		result, ok = c.Get(model)
-		if !ok {
-			//再次检查，若没有可用的缓存，直接返回
-			return nil, errors.New("can not find ai beckend")
-		}
-	}
-	bidsResult, ok := result.([]string)
-	if !ok {
-		if len(bidsResult) == 0 {
-			return nil, errors.New("can not find ai beckend ")
-		}
-		return nil, errors.New("bid data format err")
-	}
-	return bidsResult, nil
-
-}
-
 func responceJson(w http.ResponseWriter, obj interface{}, stautsCode int) {
 	w.WriteHeader(stautsCode)
 	data, err := json.Marshal(obj)
@@ -523,10 +219,56 @@ func unmarshalRequest(r *http.Request, httpRequest interface{}) error {
 	return nil
 }
 
+var config = consulapi.DefaultConfig()
+var consulClient *consulapi.Client
+
+func init() {
+	client, err := consulapi.NewClient(config)
+	if err != nil {
+		log.Error(err)
+	}
+	consulClient = client
+}
+
 type registry struct {
 	AIName       string `json:"ai_name"`
 	HeartbeatURL string `json:"heartbeat_url"`
 	ServiceURL   string `json:"service_url"`
+}
+type antiRegistry struct {
+	AIName string `json:"ai_name"`
+}
+type registerResp struct {
+	Result string `json:"result"`
+}
+
+func (h *AiServingHandler) deRegisterAIHandler(w http.ResponseWriter, r *http.Request) {
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Error(err)
+		ErrorWithCode(w, 400)
+		return
+	}
+
+	req := &antiRegistry{}
+	err = json.Unmarshal(data, req)
+	if err != nil {
+		log.Error(err)
+		ErrorWithCode(w, 400)
+		return
+	}
+	err = consulClient.Agent().ServiceDeregister(strings.Join([]string{req.AIName, req.AIName}, "."))
+	if err != nil {
+
+		ErrorWithCode(w, 400)
+		return
+	}
+	resp := &registerResp{
+		Result: "success",
+	}
+	respData, err := json.Marshal(resp)
+	w.Write(respData)
+
 }
 
 func (h *AiServingHandler) registerAIHandler(w http.ResponseWriter, r *http.Request) {
@@ -536,41 +278,40 @@ func (h *AiServingHandler) registerAIHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	resp := &registry{}
-	err = json.Unmarshal(data, resp)
+	req := &registry{}
+	err = json.Unmarshal(data, req)
 	if err != nil {
 		log.Error(err)
+		ErrorWithCode(w, 400)
 		return
-	}
-
-	config := consulapi.DefaultConfig()
-	client, err := consulapi.NewClient(config)
-	if err != nil {
-		log.Fatal("consul client error : ", err)
 	}
 
 	aiService := "ai_service"
 
-	uuid, err := uuid.NewUUID()
 	registration := new(consulapi.AgentServiceRegistration)
-	registration.ID = uuid.String()
+	registration.ID = strings.Join([]string{req.AIName, req.AIName}, ".")
 	registration.Tags = []string{aiService}
-	registration.Name = resp.AIName
+	registration.Name = req.AIName
 	registration.Kind = consulapi.ServiceKind(aiService)
-	registration.Address = resp.ServiceURL
+	registration.Address = req.ServiceURL
 	registration.Check = &consulapi.AgentServiceCheck{
-		HTTP:                           resp.HeartbeatURL,
+		HTTP:                           req.HeartbeatURL,
 		Timeout:                        "3s",
 		Interval:                       "5s",
 		DeregisterCriticalServiceAfter: "30s", //check失败后30秒删除本服务
 	}
 
-	err = client.Agent().ServiceRegister(registration)
+	err = consulClient.Agent().ServiceRegister(registration)
 	if err != nil {
+		ErrorWithCode(w, 400)
 		log.Error("register server error : ", err)
 		return
 	}
-	w.Write([]byte("success"))
+	resp := &registerResp{
+		Result: "success",
+	}
+	respData, err := json.Marshal(resp)
+	w.Write(respData)
 
 }
 
@@ -614,6 +355,49 @@ func (h *AiServingHandler) handleDetectHTTP(w http.ResponseWriter, r *http.Reque
 	proxy.ServeHTTP(w, r)
 }
 
+func (h *AiServingHandler) handleLocalDetectHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		ErrorWithCode(w, http.StatusMethodNotAllowed)
+		return
+	}
+	aiName := r.Header.Get("ai_name")
+	imagePath := r.Header.Get("image_path")
+
+	config := consulapi.DefaultConfig()
+	client, err := consulapi.NewClient(config)
+	if err != nil {
+		w.WriteHeader(500)
+		return
+	}
+
+	imageData, err := ioutil.ReadFile(imagePath)
+	r.Body = ioutil.NopCloser(bytes.NewReader(imageData))
+
+	catalog := client.Catalog()
+	// 使用缓存，缓存超过maxage 会再去获取一次
+	services, _, err := catalog.Service(aiName, "ai_service", &consulapi.QueryOptions{
+		UseCache: true,
+		MaxAge:   3 * time.Hour,
+	})
+	dstServiceURL := ""
+	for _, service := range services {
+		if service.ServiceName == aiName {
+			dstServiceURL = service.Address
+		}
+	}
+
+	if dstServiceURL == "" {
+		ErrorNotFound(w)
+	}
+
+	proxyURL, err := url.Parse(dstServiceURL)
+	if err != nil {
+		ErrorNotFound(w)
+		return
+	}
+	proxy := httputil.NewSingleHostReverseProxy(proxyURL)
+	proxy.ServeHTTP(w, r)
+}
 func (h *AiServingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// logger.Printf("In:\t%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 	path := r.URL.Path
@@ -627,22 +411,19 @@ func (h *AiServingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 		case http.MethodPost:
-
 		default:
 			ErrorWithCode(w, http.StatusMethodNotAllowed)
 		}
-	case "/v2/localdetect":
-		h.aiLocalDetection(w, r)
-	case "/v2/remotedetect":
-		h.aiRemoteDetection(w, r)
-	case "/v2/create":
-		h.createAIBackend(w, r)
-
-	case "/v3/register":
+	case "/v1/register":
 		h.registerAIHandler(w, r)
-
-	case "/v3/remotedetect":
+	case "/v1/remotedetect":
 		h.handleDetectHTTP(w, r)
+		return
+	case "/v1/localdetect":
+		h.handleLocalDetectHTTP(w, r)
+		return
+	case "/v1/deregister":
+		h.deRegisterAIHandler(w, r)
 		return
 	}
 	_url := h.ServingAddr
