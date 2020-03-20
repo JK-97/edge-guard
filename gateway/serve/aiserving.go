@@ -529,10 +529,6 @@ type registry struct {
 	ServiceURL   string `json:"service_url"`
 }
 
-// ----------------------------------------------------------------------------------------
-// cache 存储的结构
-var consulServiceCache = cache.New(5*time.Minute, 5*time.Minute)
-
 func (h *AiServingHandler) registerAIHandler(w http.ResponseWriter, r *http.Request) {
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -553,19 +549,23 @@ func (h *AiServingHandler) registerAIHandler(w http.ResponseWriter, r *http.Requ
 		log.Fatal("consul client error : ", err)
 	}
 
+	aiService := "ai_service"
+
 	uuid, err := uuid.NewUUID()
 	registration := new(consulapi.AgentServiceRegistration)
 	registration.ID = uuid.String()
-	registration.Tags = []string{"ai_service"}
+	registration.Tags = []string{aiService}
 	registration.Name = resp.AIName
+	registration.Kind = consulapi.ServiceKind(aiService)
+	registration.Address = resp.ServiceURL
 	registration.Check = &consulapi.AgentServiceCheck{
 		HTTP:                           resp.HeartbeatURL,
 		Timeout:                        "3s",
 		Interval:                       "5s",
 		DeregisterCriticalServiceAfter: "30s", //check失败后30秒删除本服务
 	}
-	registration.
-		err = client.Agent().ServiceRegister(registration)
+
+	err = client.Agent().ServiceRegister(registration)
 	if err != nil {
 		log.Error("register server error : ", err)
 		return
@@ -580,17 +580,32 @@ func (h *AiServingHandler) handleDetectHTTP(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	aiName := r.Header.Get("ai_name")
-	raw, ok := consulServiceCache.Get(aiName)
-	if !ok {
 
-		ErrorNotFound(w)
-	}
-	serverURL, ok := raw.(string)
-	if !ok {
-		ErrorNotFound(w)
+	config := consulapi.DefaultConfig()
+	client, err := consulapi.NewClient(config)
+	if err != nil {
+		w.WriteHeader(500)
 		return
 	}
-	proxyURL, err := url.Parse(serverURL)
+
+	catalog := client.Catalog()
+	// 使用缓存，缓存超过maxage 会再去获取一次
+	services, _, err := catalog.Service(aiName, "ai_service", &consulapi.QueryOptions{
+		UseCache: true,
+		MaxAge:   3 * time.Hour,
+	})
+	dstServiceURL := ""
+	for _, service := range services {
+		if service.ServiceName == aiName {
+			dstServiceURL = service.Address
+		}
+	}
+
+	if dstServiceURL == "" {
+		ErrorNotFound(w)
+	}
+
+	proxyURL, err := url.Parse(dstServiceURL)
 	if err != nil {
 		ErrorNotFound(w)
 		return

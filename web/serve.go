@@ -10,8 +10,8 @@ import (
 func Serve(ctx context.Context, addr string, handler http.Handler, wait time.Duration) error {
 	cancelCtx, cancel := context.WithCancel(ctx)
 	srv := http.Server{
-		Addr:        addr,
-		Handler:     handler,
+		Addr:    addr,
+		Handler: handler,
 	}
 	var err error
 	go func() {
