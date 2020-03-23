@@ -26,6 +26,7 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.2.0
 	github.com/gorilla/websocket v1.4.1
+	github.com/hashicorp/consul/api v1.4.0
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/koron/go-ssdp v0.0.0-20191105050749-2e1c40ed0b5d
@@ -60,14 +61,14 @@ require (
 	gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils v0.0.0-00010101000000-000000000000
 	golang.org/x/net v0.0.0-20191027093000-83d349e8ac1a
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
-	golang.org/x/sys v0.0.0-20191128015809-6d18c012aee9
+	golang.org/x/sys v0.0.0-20200124204421-9fbb57f87de9
 	golang.org/x/text v0.3.2 // indirect
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	google.golang.org/genproto v0.0.0-20191206224255-0243a4be9c8f // indirect
 	google.golang.org/grpc v1.25.1
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.5.0
-	gopkg.in/yaml.v2 v2.2.7
+	gopkg.in/yaml.v2 v2.2.8
 	gotest.tools v2.2.0+incompatible // indirect
 
 )
