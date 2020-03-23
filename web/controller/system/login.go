@@ -2,6 +2,9 @@ package system
 
 import (
 	"fmt"
+	"jxcore/oplog"
+	"jxcore/oplog/logs"
+	"jxcore/oplog/types"
 	"jxcore/web/controller/utils"
 	"net/http"
 )
@@ -35,12 +38,14 @@ func PostLogin(w http.ResponseWriter, r *http.Request) {
 	if err := saveSessionUser(w, r, user, false); err != nil {
 		panic(err)
 	}
+	oplog.Insert(logs.NewOplog(types.AUTH, "somce one login"))
 }
 
 func PostLogout(w http.ResponseWriter, r *http.Request) {
 	if err := saveSessionUser(w, r, utils.User{}, true); err != nil {
 		panic(err)
 	}
+	oplog.Insert(logs.NewOplog(types.AUTH, "somce one logout"))
 }
 
 func GetSessionUser(r *http.Request) (utils.User, error) {

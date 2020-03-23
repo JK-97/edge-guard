@@ -19,6 +19,8 @@ func Routes() *mux.Router {
 	r.HandleFunc("/edgenode/exec/update", system.UpdateByDeb).Methods(http.MethodPost)
 
 	v1Router := r.PathPrefix("/api/v1").Subrouter()
+	v1Router.HandleFunc("/log", system.GetOplog).Methods(http.MethodGet)
+	v1Router.HandleFunc("/log/download", system.DownloadOplog).Methods(http.MethodGet)
 	// 登陆登出
 	v1Router.HandleFunc("/login", system.PostLogin).Methods(http.MethodPost)
 	v1Router.HandleFunc("/logout", system.PostLogout).Methods(http.MethodPost)
@@ -42,6 +44,7 @@ func Routes() *mux.Router {
 
 	// 驱动
 	secretRouter.HandleFunc("/drivers", driver.GetEdgexDrivers).Methods(http.MethodGet)
+	secretRouter.HandleFunc("/drivers", driver.PostInstallDriver).Methods(http.MethodPost)
 
 	// 代理请求到device service
 	secretRouter.HandleFunc("/driver/{dsname}{path:.*}", driver.Proxy)
@@ -49,6 +52,12 @@ func Routes() *mux.Router {
 	// 网络
 	secretRouter.HandleFunc("/network/interfaces", system.GetNetworkInterfaces).Methods(http.MethodGet)
 	secretRouter.HandleFunc("/network/interface/{iface}", system.GetNetworkInterfaceByName).Methods(http.MethodGet)
+	secretRouter.HandleFunc("/network/interfaces/fourg", system.GetFourGInterface).Methods(http.MethodGet)
+	secretRouter.HandleFunc("/network/interfaces/fourg", system.EnableFourGInterface).Methods(http.MethodPost)
+
+	//日志系统
+	// secretRouter.HandleFunc("/log", system.GetOplog).Methods(http.MethodGet)
+	// secretRouter.HandleFunc("/log/download", system.DownloadOplog).Methods(http.MethodGet)
 
 	// 密码
 	secretRouter.HandleFunc("/system/password", system.SetPasswordHandler).Methods(http.MethodPost)

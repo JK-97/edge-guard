@@ -2,11 +2,16 @@ package system
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"jxcore/internal/config"
+	"jxcore/internal/network"
 	"jxcore/lowapi/store/filestore"
 	"jxcore/lowapi/system"
+	"jxcore/oplog"
+	"jxcore/oplog/logs"
+	"jxcore/oplog/types"
 	"jxcore/web/controller/utils"
 	"net/http"
 	"time"
@@ -21,6 +26,7 @@ type timeRequest struct {
 }
 
 func SetTime(w http.ResponseWriter, r *http.Request) {
+
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		panic(err)
@@ -37,6 +43,7 @@ func SetTime(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+	oplog.Insert(logs.NewOplog(types.DEVICE, fmt.Sprintf("set time %s", time.Unix(request.Time, 0).Format("2006-01-02 15:04:05"))))
 	utils.RespondJSON(nil, w, 200)
 }
 
@@ -83,6 +90,11 @@ func GetNtpConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 func SetNtpConfig(w http.ResponseWriter, r *http.Request) {
+	queryValues := r.URL.Query()
+	if queryValues.Get("test") == "true" {
+		TestNtpConfig(w, r)
+		return
+	}
 	patch, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		panic(err)
@@ -117,8 +129,24 @@ func SetNtpConfig(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 	}
-
+	oplog.Insert(logs.NewOplog(types.DEVICE, fmt.Sprintf("set ntp time server %s", patch)))
 	utils.RespondJSON(nil, w, 200)
+}
+
+func TestNtpConfig(w http.ResponseWriter, r *http.Request) {
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		panic(err)
+	}
+	timeConfig := timeConfig{}
+	err = json.Unmarshal(data, &timeConfig)
+	if err != nil {
+		panic(err)
+	}
+	if !network.Ping(timeConfig.Ntp.ServerAddr) {
+		panic(errors.New("The ntp server arn't reachable"))
+	}
+	utils.RespondSuccessJSON(nil, w)
 }
 
 func patchConfig(oldData, patch []byte) (old, new timeConfig, newData []byte, err error) {
