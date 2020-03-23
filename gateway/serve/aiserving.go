@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
+	"net"
+	"strconv"
 	"strings"
 	"time"
 
@@ -274,26 +276,30 @@ func (h *AiServingHandler) deRegisterAIHandler(w http.ResponseWriter, r *http.Re
 func (h *AiServingHandler) registerAIHandler(w http.ResponseWriter, r *http.Request) {
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Error(err)
 		return
 	}
 
 	req := &registry{}
 	err = json.Unmarshal(data, req)
 	if err != nil {
-		log.Error(err)
+		ErrorWithCode(w, 400)
+		return
+	}
+	host, port, err := net.SplitHostPort(req.ServiceURL)
+	if err != nil {
 		ErrorWithCode(w, 400)
 		return
 	}
 
 	aiService := "ai_service"
-
+	logger.Info(req.AIName)
 	registration := new(consulapi.AgentServiceRegistration)
-	registration.ID = strings.Join([]string{req.AIName, req.AIName}, ".")
+	registration.ID = req.AIName
 	registration.Tags = []string{aiService}
 	registration.Name = req.AIName
 	registration.Kind = consulapi.ServiceKind(aiService)
-	registration.Address = req.ServiceURL
+	registration.Address = host
+	registration.Port, _ = strconv.Atoi(port)
 	registration.Check = &consulapi.AgentServiceCheck{
 		HTTP:                           req.HeartbeatURL,
 		Timeout:                        "3s",
@@ -302,9 +308,10 @@ func (h *AiServingHandler) registerAIHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	err = consulClient.Agent().ServiceRegister(registration)
+
 	if err != nil {
 		ErrorWithCode(w, 400)
-		log.Error("register server error : ", err)
+		logger.Error("register server error : ", err)
 		return
 	}
 	resp := &registerResp{
@@ -335,23 +342,13 @@ func (h *AiServingHandler) handleDetectHTTP(w http.ResponseWriter, r *http.Reque
 		UseCache: true,
 		MaxAge:   3 * time.Hour,
 	})
+	if len(services) != 1 {
 
-	dstServiceURL := ""
-	for _, service := range services {
-		if service.ServiceName == aiName {
-			dstServiceURL = service.Address
-		}
-	}
-
-	if dstServiceURL == "" {
-		ErrorNotFound(w)
-	}
-
-	proxyURL, err := url.Parse(dstServiceURL)
-	if err != nil {
-		ErrorNotFound(w)
 		return
 	}
+	host := services[0].Address
+	port := services[0].ServicePort
+	proxyURL, _ := url.Parse(net.JoinHostPort(host, strconv.Itoa(port)))
 	proxy := httputil.NewSingleHostReverseProxy(proxyURL)
 	proxy.ServeHTTP(w, r)
 }
@@ -380,22 +377,13 @@ func (h *AiServingHandler) handleLocalDetectHTTP(w http.ResponseWriter, r *http.
 		UseCache: true,
 		MaxAge:   3 * time.Hour,
 	})
-	dstServiceURL := ""
-	for _, service := range services {
-		if service.ServiceName == aiName {
-			dstServiceURL = service.Address
-		}
-	}
+	if len(services) != 1 {
 
-	if dstServiceURL == "" {
-		ErrorNotFound(w)
-	}
-
-	proxyURL, err := url.Parse(dstServiceURL)
-	if err != nil {
-		ErrorNotFound(w)
 		return
 	}
+	host := services[0].Address
+	port := services[0].ServicePort
+	proxyURL, _ := url.Parse(net.JoinHostPort(host, strconv.Itoa(port)))
 	proxy := httputil.NewSingleHostReverseProxy(proxyURL)
 	proxy.ServeHTTP(w, r)
 }
@@ -415,8 +403,10 @@ func (h *AiServingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		default:
 			ErrorWithCode(w, http.StatusMethodNotAllowed)
 		}
+		return
 	case "/v1/register":
 		h.registerAIHandler(w, r)
+		return
 	case "/v1/remotedetect":
 		h.handleDetectHTTP(w, r)
 		return
@@ -426,6 +416,8 @@ func (h *AiServingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/v1/deregister":
 		h.deRegisterAIHandler(w, r)
 		return
+	default:
+		logger.Println("AIPath:", path)
 	}
 	_url := h.ServingAddr
 	proxy := httputil.NewSingleHostReverseProxy(_url)
