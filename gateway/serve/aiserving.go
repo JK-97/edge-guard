@@ -2,7 +2,9 @@ package serve
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"strconv"
@@ -172,7 +174,7 @@ func (h *AiServingHandler) handleDetect(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	logger.Printf("AI Detect: [%s]\n", b.Path)
+	log.Printf("AI Detect: [%s]\n", b.Path)
 
 	r.Body = ioutil.NopCloser(bytes.NewReader(buff))
 	_url := h.ServingAddr
@@ -233,15 +235,19 @@ func init() {
 }
 
 type registry struct {
-	AIName       string `json:"ai_name"`
-	HeartbeatURL string `json:"heartbeat_url"`
-	ServiceURL   string `json:"service_url"`
+	AIName        string `json:"ai_name"`
+	HeartbeatPath string `json:"heartbeat_path"`
+	Address       string `json:"address"`
 }
 type antiRegistry struct {
 	AIName string `json:"ai_name"`
 }
 type registerResp struct {
 	Result string `json:"result"`
+}
+
+type detectRequest struct {
+	Image string `json:"image"`
 }
 
 func (h *AiServingHandler) deRegisterAIHandler(w http.ResponseWriter, r *http.Request) {
@@ -285,14 +291,13 @@ func (h *AiServingHandler) registerAIHandler(w http.ResponseWriter, r *http.Requ
 		ErrorWithCode(w, 400)
 		return
 	}
-	host, port, err := net.SplitHostPort(req.ServiceURL)
+	host, port, err := net.SplitHostPort(req.Address)
 	if err != nil {
 		ErrorWithCode(w, 400)
 		return
 	}
 
 	aiService := "ai_service"
-	logger.Info(req.AIName)
 	registration := new(consulapi.AgentServiceRegistration)
 	registration.ID = req.AIName
 	registration.Tags = []string{aiService}
@@ -300,11 +305,13 @@ func (h *AiServingHandler) registerAIHandler(w http.ResponseWriter, r *http.Requ
 	registration.Kind = consulapi.ServiceKind(aiService)
 	registration.Address = host
 	registration.Port, _ = strconv.Atoi(port)
-	registration.Check = &consulapi.AgentServiceCheck{
-		HTTP:                           req.HeartbeatURL,
-		Timeout:                        "3s",
-		Interval:                       "5s",
-		DeregisterCriticalServiceAfter: "30s", //check失败后30秒删除本服务
+	registration.Checks = consulapi.AgentServiceChecks{
+		&consulapi.AgentServiceCheck{
+			HTTP:                           strings.Join([]string{"http://", req.Address, req.HeartbeatPath}, ""),
+			Timeout:                        "3s",
+			Interval:                       "5s",
+			DeregisterCriticalServiceAfter: "30s", //check失败后30秒删除本服务
+		},
 	}
 
 	err = consulClient.Agent().ServiceRegister(registration)
@@ -342,13 +349,25 @@ func (h *AiServingHandler) handleDetectHTTP(w http.ResponseWriter, r *http.Reque
 		UseCache: true,
 		MaxAge:   3 * time.Hour,
 	})
-	if len(services) != 1 {
-
+	if err != nil {
+		logger.Info(err)
+		w.WriteHeader(500)
 		return
 	}
-	host := services[0].Address
+	if len(services) != 1 {
+		return
+	}
+
+	host := services[0].ServiceAddress
 	port := services[0].ServicePort
-	proxyURL, _ := url.Parse(net.JoinHostPort(host, strconv.Itoa(port)))
+
+	r.URL.Path = "/api/detect"
+	proxyURL, err := url.Parse(fmt.Sprintf("http://%s", net.JoinHostPort(host, strconv.Itoa(port))))
+	if err != nil {
+		logger.Info(proxyURL.String())
+		logger.Info(err)
+	}
+
 	proxy := httputil.NewSingleHostReverseProxy(proxyURL)
 	proxy.ServeHTTP(w, r)
 }
@@ -369,7 +388,22 @@ func (h *AiServingHandler) handleLocalDetectHTTP(w http.ResponseWriter, r *http.
 	}
 
 	imageData, err := ioutil.ReadFile(imagePath)
-	r.Body = ioutil.NopCloser(bytes.NewReader(imageData))
+	if err != nil {
+		w.WriteHeader(500)
+		logger.Info(err)
+		return
+	}
+	image := base64.StdEncoding.EncodeToString(imageData)
+	detectBody := &detectRequest{
+		Image: image,
+	}
+	detectRawData, err := json.Marshal(detectBody)
+	if err != nil {
+		w.WriteHeader(500)
+		logger.Info(err)
+		return
+	}
+	r.Body = ioutil.NopCloser(bytes.NewReader(detectRawData))
 
 	catalog := client.Catalog()
 	// 使用缓存，缓存超过maxage 会再去获取一次
@@ -378,12 +412,18 @@ func (h *AiServingHandler) handleLocalDetectHTTP(w http.ResponseWriter, r *http.
 		MaxAge:   3 * time.Hour,
 	})
 	if len(services) != 1 {
-
 		return
 	}
-	host := services[0].Address
+	host := services[0].ServiceAddress
 	port := services[0].ServicePort
-	proxyURL, _ := url.Parse(net.JoinHostPort(host, strconv.Itoa(port)))
+
+	r.URL.Path = "/api/detect"
+	proxyURL, err := url.Parse(fmt.Sprintf("http://%s", net.JoinHostPort(host, strconv.Itoa(port))))
+	if err != nil {
+		logger.Info(proxyURL.String())
+		logger.Info(err)
+	}
+
 	proxy := httputil.NewSingleHostReverseProxy(proxyURL)
 	proxy.ServeHTTP(w, r)
 }
