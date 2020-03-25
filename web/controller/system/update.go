@@ -1,8 +1,12 @@
 package system
 
 import (
+	"fmt"
 	"jxcore/core/device"
 	"jxcore/management/updatemanage"
+	"jxcore/oplog"
+	"jxcore/oplog/logs"
+	"jxcore/oplog/types"
 	"jxcore/web/controller/utils"
 	"net/http"
 )
@@ -35,5 +39,6 @@ func UpdateByDeb(w http.ResponseWriter, r *http.Request) {
 		WorkerId: deviceinfo.WorkerID,
 		PkgInfo:  manager.GetCurrentVersion(),
 	}
+	oplog.Insert(logs.NewOplog(types.UPDATE, fmt.Sprintf("updated online %s", reqinfo.Data["jx-toolset"])))
 	utils.RespondJSON(respdata, w, 200)
 }

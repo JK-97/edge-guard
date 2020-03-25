@@ -55,7 +55,7 @@ func GetDeviceServices(ctx context.Context) ([]*DeviceService, error) {
 		return nil, err
 	}
 
-	deviceServices := []*DeviceService{}
+	var deviceServices []*DeviceService
 	for _, eds := range edgexDSs {
 		ds := &DeviceService{Name: eds.Name, Description: eds.Description}
 		deviceServices = append(deviceServices, ds)
@@ -156,6 +156,7 @@ func getEdgexDeviceServices() ([]edgexDeviceServiceResp, error) {
 // getEdgexIPs gets edgex device services ip, returns <ds hostname> -> <ip>
 func getEdgexIPs(ctx context.Context) (map[string]string, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv)
+
 	if err != nil {
 		panic(err)
 	}

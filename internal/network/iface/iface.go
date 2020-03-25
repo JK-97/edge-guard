@@ -8,6 +8,9 @@ import (
 	"jxcore/gateway/log"
 	"jxcore/internal/network"
 	"jxcore/internal/network/dns"
+	"jxcore/oplog"
+	"jxcore/oplog/logs"
+	"jxcore/oplog/types"
 	"net"
 	"net/url"
 	"os/exec"
@@ -87,8 +90,18 @@ func switchDhcpRouter(iface, dhcpServer string) (err error) {
 	}
 	servers, err := net.LookupHost(dhcpServer)
 	if err != nil {
+		err = dns.ApplyInterfaceDNSResolv(iface)
+		if err != nil {
+			IFaceUp(iface)
+			err = dns.ApplyInterfaceDNSResolv(iface)
+			if err != nil {
+
+				return err
+			}
+		}
 		return err
 	}
+
 	// dhcpserver maybe not only one
 	for _, addr := range servers {
 		SetHighPriority(route)
@@ -98,16 +111,8 @@ func switchDhcpRouter(iface, dhcpServer string) (err error) {
 		}
 	}
 
-	err = dns.ApplyInterfaceDNSResolv(iface)
-	if err != nil {
-		IFaceUp(iface)
-		err = dns.ApplyInterfaceDNSResolv(iface)
-		if err != nil {
-			return err
-		}
-	}
-
 	log.Infof("Switch network interface %s -> %s", currentIFace, iface)
+	oplog.Insert(logs.NewOplog(types.NETWORKE, fmt.Sprintf("Switch network interface %s -> %s", currentIFace, iface)))
 	currentIFace = iface
 	return
 }

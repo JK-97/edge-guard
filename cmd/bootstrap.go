@@ -24,7 +24,10 @@ import (
 	"jxcore/core/register"
 	"jxcore/internal/network/dns"
 	"jxcore/lowapi/docker"
-	log "jxcore/lowapi/logger"
+	"jxcore/lowapi/logger"
+	"jxcore/oplog"
+	"jxcore/oplog/logs"
+	"jxcore/oplog/types"
 	"os"
 	"os/exec"
 	"strings"
@@ -71,7 +74,7 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		defer func() {
 			if err := recover(); err != nil {
-				log.Info("register failed")
+				logger.Info("register failed")
 				cleanBootstrap()
 				panic(err)
 			}
@@ -83,7 +86,7 @@ to quickly create a Cobra application.`,
 
 		err := initHardWare()
 		if err != nil {
-			panic(err)
+			logger.Info(err)
 		}
 		err = syncVersion()
 		if err != nil {
@@ -126,6 +129,7 @@ to quickly create a Cobra application.`,
 			if err != nil {
 				panic(err)
 			}
+			oplog.Insert(logs.NewOplog(types.NETWORKE, fmt.Sprintf("register success ->%s", currentDevice.DhcpServer)))
 
 		} else {
 
@@ -158,13 +162,12 @@ func init() {
 // LoadDockerImage载入镜像
 func loadDockerImage() {
 	if _, err := os.Stat(restoreImagePath); err == nil {
-		log.Info("Restore Docker Images")
-		var dockerobj = docker.NewClient()
-		err := dockerobj.DockerRestore()
+		logger.Info("Restore Docker Images")
+		err := docker.DockerRestore()
 		if err != nil {
-			log.Error(err)
+			logger.Error(err)
 		} else {
-			log.Info("Finish Restore Docker Images")
+			logger.Info("Finish Restore Docker Images")
 		}
 	}
 }
