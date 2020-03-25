@@ -16,7 +16,6 @@ import (
 const (
 	OpenVPNInterface = "tun0"
 	openvpnConfigDir = "/etc/openvpn/"
-
 	// openvpnSuccessMessage = "Initialization Sequence Completed"
 	openvpnConfigPath  = "/etc/openvpn/client.ovpn"
 	openvpnConfigName  = "iotedge"
