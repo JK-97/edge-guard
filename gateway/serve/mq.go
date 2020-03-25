@@ -207,7 +207,7 @@ func (h *MesageQueueInternalHandler) sendTopic(topic string, grant bool) {
 func (h *MesageQueueInternalHandler) NotifyTopics(w http.ResponseWriter, r *http.Request) {
 	c, err := h.Upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Print("upgrade:", err)
+		log.Println("upgrade:", err)
 		return
 	}
 	defer c.Close()

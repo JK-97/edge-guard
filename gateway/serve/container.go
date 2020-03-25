@@ -16,9 +16,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gorilla/mux"
-
 	"jxcore/gateway/log"
+
+	"github.com/gorilla/mux"
 
 	yaml "gopkg.in/yaml.v2"
 )

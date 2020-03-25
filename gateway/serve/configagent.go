@@ -14,10 +14,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gorilla/websocket"
-
 	"jxcore/gateway/log"
 	"jxcore/gateway/option"
+
+	"github.com/gorilla/websocket"
 )
 
 // ConfigWatcher 监听配置变化
@@ -358,7 +358,7 @@ func (h *ConfigAgentHandler) ServeWebsocket(w http.ResponseWriter, r *http.Reque
 		mt, message, err := c.ReadMessage()
 
 		if err != nil {
-			log.Println("read:", err)
+			log.Print("read:", err)
 			break
 		}
 
