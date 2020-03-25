@@ -76,8 +76,7 @@ to quickly create a Cobra application.`,
 		}
 		fmt.Print(SetColor("Step Three\n", 0, 0, TextBlue))
 		fmt.Print(SetColor("*********Check the docker container**********\n", 0, 0, TextBlue))
-		dockerInstance := docker.NewClient()
-		dockerImages, err := dockerInstance.ImagesList()
+		dockerImages, err := docker.ImagesList()
 		dockerImagesTag := make([]string, 0)
 		for _, dockerimage := range dockerImages {
 			dockerImagesTag = append(dockerImagesTag, dockerimage.Tag[0])
