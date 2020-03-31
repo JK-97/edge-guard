@@ -1,14 +1,15 @@
 package route
 
 import (
-	"jxcore/web/controller/driver"
-	"jxcore/web/controller/system"
 	"net/http"
+
+	"github.com/JK-97/edge-guard/web/controller/driver"
+	"github.com/JK-97/edge-guard/web/controller/system"
 
 	"github.com/gorilla/mux"
 )
 
-const staticFilePath = "/edge/jxcore/frontend"
+const staticFilePath = "/edge/edge-guard/frontend"
 
 func Routes() *mux.Router {
 	r := mux.NewRouter()

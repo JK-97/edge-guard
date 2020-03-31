@@ -1,7 +1,0 @@
-[submodule "internal/mod/go-utils"]
-	path = internal/mod/go-utils
-	url = http://gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils.git
-[submodule "frontend"]
-	path = frontend
-	url = http://gitlab.jiangxingai.com/applications/iot-edge/jxcore-front
-	branch = jackfan_dev

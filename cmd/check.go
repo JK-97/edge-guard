@@ -16,11 +16,12 @@ package cmd
 
 import (
 	"fmt"
-	"jxcore/internal/network/dns"
-	"jxcore/lowapi/docker"
-	"jxcore/lowapi/utils"
 	"net/http"
 	"strings"
+
+	"github.com/JK-97/edge-guard/internal/network/dns"
+	"github.com/JK-97/edge-guard/lowapi/docker"
+	"github.com/JK-97/edge-guard/lowapi/utils"
 
 	// 调试
 	_ "net/http/pprof"
@@ -47,7 +48,7 @@ func SetColor(msg string, conf, bg, text int) string {
 // serveCmd represents the serve command
 var checkCmd = &cobra.Command{
 	Use:   "check",
-	Short: "check jxcore runtime",
+	Short: "check edge-guard runtime",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
@@ -122,12 +123,12 @@ to quickly create a Cobra application.`,
 
 		fmt.Print(SetColor("Step Six\n", 0, 0, TextBlue))
 		fmt.Print(SetColor("******Check component operation status********\n", 0, 0, TextBlue))
-		if out, _ := exec.Command("/bin/bash", "-c", "ps -ef | grep \"jxcore serve\" | grep -v grep | awk '{print $2}'").Output(); len(out) != 0 {
-			fmt.Print(SetColor("has detect the jxcore running"+"\n", 0, 0, TextGreen))
+		if out, _ := exec.Command("/bin/bash", "-c", "ps -ef | grep \"edge-guard serve\" | grep -v grep | awk '{print $2}'").Output(); len(out) != 0 {
+			fmt.Print(SetColor("has detect the edge-guard running"+"\n", 0, 0, TextGreen))
 			resp, err := http.Get("http://localhost:80/ping")
 			utils.CheckErr(err)
 			if resp.StatusCode == 200 {
-				fmt.Print(SetColor("jxcore web service health"+"\n", 0, 0, TextGreen))
+				fmt.Print(SetColor("edge-guard web service health"+"\n", 0, 0, TextGreen))
 			}
 			for programname, shellpath := range BinFilesMAP {
 				if out, _ := exec.Command("pgrep", "-f", shellpath).Output(); len(out) != 0 {
@@ -138,7 +139,7 @@ to quickly create a Cobra application.`,
 				}
 			}
 		} else {
-			fmt.Print(SetColor("JXCORE NOT RUNNING"+"\n", 0, 0, TextYellow))
+			fmt.Print(SetColor("EDGE-GUARD NOT RUNNING"+"\n", 0, 0, TextYellow))
 		}
 
 	},

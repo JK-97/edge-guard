@@ -2,8 +2,9 @@ package ssdp
 
 import (
 	"context"
-	log "jxcore/lowapi/logger"
 	"time"
+
+	log "github.com/JK-97/edge-guard/lowapi/logger"
 
 	"github.com/koron/go-ssdp"
 )
@@ -16,11 +17,11 @@ type ssdpClient struct {
 func (c *ssdpClient) Aliving(ctx context.Context) error {
 
 	ad, err := ssdp.Advertise(
-		"JIANGXING:JXCORE",  // send as "ST"
-		"alive:"+c.WorkerID, // send as "USN"
-		"",                  // send as "LOCATION"
-		"",                  // send as "SERVER"
-		1800)                // send as "maxAge" in "CACHE-CONTROL"
+		"EDGE-GUARD:EDGE-GUARD", // send as "ST"
+		"alive:"+c.WorkerID,     // send as "USN"
+		"",                      // send as "LOCATION"
+		"",                      // send as "SERVER"
+		1800)                    // send as "maxAge" in "CACHE-CONTROL"
 	if err != nil {
 		return err
 	}

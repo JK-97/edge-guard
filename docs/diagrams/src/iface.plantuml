@@ -17,7 +17,7 @@ partition 自动切换网口 {
 
   :添加网口的默认路由，metric=5;
   :将dhcp DNS 复制到\n/etc/dnsmasq.resolv.conf;
-  endwhile (jxcore 退出)
+  endwhile (edge-guard 退出)
   end
 }
 

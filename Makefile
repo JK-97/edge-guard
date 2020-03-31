@@ -1,8 +1,8 @@
-NAME=jxcore
-PACKAGE_NAME=jx-jxcore
+NAME=edge-guard
+PACKAGE_NAME=jx-edge-guard
 BINDIR=build/bin
 PACKAGE_DIR=build/package-$(arch)
-EXTRACT_DIR=edge/jxcore
+EXTRACT_DIR=edge/edge-guard
 CHANGELOG=build/CHANGELOG.md
 RC_TAG=$(shell git tag -l "rc-*" --points-at HEAD)
 
@@ -11,11 +11,11 @@ commit=$(shell git rev-parse --short HEAD)
 builddate=$(shell date "+%m/%d/%Y %R %Z")
 arch?=arm64
 
-REPO=jxcore
+REPO=edge-guard
 GO=CGO_ENABLED=0 GO111MODULE=on go
 GOFLAGS=-v -ldflags '-X "$(REPO)/version.Version=$(version)" -X "$(REPO)/version.GitCommit=$(commit)" -X "$(REPO)/version.BuildDate=$(builddate)"'
 
-.PHONY: build debian test clean check_version push_to_source check_rc frontend
+.PHONY: build debian test clean check_version push_to_source check_rc
 
 check_version:
 ifeq ($(version),)
@@ -38,9 +38,6 @@ changelog:
 	echo "# Changelog\n" > $(CHANGELOG)
 	TZ=UTC-8 git tag -l 'v*' --sort=-creatordate --format='## %(refname:short) - %(creatordate:iso-local)%0a### Author: %(taggername) %(taggeremail)%0a%(contents)%0a' >> $(CHANGELOG)
 
-upload_changelog: changelog
-	curl -s --fail -F "changelog=@$(CHANGELOG)" "http://packages.debian.jiangxingai.com:8000/api/v1/packages/$(PACKAGE_NAME)/changelog"
-
 debian_base: build
 	mkdir -p $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin
 	mkdir -p $(PACKAGE_DIR)/usr/bin
@@ -49,16 +46,15 @@ debian_base: build
 	cp -r settings.yaml $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin
 	cp -r gateway.cfg $(PACKAGE_DIR)/$(EXTRACT_DIR)/bin
 	mkdir -p $(PACKAGE_DIR)/etc/systemd/system/
-	cp -r scripts/jxcore.service $(PACKAGE_DIR)/etc/systemd/system/
+	cp -r scripts/edge-guard.service $(PACKAGE_DIR)/etc/systemd/system/
 	cp -r template $(PACKAGE_DIR)/$(EXTRACT_DIR)/template
 	cp -r DEBIAN $(PACKAGE_DIR)/DEBIAN/
-	cp -r build/frontend $(PACKAGE_DIR)/$(EXTRACT_DIR)/frontend
 
 debian: check_version debian_base changelog
 	cp  $(CHANGELOG) $(PACKAGE_DIR)/$(EXTRACT_DIR)/CHANGELOG.md
 	echo $(version) > $(PACKAGE_DIR)/$(EXTRACT_DIR)/VERSION
-	cp scripts/jxcorectl $(PACKAGE_DIR)/usr/bin/
-	chmod +x $(PACKAGE_DIR)/usr/bin/jxcorectl
+	cp scripts/edge-guardctl $(PACKAGE_DIR)/usr/bin/
+	chmod +x $(PACKAGE_DIR)/usr/bin/edge-guardctl
 	sed -e "s/REPLACE_VERSION/$(version)/g" \
 		-e "s/REPLACE_ARCH/$(arch)/" \
 		-e "s/REPLACE_PACKAGE_NAME/$(PACKAGE_NAME)/g" \
@@ -88,14 +84,6 @@ test:
 	go test -v -cover -coverprofile=coverage.out ./...
 	go tool cover -func=coverage.out
 
-frontend:
-	npm config set registry http://npm.registry.jiangxingai.com:7001/
-	cd frontend; \
-		npm i; \
-		CI=false npm run build
-	mkdir -p build
-	rm -rf build/frontend
-	mv frontend/build build/frontend
 
 clean:
 	rm -rf build/

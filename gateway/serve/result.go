@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"sync"
 
-	"jxcore/gateway/log"
+	"github.com/JK-97/edge-guard/gateway/log"
 )
 
 var once sync.Once

@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"jxcore/core/device"
-	"jxcore/internal/network/vpn"
 	"net/http"
 	"os"
 
-	log "jxcore/lowapi/logger"
+	"github.com/JK-97/edge-guard/core/device"
+	"github.com/JK-97/edge-guard/internal/network/vpn"
+
+	log "github.com/JK-97/edge-guard/lowapi/logger"
 
 	"github.com/spf13/cobra"
 )
@@ -18,11 +19,11 @@ const (
 	exitCodeVPNFailed
 )
 
-// statusCmd 获取 jxcore 的状态
+// statusCmd 获取 edge-guard 的状态
 var statusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "to see the status of jxcore",
-	Long:  `to see the status of jxcore`,
+	Short: "to see the status of edge-guard",
+	Long:  `to see the status of edge-guard`,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		exitCode := 0

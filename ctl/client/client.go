@@ -29,8 +29,8 @@ func Run(version string) {
 	p := prompt.New(
 		e.Execute,
 		c.completer,
-		prompt.OptionTitle("jxcore-prompt: interactive jxcore client"),
-		prompt.OptionPrefix("jxcorectl > "),
+		prompt.OptionTitle("edge-guard-prompt: interactive edge-guard client"),
+		prompt.OptionPrefix("edge-guardctl > "),
 		prompt.OptionInputTextColor(prompt.Yellow),
 		prompt.OptionCompletionWordSeparator(completer.FilePathCompletionSeparator),
 	)

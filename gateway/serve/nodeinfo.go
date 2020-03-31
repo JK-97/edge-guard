@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"jxcore/gateway/utils"
+	"github.com/JK-97/edge-guard/gateway/utils"
 )
 
 const nodeInfoPath = "/edge/init"

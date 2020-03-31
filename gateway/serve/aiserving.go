@@ -17,8 +17,8 @@ import (
 	"net/url"
 	"os"
 
-	"jxcore/gateway/log"
-	"jxcore/lowapi/logger"
+	"github.com/JK-97/edge-guard/gateway/log"
+	"github.com/JK-97/edge-guard/lowapi/logger"
 
 	consulapi "github.com/hashicorp/consul/api"
 	"github.com/patrickmn/go-cache"

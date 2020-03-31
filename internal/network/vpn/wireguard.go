@@ -3,10 +3,10 @@ package vpn
 import (
 	"context"
 	"errors"
+	"github.com/JK-97/edge-guard/internal/network"
+	log "github.com/JK-97/edge-guard/lowapi/logger"
+	"github.com/JK-97/edge-guard/lowapi/utils"
 	"io/ioutil"
-	"jxcore/internal/network"
-	log "jxcore/lowapi/logger"
-	"jxcore/lowapi/utils"
 	"net"
 	"os/exec"
 	"strings"

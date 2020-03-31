@@ -3,13 +3,13 @@ package dnsfile
 const DhclientResolvRedirectHook = `
 #!/bin/sh
 
-# This file is managed by Jxcore, please don't modify.
+# This file is managed by edge-guard, please don't modify.
 
 # update /etc/resolv.conf based on received values
 make_resolv_conf() {
     local new_resolv_conf
 
-    echo "====JXCORE DHCP START===="
+    echo "====EDGE-GUARD DHCP START===="
 
     # DHCPv4
     if [ -n "$new_domain_search" ] || [ -n "$new_domain_name" ] ||
@@ -57,7 +57,7 @@ make_resolv_conf() {
             chmod --reference=$resolv_conf $new_resolv_conf
         fi
 
-    echo "====JXCORE DHCP END===="
+    echo "====EDGE-GUARD DHCP END===="
     # DHCPv6 ignored
     fi
 }`

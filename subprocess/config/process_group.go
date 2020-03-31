@@ -2,7 +2,7 @@ package config
 
 import (
 	"bytes"
-	"jxcore/subprocess/util"
+	"github.com/JK-97/edge-guard/subprocess/util"
 	"strings"
 )
 

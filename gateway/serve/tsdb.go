@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"sync"
 
-	"jxcore/gateway/option"
-	"jxcore/gateway/store"
+	"github.com/JK-97/edge-guard/gateway/option"
+	"github.com/JK-97/edge-guard/gateway/store"
 )
 
 // TSDBHandler 处理 时序数据库相关请求

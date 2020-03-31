@@ -1,8 +1,8 @@
 package oplog
 
 import (
-	"jxcore/oplog/manager"
-	"jxcore/oplog/types"
+	"github.com/JK-97/edge-guard/oplog/manager"
+	"github.com/JK-97/edge-guard/oplog/types"
 )
 
 func Insert(o types.Oplog) error {

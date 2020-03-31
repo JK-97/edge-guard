@@ -5,7 +5,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 
-	"jxcore/gateway/option"
+	"github.com/JK-97/edge-guard/gateway/option"
 )
 
 type DatabaseHandler struct {

@@ -11,8 +11,8 @@ import (
 	"strings"
 	"sync"
 
-	"jxcore/gateway/log"
-	"jxcore/gateway/store"
+	"github.com/JK-97/edge-guard/gateway/log"
+	"github.com/JK-97/edge-guard/gateway/store"
 
 	"github.com/BurntSushi/toml"
 )

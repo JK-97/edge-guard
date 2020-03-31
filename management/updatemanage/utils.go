@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"jxcore/lowapi/logger"
-	log "jxcore/lowapi/logger"
+	"github.com/JK-97/edge-guard/lowapi/logger"
+	log "github.com/JK-97/edge-guard/lowapi/logger"
 
 	"os/exec"
 	"strings"

@@ -8,13 +8,13 @@ import (
 	"os"
 	"time"
 
-	"jxcore/lowapi/logger"
-	"jxcore/web/controller/system"
+	"github.com/JK-97/edge-guard/lowapi/logger"
+	"github.com/JK-97/edge-guard/web/controller/system"
 
-	"jxcore/gateway/option"
-	"jxcore/gateway/serve"
-	"jxcore/gateway/store"
-	"jxcore/web"
+	"github.com/JK-97/edge-guard/gateway/option"
+	"github.com/JK-97/edge-guard/gateway/serve"
+	"github.com/JK-97/edge-guard/gateway/store"
+	"github.com/JK-97/edge-guard/web"
 
 	"github.com/gorilla/mux"
 )

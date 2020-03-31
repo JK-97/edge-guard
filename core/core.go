@@ -2,11 +2,11 @@ package core
 
 import (
 	"context"
-	"jxcore/config/yaml"
-	"jxcore/core/register"
-	"jxcore/internal/network/dns"
-	"jxcore/internal/network/iface"
-	"jxcore/management/updatemanage"
+	"github.com/JK-97/edge-guard/config/yaml"
+	"github.com/JK-97/edge-guard/core/register"
+	"github.com/JK-97/edge-guard/internal/network/dns"
+	"github.com/JK-97/edge-guard/internal/network/iface"
+	"github.com/JK-97/edge-guard/management/updatemanage"
 
 	"golang.org/x/sync/errgroup"
 )

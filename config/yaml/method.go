@@ -1,8 +1,8 @@
 package yaml
 
 import (
+	"github.com/JK-97/edge-guard/management/programmanage"
 	"io/ioutil"
-	"jxcore/management/programmanage"
 	"reflect"
 	"strings"
 

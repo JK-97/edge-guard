@@ -15,10 +15,9 @@
 package cmd
 
 import (
-	log "jxcore/lowapi/logger"
-	"jxcore/lowapi/docker"
-	"jxcore/lowapi/pythonpkg"
 	"os/exec"
+
+	"github.com/JK-97/edge-guard/lowapi/docker"
 
 	"github.com/spf13/cobra"
 )
@@ -30,7 +29,7 @@ var ifpython = "false"
 // bootstrapCmd represents the bootstrap command
 var cleanCmd = &cobra.Command{
 	Use:   "clean",
-	Short: "clean http backend for jxcore",
+	Short: "clean http backend for edge-guard",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
@@ -46,13 +45,7 @@ to quickly create a Cobra application.`,
 			docker.ContainerAllRemove()
 			docker.ImageAllRemove()
 		}
-		if ifpython == "true" {
-			var c = pythonpkg.NewPkgClient()
-			err := c.DeletePyPkg()
-			if err != nil {
-				log.Error(err)
-			}
-		}
+
 		exec.Command("/bin/bash", "-c", "rm -r /tmp").Output()
 		exec.Command("/bin/bash", "-c", "rm /edge/init").Output()
 

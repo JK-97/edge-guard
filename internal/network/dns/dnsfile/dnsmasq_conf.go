@@ -1,7 +1,7 @@
 package dnsfile
 
 const DNSMasqConf = `
-# This file is managed by Jxcore, please don't modify.
+# This file is managed by edge-guard, please don't modify.
 
 resolv-file=/etc/dnsmasq.resolv.conf
 interface=

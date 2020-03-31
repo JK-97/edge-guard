@@ -19,10 +19,10 @@ BuildTime=$(date +'%Y.%m.%d-%H:%M:%S')
 # BuildGoVersion=`go version`
 
 LDFlags=" \
-    -X 'jxcore/version.GitCommit=${GitCommitLog}' \
-    -X 'jxcore/version.GitStatus=${GitStatus}' \
-    -X 'jxcore/version.BuildDate=${BuildTime}' \
-    -X 'jxcore/version.Version=${Version}' \
+    -X 'edge-guard/version.GitCommit=${GitCommitLog}' \
+    -X 'edge-guard/version.GitStatus=${GitStatus}' \
+    -X 'edge-guard/version.BuildDate=${BuildTime}' \
+    -X 'edge-guard/version.Version=${Version}' \
 "
 echo ${Version}
 

@@ -2,12 +2,13 @@ package system
 
 import (
 	"fmt"
-	"jxcore/lowapi/store/filestore"
-	"jxcore/oplog"
-	"jxcore/oplog/logs"
-	"jxcore/oplog/types"
-	"jxcore/web/controller/utils"
 	"net/http"
+
+	"github.com/JK-97/edge-guard/lowapi/store/filestore"
+	"github.com/JK-97/edge-guard/oplog"
+	"github.com/JK-97/edge-guard/oplog/logs"
+	"github.com/JK-97/edge-guard/oplog/types"
+	"github.com/JK-97/edge-guard/web/controller/utils"
 )
 
 type SetPasswordRequest struct {
@@ -17,10 +18,10 @@ type SetPasswordRequest struct {
 
 const (
 	passwordKey     = "password"
-	defaultPassword = "d04db14aa76e3a03c4e383136f941c0d" // jiangxing123
+	defaultPassword = ""
 )
 
-// 设置Jxcore密码
+// 设置edge-guard密码
 func SetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 	request := SetPasswordRequest{}
 	utils.MustUnmarshalJson(r.Body, &request)

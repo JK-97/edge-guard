@@ -4,8 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"github.com/JK-97/edge-guard/core/heartbeat/message"
 	"io/ioutil"
-	"jxcore/core/heartbeat/message"
 	"net"
 	"os"
 	"os/exec"
@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
+	"github.com/JK-97/go-utils/logger"
 
 	"github.com/shirou/gopsutil/disk"
 )

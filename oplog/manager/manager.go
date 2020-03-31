@@ -1,10 +1,10 @@
 package manager
 
 import (
+	"github.com/JK-97/edge-guard/oplog/logs"
+	"github.com/JK-97/edge-guard/oplog/types"
 	"io"
 	"io/ioutil"
-	"jxcore/oplog/logs"
-	"jxcore/oplog/types"
 	"os"
 	"strings"
 

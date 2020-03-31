@@ -1,2 +1,2 @@
 #!/bin/bash
-/edge/jxcore/bin/jxcore control
+/usr/local/bin/edge-guard control

@@ -27,5 +27,5 @@ var (
 
 const ifaceDNSConfHeader = `################ DHCP Nameserver #############################################
 ################ Below is the nameserver obtained by dhclient ################
-################ Maintained by Jxcore, don't modify!! ########################
+################ Maintained by edge-guard, don't modify!! ########################
 `

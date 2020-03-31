@@ -3,10 +3,10 @@ package logger
 import (
 	"errors"
 	"fmt"
+	"github.com/JK-97/edge-guard/subprocess/events"
+	"github.com/JK-97/edge-guard/subprocess/faults"
 	"io"
 	"io/ioutil"
-	"jxcore/subprocess/events"
-	"jxcore/subprocess/faults"
 	"os"
 	"path"
 	"strconv"

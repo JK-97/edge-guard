@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"jxcore/version"
+	"github.com/JK-97/edge-guard/version"
 
 	"github.com/spf13/cobra"
 )
@@ -11,8 +11,8 @@ import (
 // versionCmd represents the version command
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Print the version number of jxcore",
-	Long:  `All software has versions. This jxcore-backend`,
+	Short: "Print the version number of edge-guard",
+	Long:  `All software has versions. This edge-guard-backend`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Build Date:", version.BuildDate)
 		fmt.Println("Git Commit:", version.GitCommit)

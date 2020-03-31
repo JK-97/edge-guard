@@ -1,9 +1,9 @@
 package system
 
 import (
-	"jxcore/lowapi/system"
-	"jxcore/monitor"
-	"jxcore/web/controller/utils"
+	"github.com/JK-97/edge-guard/lowapi/system"
+	"github.com/JK-97/edge-guard/monitor"
+	"github.com/JK-97/edge-guard/web/controller/utils"
 	"net/http"
 	"strconv"
 	"strings"

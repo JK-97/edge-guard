@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	"jxcore/gateway/option"
+	"github.com/JK-97/edge-guard/gateway/option"
 )
 
 type DeviceHandler struct {

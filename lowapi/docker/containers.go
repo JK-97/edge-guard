@@ -1,7 +1,7 @@
 package docker
 
 import (
-	"jxcore/lowapi/logger"
+	"github.com/JK-97/edge-guard/lowapi/logger"
 
 	"github.com/docker/docker/api/types"
 )

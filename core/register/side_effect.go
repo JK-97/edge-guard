@@ -2,14 +2,14 @@ package register
 
 import (
 	"encoding/json"
+	"github.com/JK-97/edge-guard/core/device"
+	"github.com/JK-97/edge-guard/internal/config"
+	"github.com/JK-97/edge-guard/internal/network/dns"
+	"github.com/JK-97/edge-guard/internal/network/vpn"
+	"github.com/JK-97/edge-guard/lowapi/logger"
+	"github.com/JK-97/edge-guard/lowapi/system"
+	"github.com/JK-97/edge-guard/lowapi/utils"
 	"io/ioutil"
-	"jxcore/core/device"
-	"jxcore/internal/config"
-	"jxcore/internal/network/dns"
-	"jxcore/internal/network/vpn"
-	"jxcore/lowapi/logger"
-	"jxcore/lowapi/system"
-	"jxcore/lowapi/utils"
 )
 
 type consulConfig struct {

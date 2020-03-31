@@ -2,7 +2,7 @@ package utils
 
 import (
 	"context"
-	"jxcore/lowapi/logger"
+	"github.com/JK-97/edge-guard/lowapi/logger"
 	"reflect"
 	"runtime"
 	"time"

@@ -7,15 +7,16 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"jxcore/core/device"
-	"jxcore/internal/network/dns"
-	"jxcore/lowapi/system"
 	"net/http"
 	"os"
 	"sync"
+
+	"github.com/JK-97/edge-guard/core/device"
+	"github.com/JK-97/edge-guard/internal/network/dns"
+	"github.com/JK-97/edge-guard/lowapi/system"
 )
 
-// 设置目标版本后，在后台自动更新。更新成功后上报版本，重启jxcore。
+// 设置目标版本后，在后台自动更新。更新成功后上报版本，重启edge-guard。
 type UpdateManager interface {
 	// 开始后台更新
 	Start()

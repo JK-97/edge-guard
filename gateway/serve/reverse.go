@@ -8,8 +8,8 @@ import (
 	"regexp"
 	"strings"
 
-	"jxcore/gateway/log"
-	"jxcore/gateway/option"
+	"github.com/JK-97/edge-guard/gateway/log"
+	"github.com/JK-97/edge-guard/gateway/option"
 )
 
 type service struct {

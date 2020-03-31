@@ -4,9 +4,9 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
+	log "github.com/JK-97/edge-guard/lowapi/logger"
 	"io"
 	"io/ioutil"
-	log "jxcore/lowapi/logger"
 	"os"
 	"path/filepath"
 )

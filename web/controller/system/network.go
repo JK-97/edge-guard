@@ -2,20 +2,21 @@ package system
 
 import (
 	"fmt"
-	"jxcore/internal/network/dns"
-	"jxcore/internal/network/iface"
-	"jxcore/lowapi/system"
-	"jxcore/oplog"
-	"jxcore/oplog/logs"
-	"jxcore/oplog/types"
-	"jxcore/web/controller/utils"
 	"net"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/JK-97/edge-guard/internal/network/dns"
+	"github.com/JK-97/edge-guard/internal/network/iface"
+	"github.com/JK-97/edge-guard/lowapi/system"
+	"github.com/JK-97/edge-guard/oplog"
+	"github.com/JK-97/edge-guard/oplog/logs"
+	"github.com/JK-97/edge-guard/oplog/types"
+	"github.com/JK-97/edge-guard/web/controller/utils"
+
+	"github.com/JK-97/go-utils/logger"
 	"github.com/gorilla/mux"
-	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
 )
 
 type interfaceInfo struct {
@@ -119,7 +120,7 @@ type fourGInfo struct {
 var fourGInterface = "usb0"
 
 func GetFourGInterface(w http.ResponseWriter, r *http.Request) {
-	scpritPath := "/jxbootstrap/worker/scripts/G8100_NoMCU.py"
+	scpritPath := "/usb/locl/sbin/G8100_NoMCU.py"
 
 	resp := &fourGInfo{}
 
@@ -167,17 +168,14 @@ func parseFourGInfo(output []byte) (float64, error) {
 }
 
 func EnableFourGInterface(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	flag, ok := vars["enable"]
-	if !ok {
-		utils.RespondReasonJSON(nil, w, "notfound args", 400)
-		return
-	}
-	enable, err := strconv.ParseBool(flag)
+	queryValue := r.URL.Query()
+	ifenable := queryValue.Get("enable")
+	enable, err := strconv.ParseBool(ifenable)
 	if err != nil {
-		utils.RespondReasonJSON(nil, w, "invaild args", 400)
+		utils.RespondReasonJSON(nil, w, "pare args error", 400)
 		return
 	}
+
 	if enable {
 		err = system.RunCommand(fmt.Sprintf("ifup %s", fourGInterface))
 	} else {
@@ -187,6 +185,6 @@ func EnableFourGInterface(w http.ResponseWriter, r *http.Request) {
 		utils.RespondReasonJSON(nil, w, fmt.Sprintf("operated faild with err : %s", err.Error()), 400)
 		return
 	}
-	oplog.Insert(logs.NewOplog(types.NETWORKE, fmt.Sprintf("set 4g %s", flag)))
+	oplog.Insert(logs.NewOplog(types.NETWORKE, fmt.Sprintf("set 4g %s", enable)))
 	utils.RespondSuccessJSON(nil, w)
 }

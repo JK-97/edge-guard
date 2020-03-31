@@ -2,13 +2,13 @@ package process
 
 import (
 	"fmt"
+	log "github.com/JK-97/edge-guard/lowapi/logger"
+	"github.com/JK-97/edge-guard/subprocess/config"
+	"github.com/JK-97/edge-guard/subprocess/events"
+	"github.com/JK-97/edge-guard/subprocess/logger"
+	"github.com/JK-97/edge-guard/subprocess/signals"
 	"github.com/ochinchina/filechangemonitor"
-	log "jxcore/lowapi/logger"
 	"io"
-	"jxcore/subprocess/config"
-	"jxcore/subprocess/events"
-	"jxcore/subprocess/logger"
-	"jxcore/subprocess/signals"
 	"os"
 	"os/exec"
 	"os/user"

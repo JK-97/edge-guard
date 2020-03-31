@@ -32,5 +32,5 @@ func init() {
 }
 
 func GetLoginSession(r *http.Request) (*sessions.Session, error) {
-	return store.Get(r, "jiangxing_login_jxcore_ticket")
+	return store.Get(r, "login_edge-guard_ticket")
 }

@@ -2,9 +2,9 @@ package driver
 
 import (
 	"context"
-	"jxcore/lowapi/docker"
-	"jxcore/web/controller/utils"
-	"jxcore/web/remote"
+	"github.com/JK-97/edge-guard/lowapi/docker"
+	"github.com/JK-97/edge-guard/web/controller/utils"
+	"github.com/JK-97/edge-guard/web/remote"
 	"net/http"
 	"time"
 )

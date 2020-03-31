@@ -1,8 +1,8 @@
 package filestore
 
 import (
+	"github.com/JK-97/edge-guard/lowapi/store"
 	"io/ioutil"
-	"jxcore/lowapi/store"
 	"os"
 	"path"
 )

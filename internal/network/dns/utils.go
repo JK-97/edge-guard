@@ -5,8 +5,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"jxcore/lowapi/logger"
-	log "jxcore/lowapi/logger"
+	"github.com/JK-97/edge-guard/lowapi/logger"
+	log "github.com/JK-97/edge-guard/lowapi/logger"
 )
 
 func RestartDnsmasq() {

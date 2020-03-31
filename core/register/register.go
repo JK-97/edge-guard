@@ -10,24 +10,21 @@ import (
 	"net/http"
 	"time"
 
-	"jxcore/config/yaml"
-	"jxcore/core/device"
-	"jxcore/core/heartbeat"
-	"jxcore/internal/network/dns"
-	"jxcore/internal/network/iface"
-	"jxcore/internal/network/vpn"
-	"jxcore/oplog"
-	"jxcore/oplog/logs"
-	"jxcore/oplog/types"
-	"jxcore/version"
+	"github.com/JK-97/edge-guard/config/yaml"
+	"github.com/JK-97/edge-guard/core/device"
+	"github.com/JK-97/edge-guard/core/heartbeat"
+	"github.com/JK-97/edge-guard/internal/network/dns"
+	"github.com/JK-97/edge-guard/internal/network/iface"
+	"github.com/JK-97/edge-guard/internal/network/vpn"
+	"github.com/JK-97/edge-guard/oplog"
+	"github.com/JK-97/edge-guard/oplog/logs"
+	"github.com/JK-97/edge-guard/oplog/types"
+	"github.com/JK-97/edge-guard/version"
 
-	"jxcore/lowapi/logger"
+	"github.com/JK-97/edge-guard/lowapi/logger"
 )
 
 const (
-	// FallBackAuthHost 默认集群地址
-	FallBackAuthHost = "http://auth.iotedge.jiangxingai.com:1054"
-
 	wireguardRegisterPath = "/api/v1/wg/register"
 	openvpnRegisterPath   = "/api/v1/openvpn/register"
 

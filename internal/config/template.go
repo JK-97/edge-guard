@@ -1,13 +1,14 @@
 package config
 
 import (
-	log "jxcore/lowapi/logger"
 	"os"
 	"text/template"
+
+	log "github.com/JK-97/edge-guard/lowapi/logger"
 )
 
 const (
-	tmplDir = "/edge/jxcore/template"
+	tmplDir = "/edge/edge-guard/template"
 
 	telegrafTmplPath = tmplDir + "/telegraf.cfg.tpl"
 	telegrafConfPath = "/edge/monitor/telegraf/bin/telegraf.cfg"

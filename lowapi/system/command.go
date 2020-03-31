@@ -2,7 +2,7 @@ package system
 
 import (
 	"fmt"
-	"jxcore/lowapi/logger"
+	"github.com/JK-97/edge-guard/lowapi/logger"
 	"os/exec"
 
 	"github.com/pkg/errors"

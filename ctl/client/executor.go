@@ -2,10 +2,11 @@ package client
 
 import (
 	"fmt"
-	"jxcore/ctl/rpc"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/JK-97/edge-guard/ctl/rpc"
 
 	"github.com/ochinchina/supervisord/types"
 )
@@ -115,7 +116,7 @@ func (x *RpcExector) Execute(s string) {
 			return
 		}
 	case "log":
-		cmd := exec.Command("tail", "-f", "/edge/logs/jxcore.log")
+		cmd := exec.Command("tail", "-f", "/edge/logs/edge-guard.log")
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr

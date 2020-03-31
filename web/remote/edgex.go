@@ -3,9 +3,9 @@ package remote
 import (
 	"context"
 	"fmt"
+	"github.com/JK-97/edge-guard/lowapi/logger"
+	"github.com/JK-97/edge-guard/web/controller/utils"
 	"io/ioutil"
-	"jxcore/lowapi/logger"
-	"jxcore/web/controller/utils"
 	"net/http"
 
 	"github.com/docker/docker/api/types"

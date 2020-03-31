@@ -3,13 +3,13 @@ package heartbeat
 import (
 	"bufio"
 	"encoding/binary"
+	"github.com/JK-97/edge-guard/core/heartbeat/message"
 	"io"
-	"jxcore/core/heartbeat/message"
 	"net"
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
+	"github.com/JK-97/go-utils/logger"
 )
 
 // RegisterDefaultHandlers 注册默认回调

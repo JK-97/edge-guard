@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
+	"github.com/JK-97/go-utils/logger"
 )
 
 type bootstrapRequest struct {

@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"container/list"
 	"fmt"
-	log "jxcore/lowapi/logger"
+	log "github.com/JK-97/edge-guard/lowapi/logger"
 	"io"
 	"strconv"
 	"strings"

@@ -3,8 +3,8 @@ package vpn
 import (
 	"context"
 	"fmt"
-	"jxcore/core/device"
-	"jxcore/lowapi/logger"
+	"github.com/JK-97/edge-guard/core/device"
+	"github.com/JK-97/edge-guard/lowapi/logger"
 	"time"
 )
 

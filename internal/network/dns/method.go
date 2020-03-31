@@ -2,12 +2,12 @@ package dns
 
 import (
 	"fmt"
+	"github.com/JK-97/edge-guard/internal/network"
 	"io/ioutil"
-	"jxcore/internal/network"
 	"os"
 	"strings"
 
-	"jxcore/lowapi/logger"
+	"github.com/JK-97/edge-guard/lowapi/logger"
 )
 
 // 重设 /etc/dnsmasq.hosts

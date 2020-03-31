@@ -1,6 +1,6 @@
 Package: REPLACE_PACKAGE_NAME
 Version: REPLACE_VERSION
-Maintainer: shenmingjie <shenmingjie@jiangxing.ai>
-Description: Jiangxing Core
-Homepage: http://gitlab.jiangxingai.com/edgenode/jxcore
+Maintainer: jk-97 <benjamin-dream@outlook.com>
+Description: edge-guard
+Homepage: https://github.com/JK-97/edge-guard.git
 Architecture: REPLACE_ARCH

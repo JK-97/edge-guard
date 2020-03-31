@@ -40,7 +40,7 @@ func LoadConfigProvider(appName string) Provider {
 }
 
 func init() {
-	defaultConfig = readViperConfig("JXcore")
+	defaultConfig = readViperConfig("edge-guard")
 }
 
 func readViperConfig(appName string) *viper.Viper {
@@ -53,7 +53,7 @@ func readViperConfig(appName string) *viper.Viper {
 	v.SetDefault("json_logs", false)
 	v.SetDefault("loglevel", "debug")
 
-	v.SetDefault("app-name", "jxcore")
+	v.SetDefault("app-name", "edge-guard")
 
 	return v
 }

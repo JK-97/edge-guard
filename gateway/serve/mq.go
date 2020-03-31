@@ -12,9 +12,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 
-	"jxcore/gateway/log"
-	"jxcore/gateway/option"
-	"jxcore/gateway/store"
+	"github.com/JK-97/edge-guard/gateway/log"
+	"github.com/JK-97/edge-guard/gateway/option"
+	"github.com/JK-97/edge-guard/gateway/store"
 )
 
 const jsonContentType = "application/json"

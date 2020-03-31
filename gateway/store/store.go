@@ -9,7 +9,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb/util"
 
-	"jxcore/gateway/log"
+	"github.com/JK-97/edge-guard/gateway/log"
 )
 
 // Iterator 迭代器

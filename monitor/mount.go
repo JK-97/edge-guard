@@ -4,21 +4,22 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"jxcore/config/yaml"
-	"jxcore/lowapi/logger"
-	"jxcore/lowapi/system"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
 	"syscall"
 
+	"github.com/JK-97/edge-guard/config/yaml"
+	"github.com/JK-97/edge-guard/lowapi/logger"
+	"github.com/JK-97/edge-guard/lowapi/system"
+
 	"github.com/pkg/errors"
 	"github.com/rjeczalik/notify"
 )
 
 /*
-1 jxcore起来带起filelistener
+1 edge-guard起来带起filelistener
 2 主动，或被动检测到tf卡插入，并且确保docker运行之前
 3 进行mount，
 4 检测到 tf拔出，则umount

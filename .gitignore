@@ -32,9 +32,9 @@
 .idea
 *.backup
 logfile
-go_build_jxcore
-jxcore
+go_build_edge_guard
+edge_guard*
 /version/version_impl.go
 build/
 /dhclient*
-!jxcore.service
+!edge_guard.service

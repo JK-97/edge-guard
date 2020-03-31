@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"jxcore/gateway/power"
+	"github.com/JK-97/edge-guard/gateway/power"
 )
 
 type powerOffParam struct {

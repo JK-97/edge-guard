@@ -2,11 +2,11 @@ package docker
 
 import (
 	"encoding/json"
+	"github.com/JK-97/edge-guard/internal/network"
 	"io/ioutil"
-	"jxcore/internal/network"
 	"os/exec"
 
-	"jxcore/lowapi/logger"
+	"github.com/JK-97/edge-guard/lowapi/logger"
 )
 
 func EnsureDockerDNSConfig() error {

@@ -5,7 +5,7 @@ const (
 )
 
 var ProgramMconfig = `[supervisord]
-logfile=/edge/logs/jxcore.log
+logfile=/edge/logs/edge-guard.log
 logfile_maxbytes=50MB
 logfile_backups=10
 loglevel=info

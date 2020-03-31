@@ -1,3 +1,3 @@
 ## Heartbeat message protobuf
 
-generated from http://gitlab.jiangxingai.com/edgenode/proto
+generated from https://github.com/JK-97/edge-guard.git

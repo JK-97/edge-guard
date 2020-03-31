@@ -5,7 +5,7 @@ import (
 	// "log"
 	"net/http"
 
-	"jxcore/gateway/log"
+	"github.com/JK-97/edge-guard/gateway/log"
 )
 
 // APIError api 异常类型

@@ -1,14 +1,14 @@
 package manager
 
 import (
-	"jxcore/oplog/types"
+	"github.com/JK-97/edge-guard/oplog/types"
 )
 
 func init() {
 	This = NewManager(defaultLogPath)
 }
 
-var defaultLogPath = "/var/log/jxcore_event.log"
+var defaultLogPath = "/var/log/edge-guard_event.log"
 var This *Manager = nil
 
 func Insert(o types.Oplog) error {

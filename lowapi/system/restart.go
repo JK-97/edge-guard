@@ -1,9 +1,10 @@
 package system
 
 import (
-	"jxcore/lowapi/logger"
 	"syscall"
 	"time"
+
+	"github.com/JK-97/edge-guard/lowapi/logger"
 )
 
 func RebootAfter(t time.Duration) error {
@@ -12,8 +13,8 @@ func RebootAfter(t time.Duration) error {
 	return RunCommand("reboot")
 }
 
-func RestartJxcoreAfter(t time.Duration) {
-	logger.Info("Jxcore will restart in ", t)
+func RestartEdgeguardAfter(t time.Duration) {
+	logger.Info("edge-guard will restart in ", t)
 	time.Sleep(t)
 	syscall.Exit(0)
 }

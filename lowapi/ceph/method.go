@@ -8,7 +8,7 @@ import (
 	"strings"
 	"syscall"
 
-	log "jxcore/lowapi/logger"
+	log "github.com/JK-97/edge-guard/lowapi/logger"
 )
 
 // CephUmount 取消 ceph 的挂载

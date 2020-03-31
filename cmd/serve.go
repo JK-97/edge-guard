@@ -16,23 +16,24 @@ package cmd
 
 import (
 	"context"
-	"jxcore/config"
-	"jxcore/config/yaml"
-	"jxcore/core"
-	"jxcore/core/device"
-	"jxcore/gateway"
-	"jxcore/internal/network/ssdp"
-	"jxcore/lowapi/ceph"
-	"jxcore/lowapi/logger"
-	"jxcore/lowapi/utils"
-	"jxcore/monitor"
-	"jxcore/subprocess"
-	"jxcore/web"
-	"jxcore/web/route"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/JK-97/edge-guard/config"
+	"github.com/JK-97/edge-guard/config/yaml"
+	"github.com/JK-97/edge-guard/core"
+	"github.com/JK-97/edge-guard/core/device"
+	"github.com/JK-97/edge-guard/gateway"
+	"github.com/JK-97/edge-guard/internal/network/ssdp"
+	"github.com/JK-97/edge-guard/lowapi/ceph"
+	"github.com/JK-97/edge-guard/lowapi/logger"
+	"github.com/JK-97/edge-guard/lowapi/utils"
+	"github.com/JK-97/edge-guard/monitor"
+	"github.com/JK-97/edge-guard/subprocess"
+	"github.com/JK-97/edge-guard/web"
+	"github.com/JK-97/edge-guard/web/route"
 
 	"net/http"
 	_ "net/http/pprof"
@@ -55,7 +56,7 @@ var (
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
 	Use:   "serve",
-	Short: "Serve http backend for jxcore",
+	Short: "Serve http backend for edge-guard",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
@@ -86,7 +87,7 @@ func init() {
 }
 
 func serve() {
-	logger.Info("==================Jxcore Serve Starting=====================")
+	logger.Info("==================edge-guard Serve Starting=====================")
 	logger.Infof("Config: %+v", yaml.Config)
 
 	currentdevice, err := device.GetDevice()
@@ -97,7 +98,7 @@ func serve() {
 
 	// 自动切换网卡
 	// vpn 自动连接 IoTEdge
-	// 保证 网络连接 是第一优先级，如果发生错误重启jxcore
+	// 保证 网络连接 是第一优先级，如果发生错误重启edge-guard
 	logger.Info("=======================Configuring Network============================")
 	ctx, cancel := context.WithCancel(context.Background())
 	errGroup, ctx := errgroup.WithContext(ctx)
@@ -145,11 +146,11 @@ func serve() {
 	// fatal after graceful period
 	go func() {
 		time.Sleep(graceful)
-		logger.Info("===============Jxcore exited===============")
-		logger.Fatal("Jxcore cannot exit within graceful period: ", graceful.String())
+		logger.Info("===============edge-guard exited===============")
+		logger.Fatal("edge-guard cannot exit within graceful period: ", graceful.String())
 	}()
 
 	_ = errGroup.Wait()
 
-	logger.Info("===============Jxcore exited===============")
+	logger.Info("===============edge-guard exited===============")
 }

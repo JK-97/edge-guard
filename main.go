@@ -3,7 +3,7 @@ package main
 //go:generate go run version_generate.go
 
 import (
-	"jxcore/cmd"
+	"github.com/JK-97/edge-guard/cmd"
 )
 
 func main() {

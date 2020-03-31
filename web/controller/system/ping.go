@@ -1,7 +1,7 @@
 package system
 
 import (
-	"jxcore/web/controller/utils"
+	"github.com/JK-97/edge-guard/web/controller/utils"
 	"net/http"
 )
 

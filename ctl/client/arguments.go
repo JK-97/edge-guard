@@ -16,8 +16,8 @@ var rpcCommands = []prompt.Suggest{
 	{Text: "start", Description: "Start the program"},
 	{Text: "pid", Description: "Get pid by name"},
 	{Text: "restart", Description: "Restart program"},
-	{Text: "reset", Description: "Restart jxcore"},
-	{Text: "log", Description: "jxcore log"},
+	{Text: "reset", Description: "Restart edge-guard"},
+	{Text: "log", Description: "edge-guard log"},
 	// {Text: "signal", Description: "Signal a process"},
 	// {Text: "reload", Description: "reload program config"},
 }
@@ -29,7 +29,7 @@ var logLevel = []prompt.Suggest{
 
 var configFile = []prompt.Suggest{
 	{Text: "dnsmasqConf", Description: "configFile for dnsmasq"}, // valid only for federation apiservers
-	{Text: "initFile", Description: "initFile build by jxcore bootstrap"},
+	{Text: "initFile", Description: "initFile build by edge-guard bootstrap"},
 	{Text: "dnsmasqHost", Description: "hostFile for dnsmasq"},
 	{Text: "dnsmasqResolv", Description: "resolvFile for dnsmasq"},
 }
@@ -65,7 +65,7 @@ func (c *customcompleter) argumentsCompleter(args []string, d prompt.Document) [
 			}
 		}
 	case "log":
-		cmd := exec.Command("tail", "-f", "/edge/logs/jxcore.log")
+		cmd := exec.Command("tail", "-f", "/edge/logs/edge-guard.log")
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr

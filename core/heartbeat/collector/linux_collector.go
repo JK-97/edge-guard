@@ -1,8 +1,8 @@
 package collector
 
 import (
-	"jxcore/core/device"
-	"jxcore/core/heartbeat/message"
+	"github.com/JK-97/edge-guard/core/device"
+	"github.com/JK-97/edge-guard/core/heartbeat/message"
 )
 
 type linuxCollector struct{}

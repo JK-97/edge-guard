@@ -1,7 +1,7 @@
 package utils
 
 import (
-	log "jxcore/lowapi/logger"
+	log "github.com/JK-97/edge-guard/lowapi/logger"
 	"io/ioutil"
 	"testing"
 )

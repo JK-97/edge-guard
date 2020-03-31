@@ -3,18 +3,19 @@ package iface
 import (
 	"context"
 	"fmt"
-	"jxcore/config/yaml"
-	"jxcore/core/device"
-	"jxcore/gateway/log"
-	"jxcore/internal/network"
-	"jxcore/internal/network/dns"
-	"jxcore/oplog"
-	"jxcore/oplog/logs"
-	"jxcore/oplog/types"
 	"net"
 	"net/url"
 	"os/exec"
 	"time"
+
+	"github.com/JK-97/edge-guard/config/yaml"
+	"github.com/JK-97/edge-guard/core/device"
+	"github.com/JK-97/edge-guard/gateway/log"
+	"github.com/JK-97/edge-guard/internal/network"
+	"github.com/JK-97/edge-guard/internal/network/dns"
+	"github.com/JK-97/edge-guard/oplog"
+	"github.com/JK-97/edge-guard/oplog/logs"
+	"github.com/JK-97/edge-guard/oplog/types"
 
 	"github.com/vishvananda/netlink"
 )
@@ -41,8 +42,8 @@ func init() {
 
 // 网卡切换方案:
 // 所有网卡连接上后，操作系统自动添加一条默认路由，metric（优先级）为100+。
-// jxcore选定的网卡，会添加metric为5的默认路由
-// jxcore启动时调用InitIFace，选择优先级最高，能ping通外网的网卡
+// edge-guard选定的网卡，会添加metric为5的默认路由
+// edge-guard启动时调用InitIFace，选择优先级最高，能ping通外网的网卡
 // 每隔checkBestIFaceInterval间隔，重新选择优先级最高，能ping通外网的网卡
 
 func MaintainBestIFace(ctx context.Context) error {

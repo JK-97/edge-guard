@@ -1,7 +1,7 @@
 package collector
 
 import (
-	"jxcore/core/heartbeat/message"
+	"github.com/JK-97/edge-guard/core/heartbeat/message"
 )
 
 type InfoCollector interface {

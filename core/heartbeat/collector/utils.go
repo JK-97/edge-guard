@@ -1,7 +1,7 @@
 package collector
 
 import (
-	"jxcore/lowapi/logger"
+	"github.com/JK-97/edge-guard/lowapi/logger"
 	"strconv"
 	"strings"
 )

@@ -20,17 +20,17 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"jxcore/core/device"
-	"jxcore/core/register"
-	"jxcore/internal/network/dns"
-	"jxcore/lowapi/docker"
-	"jxcore/lowapi/logger"
-	"jxcore/oplog"
-	"jxcore/oplog/logs"
-	"jxcore/oplog/types"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/JK-97/edge-guard/core/device"
+	"github.com/JK-97/edge-guard/internal/network/dns"
+	"github.com/JK-97/edge-guard/lowapi/docker"
+	"github.com/JK-97/edge-guard/lowapi/logger"
+	"github.com/JK-97/edge-guard/oplog"
+	"github.com/JK-97/edge-guard/oplog/logs"
+	"github.com/JK-97/edge-guard/oplog/types"
 
 	"github.com/spf13/cobra"
 )
@@ -63,7 +63,7 @@ bootstrap ：
 // bootstrapCmd represents the bootstrap command
 var bootstrapCmd = &cobra.Command{
 	Use:   "bootstrap",
-	Short: "bootstrap http backend for jxcore",
+	Short: "bootstrap http backend for edge-guard",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
@@ -154,7 +154,7 @@ func init() {
 	rootCmd.AddCommand(bootstrapCmd)
 	bootstrapCmd.PersistentFlags().StringVarP(&vpnmode, "mode", "m", string(device.VPNModeRandom), "openvpn or wireguard or local")
 	bootstrapCmd.PersistentFlags().StringVarP(&ticket, "ticket", "t", "", "ticket for bootstrap")
-	bootstrapCmd.PersistentFlags().StringVarP(&authHost, "host", "", register.FallBackAuthHost, "host for bootstrap")
+	bootstrapCmd.PersistentFlags().StringVarP(&authHost, "host", "", "", "host for bootstrap")
 	bootstrapCmd.PersistentFlags().BoolVarP(&install, "skip", "i", false, "skip restore")
 
 }

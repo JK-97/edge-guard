@@ -5,7 +5,7 @@
 !startsub BASIC
 
 partition "自动连接 IoTEdge Master" {
-  while (jxcore 退出) is (no)
+  while (edge-guard 退出) is (no)
     repeat
     :调用register接口:
     获取新的master ip

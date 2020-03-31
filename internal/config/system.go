@@ -1,12 +1,12 @@
 package config
 
-import "jxcore/lowapi/utils"
+import "github.com/JK-97/edge-guard/lowapi/utils"
 
 // 恢复的目录：默认配置备份路径 -> 配置路径
 var mapSettings = map[string]string{
-	"/edge/recover/jxcore_settings":  "/edge/jxcore/bin/settings",
-	"/edge/recover/consul_conf.json": "/data/edgex/consul/config/consul_conf.json",
-	"/edge/recover/interfaces":       "/etc/network/interfaces",
+	"/edge/recover/edge-guard_settings": "/edge/edge-guard/bin/settings",
+	"/edge/recover/consul_conf.json":    "/data/edgex/consul/config/consul_conf.json",
+	"/edge/recover/interfaces":          "/etc/network/interfaces",
 }
 
 // 恢复系统默认配置

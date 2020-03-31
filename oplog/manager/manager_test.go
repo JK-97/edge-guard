@@ -3,8 +3,8 @@ package manager
 import (
 	"encoding/json"
 	"fmt"
-	"jxcore/oplog/logs"
-	"jxcore/oplog/types"
+	"github.com/JK-97/edge-guard/oplog/logs"
+	"github.com/JK-97/edge-guard/oplog/types"
 	"sync"
 	"testing"
 )

@@ -16,7 +16,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"jxcore/gateway/log"
+	"github.com/JK-97/edge-guard/gateway/log"
 
 	"github.com/gorilla/mux"
 

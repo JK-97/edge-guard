@@ -9,7 +9,7 @@ import (
 // 建立虚拟网口lo:0，IP地址172.18.1.1作为dnsmasq的监听IP。
 // /etc/resolv.conf 保持指向IP 172.18.1.1，使用dnsmasq
 // dnsmasq 配置使用文件 /etc/dnsmasq.resolv.conf 作为上游DNS 地址
-// jxcore添加dhcp hook，使得dhcp获取的DNS写到/edge/resolv.d/dhclient.$interface
+// edge-guard添加dhcp hook，使得dhcp获取的DNS写到/edge/resolv.d/dhclient.$interface
 // 切换网卡时，将dhcp获取的DNS写入/etc/dnsmasq.resolv.conf
 
 // ApplyInterfaceDNSResolv 将dhcp的resolv配置应用到dnsmasq

@@ -2,9 +2,9 @@ package subprocess
 
 import (
 	"encoding/json"
+	"github.com/JK-97/edge-guard/subprocess/types"
 	"github.com/gorilla/mux"
 	"io/ioutil"
-	"jxcore/subprocess/types"
 	"net/http"
 )
 

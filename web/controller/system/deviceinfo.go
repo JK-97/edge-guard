@@ -2,14 +2,14 @@ package system
 
 import (
 	"encoding/json"
+	"github.com/JK-97/edge-guard/core/device"
+	"github.com/JK-97/edge-guard/lowapi/store/filestore"
+	"github.com/JK-97/edge-guard/management/updatemanage"
+	"github.com/JK-97/edge-guard/web/controller/utils"
 	"io/ioutil"
-	"jxcore/core/device"
-	"jxcore/lowapi/store/filestore"
-	"jxcore/management/updatemanage"
-	"jxcore/web/controller/utils"
 	"net/http"
 
-	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
+	"github.com/JK-97/go-utils/logger"
 )
 
 const (

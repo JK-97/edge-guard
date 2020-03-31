@@ -7,9 +7,9 @@ import (
 
 func Deamonize(proc func()) {
 	context := daemon.Context{
-		PidFileName: "/var/run/jxcore.pid",
+		PidFileName: "/var/run/edge-guard.pid",
 		PidFilePerm: 0644,
-		LogFileName: "/edge/logs/jxcore.log",
+		LogFileName: "/edge/logs/edge-guard.log",
 		LogFilePerm: 0644,
 		// LogFileName: "/dev/stdout"
 	}
@@ -17,9 +17,9 @@ func Deamonize(proc func()) {
 	child, err := context.Reborn()
 	if err != nil {
 		context := daemon.Context{
-			PidFileName: "/var/run/jxcore.pid",
+			PidFileName: "/var/run/edge-guard.pid",
 			PidFilePerm: 0644,
-			LogFileName: "/edge/logs/jxcore.log",
+			LogFileName: "/edge/logs/edge-guard.log",
 			LogFilePerm: 0644,
 		}
 		child, err = context.Reborn()

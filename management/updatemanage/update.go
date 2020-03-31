@@ -1,10 +1,11 @@
 package updatemanage
 
 import (
-	"jxcore/lowapi/logger"
-	"jxcore/lowapi/system"
-	"jxcore/lowapi/utils"
 	"time"
+
+	"github.com/JK-97/edge-guard/lowapi/logger"
+	"github.com/JK-97/edge-guard/lowapi/system"
+	"github.com/JK-97/edge-guard/lowapi/utils"
 )
 
 type UpdateStatus string
@@ -73,7 +74,7 @@ func (up *updateManager) tryUpdate() error {
 	if len(getNeedUpdate(up.currentVersion, up.targetVersion)) == 0 {
 		//更新成功后才重启
 		logger.Info(" update success ")
-		go system.RestartJxcoreAfter(5 * time.Second)
+		go system.RestartEdgeguardAfter(5 * time.Second)
 	} else {
 		logger.Info(" update fail ")
 	}

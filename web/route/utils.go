@@ -2,9 +2,9 @@ package route
 
 import (
 	"errors"
-	"jxcore/lowapi/logger"
-	"jxcore/web/controller/system"
-	"jxcore/web/controller/utils"
+	"github.com/JK-97/edge-guard/lowapi/logger"
+	"github.com/JK-97/edge-guard/web/controller/system"
+	"github.com/JK-97/edge-guard/web/controller/utils"
 	"net/http"
 )
 

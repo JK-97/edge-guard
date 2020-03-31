@@ -3,7 +3,7 @@ package logs
 import (
 	"encoding/json"
 	"fmt"
-	"jxcore/oplog/types"
+	"github.com/JK-97/edge-guard/oplog/types"
 	"strings"
 	"time"
 )

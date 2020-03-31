@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"jxcore/ctl/client"
-	"jxcore/version"
+	"github.com/JK-97/edge-guard/ctl/client"
+	"github.com/JK-97/edge-guard/version"
 
 	"github.com/spf13/cobra"
 )

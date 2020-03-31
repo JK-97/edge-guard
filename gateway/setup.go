@@ -1,16 +1,17 @@
 package gateway
 
 import (
-	"jxcore/gateway/option"
-	"jxcore/gateway/store"
-	"jxcore/lowapi/logger"
 	"os"
 	"path/filepath"
+
+	"github.com/JK-97/edge-guard/gateway/option"
+	"github.com/JK-97/edge-guard/gateway/store"
+	"github.com/JK-97/edge-guard/lowapi/logger"
 )
 
 var (
 	workingDir string = "/data/local/gateway"
-	configPath string = "/edge/jxcore/bin/gateway.cfg"
+	configPath string = "/edge/edge-guard/bin/gateway.cfg"
 )
 
 // Setup 配置 Gateway

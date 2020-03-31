@@ -2,9 +2,9 @@ package subprocess
 
 import (
 	"context"
-	"jxcore/management/programmanage"
+	"github.com/JK-97/edge-guard/management/programmanage"
 
-	log "jxcore/lowapi/logger"
+	log "github.com/JK-97/edge-guard/lowapi/logger"
 )
 
 type Options struct {

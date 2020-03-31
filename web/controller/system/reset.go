@@ -1,11 +1,11 @@
 package system
 
 import (
-	"jxcore/internal/config"
-	"jxcore/oplog"
-	"jxcore/oplog/logs"
-	"jxcore/oplog/types"
-	"jxcore/web/controller/utils"
+	"github.com/JK-97/edge-guard/internal/config"
+	"github.com/JK-97/edge-guard/oplog"
+	"github.com/JK-97/edge-guard/oplog/logs"
+	"github.com/JK-97/edge-guard/oplog/types"
+	"github.com/JK-97/edge-guard/web/controller/utils"
 	"net/http"
 )
 

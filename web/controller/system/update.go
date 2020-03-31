@@ -2,12 +2,12 @@ package system
 
 import (
 	"fmt"
-	"jxcore/core/device"
-	"jxcore/management/updatemanage"
-	"jxcore/oplog"
-	"jxcore/oplog/logs"
-	"jxcore/oplog/types"
-	"jxcore/web/controller/utils"
+	"github.com/JK-97/edge-guard/core/device"
+	"github.com/JK-97/edge-guard/management/updatemanage"
+	"github.com/JK-97/edge-guard/oplog"
+	"github.com/JK-97/edge-guard/oplog/logs"
+	"github.com/JK-97/edge-guard/oplog/types"
+	"github.com/JK-97/edge-guard/web/controller/utils"
 	"net/http"
 )
 

@@ -3,7 +3,7 @@ package driver
 import (
 	"context"
 	"fmt"
-	"jxcore/web/remote"
+	"github.com/JK-97/edge-guard/web/remote"
 	"net/http"
 	"net/http/httputil"
 	"net/url"

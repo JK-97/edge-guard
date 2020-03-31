@@ -1,7 +1,7 @@
 package yaml
 
 const (
-	configPath = "/edge/jxcore/bin/settings.yaml"
+	configPath = "/edge/edge-guard/bin/settings.yaml"
 )
 
 var (

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/JK-97/edge-guard/subprocess/config"
 	log "github.com/sirupsen/logrus"
-	"jxcore/subprocess/config"
 )
 
 type ProcessManager struct {

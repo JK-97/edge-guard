@@ -2,14 +2,14 @@ package utils
 
 import (
 	"encoding/json"
+	log "github.com/JK-97/edge-guard/lowapi/logger"
 	"html/template"
 	"io"
 	"io/ioutil"
-	log "jxcore/lowapi/logger"
 	"net/http"
 	"strconv"
 
-	"gitlab.jiangxingai.com/applications/base-modules/internal-sdk/go-utils/logger"
+	"github.com/JK-97/go-utils/logger"
 )
 
 // Error handles server error

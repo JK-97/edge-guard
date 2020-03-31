@@ -2,9 +2,6 @@ package dns
 
 import (
 	"io/ioutil"
-	"jxcore/core/device"
-	"jxcore/internal/network"
-	"jxcore/internal/network/dns/dnsfile"
 	"math/rand"
 	"net"
 	"os"
@@ -13,10 +10,14 @@ import (
 	"strings"
 	"time"
 
-	"jxcore/lowapi/docker"
-	"jxcore/lowapi/logger"
-	"jxcore/lowapi/system"
-	"jxcore/lowapi/utils"
+	"github.com/JK-97/edge-guard/core/device"
+	"github.com/JK-97/edge-guard/internal/network"
+	"github.com/JK-97/edge-guard/internal/network/dns/dnsfile"
+
+	"github.com/JK-97/edge-guard/lowapi/docker"
+	"github.com/JK-97/edge-guard/lowapi/logger"
+	"github.com/JK-97/edge-guard/lowapi/system"
+	"github.com/JK-97/edge-guard/lowapi/utils"
 )
 
 // 尝试设置dns配置，忽略出错
@@ -25,7 +26,7 @@ func TrySetupDnsConfig() {
 	utils.RunAndLogError(func() error { return system.StopDisableService("NetworkManager") })
 	utils.RunAndLogError(func() error { return system.StopDisableService("systemd-resolved") })
 
-	// 向前兼容：旧版本jxcore会锁/etc/resolv.conf
+	// 向前兼容：旧版本edge-guard会锁/etc/resolv.conf
 	utils.RunAndLogError(unlockResolvConf)
 
 	// nano: /etc/dhcp/dhclient-enter-hooks.d 里的脚本需要被移除。

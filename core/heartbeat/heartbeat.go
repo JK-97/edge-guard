@@ -9,13 +9,13 @@ import (
 	"syscall"
 	"time"
 
-	"jxcore/config/yaml"
-	"jxcore/core/heartbeat/collector"
-	"jxcore/core/heartbeat/message"
-	"jxcore/lowapi/logger"
-	"jxcore/oplog"
-	"jxcore/oplog/logs"
-	"jxcore/oplog/types"
+	"github.com/JK-97/edge-guard/config/yaml"
+	"github.com/JK-97/edge-guard/core/heartbeat/collector"
+	"github.com/JK-97/edge-guard/core/heartbeat/message"
+	"github.com/JK-97/edge-guard/lowapi/logger"
+	"github.com/JK-97/edge-guard/oplog"
+	"github.com/JK-97/edge-guard/oplog/logs"
+	"github.com/JK-97/edge-guard/oplog/types"
 
 	"golang.org/x/sys/unix"
 )
@@ -160,7 +160,7 @@ func setKeepaliveParameters(conn *net.TCPConn) {
 			// got socket file descriptor. Setting parameters.
 			fd := int(fdPtr)
 
-			// 修复连接重连慢，原因是jxcore心跳包write无法发现tcp连接断开。
+			// 修复连接重连慢，原因是edge-guard心跳包write无法发现tcp连接断开。
 			// 设置ack timeout，使得如果write在10秒内没有收到ack，断开连接。
 			// https://blog.cloudflare.com/when-tcp-sockets-refuse-to-die/
 			timeoutSec := yaml.Config.HeartbeatTimeoutSec

@@ -1,7 +1,7 @@
 package oplog
 
 import (
-	"jxcore/oplog/types"
+	"github.com/JK-97/edge-guard/oplog/types"
 	"time"
 )
 
